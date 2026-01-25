@@ -1,0 +1,36 @@
+name: dm_bhatt_classes_new
+description: "A new Flutter project for DM Bhatt Classes."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.3.3
+  webview_flutter: ^4.2.2
+  bloc: ^9.2.0
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.8
+  pinput: ^6.0.1
+  url_launcher: ^6.1.14
+  image_picker: ^1.2.1
+  file_picker: ^10.3.8
+  http: ^1.6.0
+  flutter_tts: ^3.8.3
+  flutter_windowmanager: ^0.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/app_icons/
+    - assets/images/

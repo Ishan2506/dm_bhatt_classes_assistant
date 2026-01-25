@@ -1,0 +1,42 @@
+import 'dart:async';
+import 'package:dm_bhatt_classes_new/constant/app_images.dart';
+import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
+import 'package:dm_bhatt_classes_new/utils/app_sizes.dart';
+import 'package:flutter/material.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Timer(const Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              imgDmBhattClassesLogo,
+              width: S.s200,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
