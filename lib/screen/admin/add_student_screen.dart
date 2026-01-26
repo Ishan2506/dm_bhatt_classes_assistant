@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,10 +20,13 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _schoolNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+
+  bool _isPasswordVisible = false;
 
   // Selection States
   String? _selectedStandard;
@@ -54,6 +58,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _passwordController.dispose();
     _parentPhoneController.dispose();
     _cityController.dispose();
     _schoolNameController.dispose();
@@ -96,21 +101,52 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     }
   }
 
-  void _createStudent() {
+  Future<void> _createStudent() async {
       if (_formKey.currentState!.validate()) {
-        CustomToast.showSuccess(context, 'Student Added Successfully');
-        // Clear form
-        _nameController.clear();
-        _phoneController.clear();
-        _parentPhoneController.clear();
-        _schoolNameController.clear();
-        _addressController.clear();
-        setState(() {
-          _imageFile = null;
-          _selectedStandard = null;
-          _selectedMedium = null;
-          _selectedStream = null;
-        });
+        try {
+          CustomToast.showSuccess(context, 'Adding Student...'); // Optional: Show loading
+          
+          final response = await ApiService.addStudent(
+            name: _nameController.text,
+            phone: _phoneController.text,
+            password: _passwordController.text,
+            parentPhone: _parentPhoneController.text,
+            standard: _selectedStandard ?? "",
+            medium: _selectedMedium ?? "",
+            stream: _selectedStream,
+            state: _selectedState ?? "Gujarat",
+            city: _cityController.text,
+            address: _addressController.text,
+            schoolName: _schoolNameController.text,
+            imageFile: _imageFile,
+          );
+
+          if (!mounted) return;
+
+          if (response.statusCode == 200 || response.statusCode == 201) {
+            CustomToast.showSuccess(context, 'Student Added Successfully');
+            // Clear form
+            _nameController.clear();
+            _phoneController.clear();
+            _passwordController.clear();
+            _parentPhoneController.clear();
+            _schoolNameController.clear();
+            _addressController.clear();
+            setState(() {
+              _imageFile = null;
+              _selectedStandard = null;
+              _selectedMedium = null;
+              _selectedStream = null;
+            });
+          } else {
+             final error = jsonDecode(response.body);
+             CustomToast.showError(context, error['message'] ?? "Failed to add student");
+          }
+        } catch (e) {
+          if (mounted) {
+            CustomToast.showError(context, "Error: $e");
+          }
+        }
       }
   }
 
@@ -200,6 +236,22 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       inputType: TextInputType.phone,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                       validator: (val) => val!.length != 10 ? "Invalid phone" : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password
+                    _buildTextField(
+                      controller: _passwordController,
+                      hint: "Password",
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      isVisible: _isPasswordVisible,
+                      onVisibilityChanged: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                      validator: (val) => val!.length < 6 ? "Min 6 chars" : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -413,6 +465,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
     int maxLines = 1,
+    bool isPassword = false, 
+    bool isVisible = false,
+    VoidCallback? onVisibilityChanged,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -422,6 +477,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       ),
       child: TextFormField(
         controller: controller,
+        obscureText: isPassword && !isVisible,
         keyboardType: inputType,
         inputFormatters: inputFormatters,
         validator: validator,
@@ -431,6 +487,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           hintText: hint,
           hintStyle: GoogleFonts.poppins(color: Colors.grey),
           prefixIcon: Icon(icon, color: Colors.black54),
+          suffixIcon: isPassword 
+              ? IconButton(
+                  icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                  onPressed: onVisibilityChanged,
+                ) 
+              : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),

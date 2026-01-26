@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,8 +16,11 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _aadharNameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _aadharNumberController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  
+  bool _isPasswordVisible = false;
   
   // Mock History Data
   final List<Map<String, String>> _history = [
@@ -27,7 +32,8 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _aadharNameController.dispose();
+    _passwordController.dispose();
+    _aadharNumberController.dispose();
     _addressController.dispose();
     super.dispose();
   }
@@ -84,11 +90,28 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                     _buildTextField(
+                      controller: _passwordController,
+                      label: "Password",
+                      icon: Icons.lock_outline,
+                      isPassword: true,
+                      isVisible: _isPasswordVisible,
+                      onVisibilityChanged: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                      validator: (v) => v!.length < 6 ? "Min 6 chars" : null,
+                    ),
+                    const SizedBox(height: 16),
+
                     _buildTextField(
-                      controller: _aadharNameController,
-                      label: "Aadhar Card Name",
+                      controller: _aadharNumberController,
+                      label: "Aadhar Number",
                       icon: Icons.credit_card_outlined,
-                      validator: (v) => v!.isEmpty ? "Required" : null,
+                      inputType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(12)],
+                      validator: (v) => v!.length != 12 ? "Invalid Aadhar Number" : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -106,10 +129,38 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                            if (_formKey.currentState!.validate()) {
-                              CustomToast.showSuccess(context, "Assistant Added Successfully");
-                              // In real app, refresh history here
+                              try {
+                                CustomToast.showSuccess(context, "Adding Assistant...");
+
+                                final response = await ApiService.addAssistant(
+                                  name: _nameController.text,
+                                  phone: _phoneController.text,
+                                  password: _passwordController.text,
+                                  aadharNumber: _aadharNumberController.text,
+                                  address: _addressController.text,
+                                );
+
+                                if (!mounted) return;
+
+                                if (response.statusCode == 200 || response.statusCode == 201) {
+                                  CustomToast.showSuccess(context, "Assistant Added Successfully");
+                                  _nameController.clear();
+                                  _phoneController.clear();
+                                  _passwordController.clear();
+                                  _aadharNumberController.clear();
+                                  _addressController.clear();
+                                  // In real app, refresh history here
+                                } else {
+                                  final error = jsonDecode(response.body);
+                                  CustomToast.showError(context, error['message'] ?? "Failed to add assistant");
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  CustomToast.showError(context, "Error: $e");
+                                }
+                              }
                            }
                         },
                         style: ElevatedButton.styleFrom(
@@ -183,6 +234,9 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> {
     List<TextInputFormatter>? inputFormatters,
     int maxLines = 1,
     String? Function(String?)? validator,
+    bool isPassword = false,
+    bool isVisible = false,
+    VoidCallback? onVisibilityChanged,
   }) {
     return TextFormField(
       controller: controller,
@@ -190,11 +244,18 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> {
       inputFormatters: inputFormatters,
       maxLines: maxLines,
       validator: validator,
+      obscureText: isPassword && !isVisible,
       style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.poppins(color: Colors.grey),
         prefixIcon: Icon(icon, color: Colors.blue.shade900),
+        suffixIcon: isPassword 
+              ? IconButton(
+                  icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                  onPressed: onVisibilityChanged,
+                ) 
+              : null,
         filled: true,
         fillColor: Colors.grey.shade50,
         border: OutlineInputBorder(

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 import 'package:dm_bhatt_classes_new/screen/Dashboard/student_home_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_home_screen.dart';
@@ -141,36 +144,56 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     height: MediaQuery.of(context).size.height * 0.07,
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                          CustomToast.showSuccess(context, "$_selectedRole Login Successful");
-                          
-                          Widget targetScreen;
+                            try {
+                              // Call API
+                              final response = await ApiService.loginUser(
+                                role: _selectedRole,
+                                loginCode: _passwordController.text,
+                                phoneNum: _phoneController.text,
+                              );
 
-                          if (_selectedRole == "Admin") {
-                            targetScreen = const AdminHomeScreen();
-                          } else if (_selectedRole == "Assistant") {
-                            targetScreen = const AssistantHomeScreen();
-                          } else {
-                            targetScreen = const StudentHomeScreen();
-                          }
+                              if (!mounted) return;
 
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => targetScreen),
-                            (route) => false,
-                          );
+                              if (response.statusCode == 200) {
+                                final data = jsonDecode(response.body);
+                                final token = data['token'];
+
+                                // Save token
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setString('auth_token', token);
+                                await prefs.setString('user_role', _selectedRole);
+
+                                CustomToast.showSuccess(context, "$_selectedRole Login Successful");
+                                
+                                Widget targetScreen;
+
+                                if (_selectedRole == "Admin") {
+                                  targetScreen = const AdminHomeScreen();
+                                } else if (_selectedRole == "Assistant") {
+                                  targetScreen = const AssistantHomeScreen();
+                                } else {
+                                  targetScreen = const StudentHomeScreen();
+                                }
+
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => targetScreen),
+                                  (route) => false,
+                                );
+                              } else {
+                                final error = jsonDecode(response.body);
+                                CustomToast.showError(context, error['message'] ?? "Login Failed");
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                CustomToast.showError(context, "Error: $e");
+                              }
+                            }
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          side: const BorderSide(color: Colors.black12),
-                        ),
-                        elevation: 2,
-                      ),
                       child: Text(
                         "Login as $_selectedRole",
                         style: GoogleFonts.poppins(
