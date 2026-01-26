@@ -5,12 +5,14 @@ import 'package:dm_bhatt_classes_new/utils/app_sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+
 class StudentHomeScreen extends StatelessWidget {
   const StudentHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -18,7 +20,10 @@ class StudentHomeScreen extends StatelessWidget {
             // Company Banner with Gradient
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16), // Increased top padding for status bar
+              padding: EdgeInsets.symmetric(
+                vertical: screenHeight * 0.05, 
+                horizontal: screenWidth * 0.04
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Colors.blue.shade900, Colors.blue.shade700],
@@ -43,24 +48,26 @@ class StudentHomeScreen extends StatelessWidget {
                     "DM Bhatt Group Tuition",
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                      fontSize: 22,
+                      fontSize: screenWidth * 0.055, // Responsive Font Size
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       letterSpacing: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: screenHeight * 0.01),
                   Text(
                     "Excellence in Education",
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: screenWidth * 0.035, // Responsive Font Size
                       color: Colors.white70,
                     ),
                   ),
                 ],
               ),
             ),
-            blankVerticalSpace24,
+
+
+
   
             // Daily Time Table Section
             Padding(
@@ -82,7 +89,7 @@ class StudentHomeScreen extends StatelessWidget {
                       Text(
                         "Daily Time Table",
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
+                          fontSize: screenWidth * 0.045, // Responsive Font Size
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
                         ),
@@ -166,7 +173,7 @@ class StudentHomeScreen extends StatelessWidget {
                     Text(
                       lblNextExamWaiting,
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
+                        fontSize: screenWidth * 0.04, // Responsive Font Size
                         color: colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
                       ),
@@ -196,7 +203,7 @@ class StudentHomeScreen extends StatelessWidget {
                         child: Text(
                           lblStartExam.toUpperCase(),
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: screenWidth * 0.035, // Responsive Font Size
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1,
                           ),
