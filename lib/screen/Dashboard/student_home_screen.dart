@@ -10,6 +10,8 @@ class StudentHomeScreen extends StatelessWidget {
   const StudentHomeScreen({super.key});
 
   @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -182,7 +184,6 @@ class StudentHomeScreen extends StatelessWidget {
                     blankVerticalSpace24,
                     SizedBox(
                       width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.06,
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.push(
@@ -193,6 +194,7 @@ class StudentHomeScreen extends StatelessWidget {
                           );
                         },
                         style: ElevatedButton.styleFrom(
+                          minimumSize: Size(double.infinity, screenHeight * 0.06),
                           backgroundColor: Colors.blue.shade700,
                           foregroundColor: Colors.white,
                           elevation: 0,
@@ -214,7 +216,7 @@ class StudentHomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            blankVerticalSpace24,
+            SizedBox(height: screenHeight * 0.15),
           ],
         ),
       ),
