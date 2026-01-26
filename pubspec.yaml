@@ -23,6 +23,7 @@ dependencies:
   http: ^1.6.0
   flutter_tts: ^3.8.3
   flutter_windowmanager: ^0.2.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

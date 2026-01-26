@@ -1,8 +1,9 @@
 import 'package:dm_bhatt_classes_new/constant/app_constant.dart';
+import 'package:dm_bhatt_classes_new/cubit/theme/theme_cubit.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/splash_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/app_theme_data.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,13 +19,21 @@ class MyApp extends StatelessWidget {
     final textTheme = createTextTheme();
     final theme = MaterialTheme(textTheme);
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: appName,
-      theme: theme.light(),
-      darkTheme: theme.dark(),
-      themeMode: ThemeMode.system, // Default to system, or light
-      home: const SplashScreen(),
+    return BlocProvider(
+      create: (context) => ThemeCubit(),
+      child: BlocBuilder<ThemeCubit, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: appName,
+            theme: theme.light(),
+            darkTheme: theme.dark(),
+            themeMode: state.themeMode,
+            locale: state.locale,
+            home: const SplashScreen(),
+          );
+        },
+      ),
     );
   }
 }

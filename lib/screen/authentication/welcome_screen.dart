@@ -1,6 +1,5 @@
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/login_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/authentication/register_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -68,7 +67,7 @@ class WelcomeScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(builder: (context) => const LoginScreen(role: 'Assistant')),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -81,7 +80,7 @@ class WelcomeScreen extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: Text(
-                      "Login",
+                      "Assistant",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -91,12 +90,12 @@ class WelcomeScreen extends StatelessWidget {
                   
                   const SizedBox(height: 16),
                   
-                  // Register Button
+                  // Admin Button
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        MaterialPageRoute(builder: (context) => const LoginScreen(role: 'Admin')),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -109,7 +108,7 @@ class WelcomeScreen extends StatelessWidget {
                       elevation: 2,
                     ),
                     child: Text(
-                      "Register",
+                      "Admin",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

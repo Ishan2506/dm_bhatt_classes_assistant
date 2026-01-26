@@ -1,12 +1,15 @@
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 import 'package:dm_bhatt_classes_new/screen/Dashboard/student_home_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/admin_home_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/assistant/assistant_home_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String role;
+  const LoginScreen({super.key, required this.role});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,8 +21,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Role Selection
-  String _selectedRole = "Student";
+  late String _selectedRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRole = widget.role;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
               key: _formKey,
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
+                   const SizedBox(height: 20),
                   // Logo
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -55,11 +63,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: MediaQuery.of(context).size.height * 0.12,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  
-                  // Role Selector
-                  _buildRoleSelector(),
-                  
                   const SizedBox(height: 32),
                   
                   Text(
@@ -139,12 +142,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: MediaQuery.of(context).size.height * 0.07,
                     child: ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
+                          if (_formKey.currentState!.validate()) {
                           CustomToast.showSuccess(context, "$_selectedRole Login Successful");
+                          
+                          Widget targetScreen;
+
+                          if (_selectedRole == "Admin") {
+                            targetScreen = const AdminHomeScreen();
+                          } else if (_selectedRole == "Assistant") {
+                            targetScreen = const AssistantHomeScreen();
+                          } else {
+                            targetScreen = const StudentHomeScreen();
+                          }
+
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const StudentHomeScreen()),
+                                builder: (context) => targetScreen),
                             (route) => false,
                           );
                         }
@@ -171,48 +185,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRoleSelector() {
-    return Row(
-      children: [
-        Expanded(child: _buildRoleButton("Student")),
-        const SizedBox(width: 16),
-        Expanded(child: _buildRoleButton("Parent")),
-      ],
-    );
-  }
-
-  Widget _buildRoleButton(String role) {
-    bool isSelected = _selectedRole == role;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedRole = role),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const Duration(vertical: 0, 0: 12),
-        // Fix usage of Duration in padding, wait. Padding is EdgeInsets.
-        // Copy paste error in my thought.
-        // Correcting:
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.shade700 : Colors.white,
-          border: Border.all(color: Colors.blue.shade700),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: isSelected ? [
-            BoxShadow(color: Colors.blue.shade200, blurRadius: 8, offset: const Offset(0, 4))
-          ] : [],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          role,
-          style: GoogleFonts.poppins(
-            color: isSelected ? Colors.white : Colors.blue.shade700,
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
         ),
       ),
     );

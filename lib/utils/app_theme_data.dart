@@ -177,5 +177,16 @@ class MaterialTheme {
     scaffoldBackgroundColor: colorScheme.surface,
     canvasColor: colorScheme.surface,
     inputDecorationTheme: CustomInputDecorationTheme.getTheme(colorScheme),
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.blue.shade900,
+      foregroundColor: Colors.white,
+      centerTitle: false, // As per image alignment seems standard
+      iconTheme: const IconThemeData(color: Colors.white),
+      titleTextStyle: GoogleFonts.poppins(
+        fontSize: 20, 
+        fontWeight: FontWeight.bold, 
+        color: Colors.white
+      ),
+    ),
   );
 }
