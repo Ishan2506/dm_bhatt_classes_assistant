@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 import 'package:dm_bhatt_classes_new/screen/Dashboard/student_home_screen.dart';
@@ -147,6 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             try {
+                              CustomLoader.show(context); // Show Loader
                               // Call API
                               final response = await ApiService.loginUser(
                                 role: _selectedRole,
@@ -155,6 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
 
                               if (!mounted) return;
+                              CustomLoader.hide(context); // Hide Loader
 
                               if (response.statusCode == 200) {
                                 final data = jsonDecode(response.body);
@@ -189,6 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               }
                             } catch (e) {
                               if (mounted) {
+                                CustomLoader.hide(context); // Hide Loader
                                 CustomToast.showError(context, "Error: $e");
                               }
                             }

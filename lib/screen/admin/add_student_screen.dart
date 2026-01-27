@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -104,7 +105,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   Future<void> _createStudent() async {
       if (_formKey.currentState!.validate()) {
         try {
-          CustomToast.showSuccess(context, 'Adding Student...'); // Optional: Show loading
+          CustomLoader.show(context); // Show Loader
           
           final response = await ApiService.addStudent(
             name: _nameController.text,
@@ -122,6 +123,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           );
 
           if (!mounted) return;
+          CustomLoader.hide(context); // Hide Loader
 
           if (response.statusCode == 200 || response.statusCode == 201) {
             CustomToast.showSuccess(context, 'Student Added Successfully');
@@ -144,6 +146,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           }
         } catch (e) {
           if (mounted) {
+            CustomLoader.hide(context); // Hide on Error too (if likely shown)
             CustomToast.showError(context, "Error: $e");
           }
         }
