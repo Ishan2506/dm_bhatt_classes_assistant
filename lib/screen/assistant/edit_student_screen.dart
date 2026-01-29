@@ -20,6 +20,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   final _formKey = GlobalKey<FormState>();
   
   late TextEditingController _nameController;
+  late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _parentPhoneController;
   late TextEditingController _cityController;
@@ -51,6 +52,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     super.initState();
     // Initialize with passed data or defaults
     _nameController = TextEditingController(text: widget.studentData["name"] ?? "");
+    _emailController = TextEditingController(text: widget.studentData["email"] ?? "");
     _phoneController = TextEditingController(text: widget.studentData["phone"] ?? "");
     _parentPhoneController = TextEditingController(text: widget.studentData["parent_phone"] ?? "");
     _cityController = TextEditingController(text: widget.studentData["city"] ?? "Ahmedabad");
@@ -71,6 +73,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     _phoneController.dispose();
     _parentPhoneController.dispose();
     _cityController.dispose();
@@ -182,6 +185,20 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                 hint: "Name", 
                 icon: Icons.person_outline,
                 validator: (val) => val!.isEmpty ? "Required" : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Email
+              _buildTextField(
+                controller: _emailController,
+                hint: "Email ID", 
+                icon: Icons.email_outlined,
+                inputType: TextInputType.emailAddress,
+                validator: (val) {
+                   if (val == null || val.isEmpty) return "Required";
+                   if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) return "Invalid Email";
+                   return null;
+                },
               ),
               const SizedBox(height: 16),
 
