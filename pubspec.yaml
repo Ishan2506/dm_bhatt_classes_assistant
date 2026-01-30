@@ -24,6 +24,10 @@ dependencies:
   flutter_tts: ^3.8.3
   intl: ^0.20.2
   shared_preferences: ^2.2.2
+  excel: ^4.0.6
+  path_provider: ^2.1.5
+  permission_handler: ^12.0.1
+  universal_html: ^2.3.0
 
 dev_dependencies:
   flutter_test:

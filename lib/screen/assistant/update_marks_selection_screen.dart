@@ -60,8 +60,11 @@ class _UpdateMarksSelectionScreenState extends State<UpdateMarksSelectionScreen>
       return true;
     }).toList();
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
        appBar: AppBar(
         title: Text(
           "Select Exam",
@@ -80,6 +83,7 @@ class _UpdateMarksSelectionScreenState extends State<UpdateMarksSelectionScreen>
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -87,11 +91,11 @@ class _UpdateMarksSelectionScreenState extends State<UpdateMarksSelectionScreen>
            Container(
              padding: const EdgeInsets.all(16),
              decoration: BoxDecoration(
-               color: Colors.white,
+               color: theme.cardColor,
                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
                boxShadow: [
                  BoxShadow(
-                   color: Colors.black.withOpacity(0.05),
+                   color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                    blurRadius: 10,
                    offset: const Offset(0, 5),
                  )
@@ -121,9 +125,9 @@ class _UpdateMarksSelectionScreenState extends State<UpdateMarksSelectionScreen>
                    child: Column(
                      mainAxisAlignment: MainAxisAlignment.center,
                      children: [
-                       Icon(Icons.assignment_outlined, size: 64, color: Colors.grey.shade300),
+                       Icon(Icons.assignment_outlined, size: 64, color: isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.grey.shade300),
                        const SizedBox(height: 16),
-                       Text("No exams found for selection", style: GoogleFonts.poppins(color: Colors.grey.shade500)),
+                       Text("No exams found for selection", style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color)),
                      ],
                    ),
                  )
@@ -142,30 +146,39 @@ class _UpdateMarksSelectionScreenState extends State<UpdateMarksSelectionScreen>
   }
 
   Widget _buildDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return DropdownButtonFormField<String>(
       value: value,
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(color: theme.textTheme.bodyLarge?.color)))).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: hint,
+        labelStyle: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300)),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
       ),
-      style: GoogleFonts.poppins(color: Colors.black87),
+      style: GoogleFonts.poppins(color: theme.textTheme.bodyLarge?.color),
+      dropdownColor: theme.cardColor,
     );
   }
 
   Widget _buildExamCard(Map<String, dynamic> exam) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -179,23 +192,23 @@ class _UpdateMarksSelectionScreenState extends State<UpdateMarksSelectionScreen>
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
+            color: isDark ? Colors.blue.shade900.withOpacity(0.4) : Colors.blue.shade50,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(Icons.assignment_turned_in, color: Colors.blue.shade800),
+          child: Icon(Icons.assignment_turned_in, color: isDark ? Colors.blue.shade200 : Colors.blue.shade800),
         ),
         title: Text(
           exam["subject"],
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: theme.textTheme.bodyLarge?.color),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4.0),
           child: Text(
             "${exam['marks']} Marks • ${exam['date']}",
-            style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
+            style: GoogleFonts.poppins(fontSize: 13, color: theme.textTheme.bodyMedium?.color),
           ),
         ),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
       ),
     );
   }

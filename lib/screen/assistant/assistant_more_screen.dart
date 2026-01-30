@@ -1,7 +1,10 @@
 import 'package:dm_bhatt_classes_new/screen/assistant/help_support_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/my_profile_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/settings_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/assistant/import_students_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/assistant/top_rankers_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/update_marks_selection_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,13 +12,25 @@ class AssistantMoreScreen extends StatelessWidget {
   const AssistantMoreScreen({super.key});
 
   @override
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "More Options",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade900, Colors.blue.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
         elevation: 0,
       ),
@@ -34,6 +49,12 @@ class AssistantMoreScreen extends StatelessWidget {
           _buildOptionTile(context, Icons.edit_note_outlined, "Update Marks", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const UpdateMarksSelectionScreen()));
           }),
+          _buildOptionTile(context, Icons.upload_file, "Import Students", () {
+             Navigator.push(context, MaterialPageRoute(builder: (context) => const ImportStudentsScreen()));
+          }),
+          _buildOptionTile(context, Icons.emoji_events_outlined, "Manage Top Rankers", () {
+             Navigator.push(context, MaterialPageRoute(builder: (context) => const TopRankersScreen()));
+          }),
           const SizedBox(height: 24),
           _buildOptionTile(context, Icons.logout, "Logout", () {
              _showLogoutDialog(context);
@@ -44,11 +65,14 @@ class AssistantMoreScreen extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         title: Row(
           children: [
             Container(
@@ -72,14 +96,17 @@ class AssistantMoreScreen extends StatelessWidget {
         ),
         content: Text(
           "Are you sure you want to logout from the application?",
-          style: GoogleFonts.poppins(color: Colors.grey.shade700, fontSize: 14),
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700, 
+            fontSize: 14
+          ),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.grey.shade600,
+              foregroundColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
             child: Text(
               "Cancel",
@@ -90,8 +117,12 @@ class AssistantMoreScreen extends StatelessWidget {
             onPressed: () {
                // Pop dialog first
                Navigator.pop(context);
-               // Pop until the first route (Welcome Screen usually)
-               Navigator.of(context).popUntil((route) => route.isFirst);
+               // Navigate to Welcome Screen and clear stack
+               Navigator.pushAndRemoveUntil(
+                 context, 
+                 MaterialPageRoute(builder: (context) => const WelcomeScreen()), 
+                 (route) => false
+               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue.shade900,
@@ -113,14 +144,17 @@ class AssistantMoreScreen extends StatelessWidget {
   }
 
   Widget _buildOptionTile(BuildContext context, IconData icon, String title, VoidCallback onTap, {bool isDestructive = false}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05), // Darker shadow in dark mode
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -132,12 +166,12 @@ class AssistantMoreScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-             color: isDestructive ? Colors.red.shade50 : Colors.blue.shade50,
+             color: isDestructive ? Colors.red.shade50 : (isDark ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50),
              borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon, 
-            color: isDestructive ? Colors.red : Colors.blue.shade700,
+            color: isDestructive ? Colors.red : (isDark ? Colors.blue.shade200 : Colors.blue.shade700),
             size: 24,
           ),
         ),
@@ -146,10 +180,10 @@ class AssistantMoreScreen extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 16,
-            color: isDestructive ? Colors.red : Colors.black87,
+            color: isDestructive ? Colors.red : theme.textTheme.bodyLarge?.color,
           ),
         ),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
       ),
     );
   }

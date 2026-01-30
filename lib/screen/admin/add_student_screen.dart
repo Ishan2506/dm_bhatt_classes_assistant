@@ -16,7 +16,8 @@ class AddStudentScreen extends StatefulWidget {
   State<AddStudentScreen> createState() => _AddStudentScreenState();
 }
 
-class _AddStudentScreenState extends State<AddStudentScreen> {
+class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   
   final TextEditingController _nameController = TextEditingController();
@@ -28,6 +29,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   final TextEditingController _addressController = TextEditingController();
 
   bool _isPasswordVisible = false;
+  bool _isEditing = false; // To track if we are in edit mode
+  int? _editingIndex; // To track which item is being edited (mock)
 
   // Selection States
   String? _selectedStandard;
@@ -51,12 +54,19 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   // Mock History
   final List<Map<String, String>> _history = [
-    {"name": "Devarsh Shah", "std": "12", "stream": "Science", "date": "25 Jan 2024"},
-    {"name": "Rahul Verma", "std": "10", "stream": "-", "date": "22 Jan 2024"},
+    {"name": "Devarsh Shah", "std": "12", "stream": "Science", "date": "25 Jan 2024", "phone": "1234567890", "medium": "English"},
+    {"name": "Rahul Verma", "std": "10", "stream": "", "date": "22 Jan 2024", "phone": "9876543210", "medium": "Gujarati"},
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
   void dispose() {
+    _tabController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
@@ -102,47 +112,60 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     }
   }
 
-  Future<void> _createStudent() async {
+  Future<void> _createOrUpdateStudent() async {
       if (_formKey.currentState!.validate()) {
         try {
           CustomLoader.show(context); // Show Loader
           
-          final response = await ApiService.addStudent(
-            name: _nameController.text,
-            phone: _phoneController.text,
-            password: _passwordController.text,
-            parentPhone: _parentPhoneController.text,
-            standard: _selectedStandard ?? "",
-            medium: _selectedMedium ?? "",
-            stream: _selectedStream,
-            state: _selectedState ?? "Gujarat",
-            city: _cityController.text,
-            address: _addressController.text,
-            schoolName: _schoolNameController.text,
-            imageFile: _imageFile,
-          );
+          if (_isEditing) {
+             // Mock Update Logic
+             await Future.delayed(const Duration(seconds: 1)); // Simulate local update delay
+             if (!mounted) return;
+             CustomLoader.hide(context);
+             CustomToast.showSuccess(context, 'Student Updated Successfully (Mock)');
+              
+             // Update local history for demo
+             if (_editingIndex != null && _editingIndex! < _history.length) {
+                setState(() {
+                   _history[_editingIndex!] = {
+                     "name": _nameController.text,
+                     "std": _selectedStandard ?? "",
+                     "stream": _selectedStream ?? "",
+                     "date": _history[_editingIndex!]['date']!, // Keep original date
+                     "phone": _phoneController.text,
+                     "medium": _selectedMedium ?? "",
+                   };
+                });
+             }
+             _resetForm();
 
-          if (!mounted) return;
-          CustomLoader.hide(context); // Hide Loader
-
-          if (response.statusCode == 200 || response.statusCode == 201) {
-            CustomToast.showSuccess(context, 'Student Added Successfully');
-            // Clear form
-            _nameController.clear();
-            _phoneController.clear();
-            _passwordController.clear();
-            _parentPhoneController.clear();
-            _schoolNameController.clear();
-            _addressController.clear();
-            setState(() {
-              _imageFile = null;
-              _selectedStandard = null;
-              _selectedMedium = null;
-              _selectedStream = null;
-            });
           } else {
-             final error = jsonDecode(response.body);
-             CustomToast.showError(context, error['message'] ?? "Failed to add student");
+              // Create Logic
+              final response = await ApiService.addStudent(
+                name: _nameController.text,
+                phone: _phoneController.text,
+                password: _passwordController.text,
+                parentPhone: _parentPhoneController.text,
+                standard: _selectedStandard ?? "",
+                medium: _selectedMedium ?? "",
+                stream: _selectedStream,
+                state: _selectedState ?? "Gujarat",
+                city: _cityController.text,
+                address: _addressController.text,
+                schoolName: _schoolNameController.text,
+                imageFile: _imageFile,
+              );
+
+              if (!mounted) return;
+              CustomLoader.hide(context); // Hide Loader
+
+              if (response.statusCode == 200 || response.statusCode == 201) {
+                CustomToast.showSuccess(context, 'Student Added Successfully');
+                _resetForm();
+              } else {
+                 final error = jsonDecode(response.body);
+                 CustomToast.showError(context, error['message'] ?? "Failed to add student");
+              }
           }
         } catch (e) {
           if (mounted) {
@@ -152,12 +175,114 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         }
       }
   }
+  
+  void _editStudent(int index) {
+     final item = _history[index];
+     setState(() {
+       _isEditing = true;
+       _editingIndex = index;
+       _nameController.text = item['name'] ?? "";
+       _phoneController.text = item['phone'] ?? ""; // Assuming we have this in history or fetch it
+       _selectedStandard = item['std'];
+       _selectedStream = (item['stream'] == "" || item['stream'] == "-") ? null : item['stream'];
+       _selectedMedium = item['medium'];
+       // For mock purposes other fields might be empty or defaults
+       _cityController.text = "Ahmedabad"; 
+     });
+     _tabController.animateTo(0); // Switch to "Create New" tab form
+  }
+
+  void _confirmDelete(int index) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: theme.cardColor,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.delete_outline, color: Colors.red.shade900, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "Delete Student",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87, // Adaptive color
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          "Are you sure you want to delete this student? This action cannot be undone.",
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+            fontSize: 14,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+             style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+            child: Text("Cancel", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _history.removeAt(index);
+              });
+              CustomToast.showSuccess(context, "Student Deleted Successfully");
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+              elevation: 0,
+               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text("Delete", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _resetForm() {
+    _nameController.clear();
+    _phoneController.clear();
+    _passwordController.clear();
+    _parentPhoneController.clear();
+    _schoolNameController.clear();
+    _addressController.clear();
+    _cityController.clear();
+    setState(() {
+      _imageFile = null;
+      _selectedStandard = null;
+      _selectedMedium = null;
+      _selectedStream = null;
+      _isEditing = false;
+      _editingIndex = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text(
@@ -165,16 +290,18 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
           ),
           elevation: 0,
-          bottom: const TabBar(
+          bottom: TabBar(
+            controller: _tabController,
             labelColor: Colors.blue,
             unselectedLabelColor: Colors.grey,
-            tabs: [
+            tabs: const [
               Tab(text: "Create New"),
               Tab(text: "History"),
             ],
           ),
         ),
         body: TabBarView(
+          controller: _tabController,
           children: [
             // Tab 1: Create Form
             SingleChildScrollView(
@@ -254,7 +381,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
                       },
-                      validator: (val) => val!.length < 6 ? "Min 6 chars" : null,
+                      validator: (val) => (!_isEditing && val!.length < 6) ? "Min 6 chars" : null, // Optional on edit mostly
                     ),
                     const SizedBox(height: 16),
 
@@ -265,7 +392,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       icon: Icons.family_restroom_outlined, 
                       inputType: TextInputType.phone,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-                       validator: (val) => val!.length != 10 ? "Invalid phone" : null,
+                       validator: (val) => (val != null && val.isNotEmpty && val.length != 10) ? "Invalid phone" : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -405,7 +532,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: _createStudent,
+                        onPressed: _createOrUpdateStudent,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue.shade900,
                           shape: RoundedRectangleBorder(
@@ -414,7 +541,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                           elevation: 2,
                         ),
                         child: Text(
-                          "Add Student",
+                          _isEditing ? "Update Student" : "Add Student",
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -423,6 +550,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         ),
                       ),
                     ),
+                    if (_isEditing)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: TextButton(
+                          onPressed: _resetForm,
+                          child: Text("Cancel Edit", style: TextStyle(color: Colors.red)),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -443,27 +578,39 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                       side: BorderSide(color: Colors.grey.shade200),
                     ),
                   child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: CircleAvatar(
                        backgroundColor: Colors.blue.shade100,
                        child: Text(item['name']![0], style: TextStyle(color: Colors.blue.shade900)),
                     ),
                     title: Text(item['name']!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                     subtitle: Text("Std: ${item['std']} ${item['stream']} • ${item['date']}", style: GoogleFonts.poppins(fontSize: 12)),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _editStudent(index),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _confirmDelete(index),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ],
         ),
-      ),
     );
   }
 
   Widget _buildTextField({
+    required TextEditingController controller,
     required String hint, 
     required IconData icon, 
-    TextEditingController? controller,
     TextInputType inputType = TextInputType.text,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,

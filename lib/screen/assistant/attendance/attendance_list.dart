@@ -48,8 +48,11 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "${widget.isStudent ? 'Student' : 'Guest'} Attendance",
@@ -85,10 +88,10 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           Container(
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
@@ -133,12 +136,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   Widget _buildStudentTile(int index) {
     final student = _listData[index];
     bool isPresent = student["isPresent"];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPresent ? Colors.transparent : Colors.red.shade100,
@@ -146,7 +151,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -170,7 +175,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               Expanded(
                 child: Text(
                   student["name"],
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16, color: theme.textTheme.bodyLarge?.color),
                 ),
               ),
               Container(
@@ -212,9 +217,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               child: TextField(
                 decoration: InputDecoration(
                   hintText: "Enter reason for absence...",
-                  hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade400),
+                  hintStyle: GoogleFonts.poppins(fontSize: 13, color: isDark ? Colors.grey.shade400 : Colors.grey.shade400),
                   filled: true,
-                  fillColor: Colors.grey.shade50,
+                  fillColor: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -222,7 +227,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   prefixIcon: Icon(Icons.edit_note, color: Colors.grey.shade400, size: 20),
                 ),
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: GoogleFonts.poppins(fontSize: 14, color: theme.textTheme.bodyMedium?.color),
                 onChanged: (val) {
                   _listData[index]["reason"] = val;
                 },

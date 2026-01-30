@@ -6,6 +6,7 @@ import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 import 'package:dm_bhatt_classes_new/screen/Dashboard/student_home_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_home_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/assistant_home_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/authentication/forgot_password_phone_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -127,7 +128,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
 
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ForgotPasswordPhoneScreen()),
+                      );
+                    },
                     child: Text(
                       "Forgot your password?",
                       style: GoogleFonts.poppins(

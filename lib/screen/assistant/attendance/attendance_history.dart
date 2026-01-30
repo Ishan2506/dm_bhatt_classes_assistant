@@ -60,8 +60,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "Attendance History",
@@ -97,10 +100,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
               boxShadow: [
-                 BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                 BoxShadow(color: Colors.black.withOpacity(isDark ? 0.3 : 0.05), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: Column(
@@ -112,11 +115,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     children: [
                       Text(
                         "Filter Records", 
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.blue.shade900)
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: theme.primaryColor)
                       ),
                       Icon(
                         _filtersVisible ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                        color: Colors.blue.shade900,
+                        color: theme.primaryColor,
                       )
                     ],
                   ),
@@ -187,20 +190,24 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   Widget _buildDropdown(String label, List<String> items, String? value, Function(String?) onChanged) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        border: Border.all(color: Colors.grey.shade300),
+        color: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
+        border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          hint: Text("Select $label", style: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 13)),
+          dropdownColor: theme.cardColor,
+          hint: Text("Select $label", style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color, fontSize: 13)),
           icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.blue.shade700, size: 20),
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))).toList(),
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14, color: theme.textTheme.bodyLarge?.color)))).toList(),
           onChanged: onChanged,
         ),
       ),
@@ -210,14 +217,16 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   Widget _buildHistoryCard(Map<String, dynamic> item) {
     final dateFormat = DateFormat('dd MMM yyyy');
     final isStudent = item['type'] == 'Student';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -235,12 +244,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: isStudent ? Colors.blue.shade50 : Colors.orange.shade50,
+                        color: isStudent ? (isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.blue.shade50) : (isDark ? Colors.orange.shade900.withOpacity(0.5) : Colors.orange.shade50),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         isStudent ? Icons.school : Icons.person_outline,
-                        color: isStudent ? Colors.blue.shade700 : Colors.orange.shade700,
+                        color: isStudent ? (isDark ? Colors.blue.shade200 : Colors.blue.shade700) : (isDark ? Colors.orange.shade200 : Colors.orange.shade700),
                         size: 20,
                       ),
                     ),
@@ -253,13 +262,13 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: Colors.grey.shade800,
+                            color: theme.textTheme.bodyLarge?.color,
                           ),
                         ),
                         Text(
                           dateFormat.format(item['date']),
                           style: GoogleFonts.poppins(
-                            color: Colors.grey.shade500,
+                            color: theme.textTheme.bodyMedium?.color,
                             fontSize: 12,
                           ),
                         ),
@@ -270,23 +279,23 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: isDark ? Colors.green.shade900.withOpacity(0.5) : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.green.shade100),
+                    border: Border.all(color: isDark ? Colors.green.shade700 : Colors.green.shade100),
                   ),
                   child: Text(
                     "Submitted",
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.green.shade700,
+                      color: isDark ? Colors.green.shade200 : Colors.green.shade700,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            const Divider(height: 1),
+            Divider(height: 1, color: theme.dividerColor),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -300,7 +309,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: Colors.black87,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -313,11 +322,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildStatBadge("Total", item['total'].toString(), Colors.grey),
+                _buildStatBadge("Total", item['total'].toString(), Colors.grey, isDark),
                 const SizedBox(width: 8),
-                _buildStatBadge("Present", item['present'].toString(), Colors.green),
+                _buildStatBadge("Present", item['present'].toString(), Colors.green, isDark),
                 const SizedBox(width: 8),
-                _buildStatBadge("Absent", item['absent'].toString(), Colors.red),
+                _buildStatBadge("Absent", item['absent'].toString(), Colors.red, isDark),
               ],
             )
           ],
@@ -326,22 +335,22 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _buildStatBadge(String label, String value, MaterialColor color) {
+  Widget _buildStatBadge(String label, String value, MaterialColor color, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.shade50,
+        color: isDark ? color.shade900.withOpacity(0.5) : color.shade50,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           Text(
             "$label: ",
-            style: GoogleFonts.poppins(fontSize: 11, color: color.shade700),
+            style: GoogleFonts.poppins(fontSize: 11, color: isDark ? color.shade200 : color.shade700),
           ),
           Text(
             value,
-            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: color.shade900),
+            style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? color.shade100 : color.shade900),
           ),
         ],
       ),

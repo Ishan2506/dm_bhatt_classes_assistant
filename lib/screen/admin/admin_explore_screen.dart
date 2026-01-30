@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dm_bhatt_classes_new/screen/admin/admin_product_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,7 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 
 class AdminExploreScreen extends StatefulWidget {
-  const AdminExploreScreen({super.key});
+  final Map<String, dynamic>? productToEdit;
+  const AdminExploreScreen({super.key, this.productToEdit});
 
   @override
   State<AdminExploreScreen> createState() => _AdminExploreScreenState();
@@ -15,11 +17,11 @@ class AdminExploreScreen extends StatefulWidget {
 class _AdminExploreScreenState extends State<AdminExploreScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _originalPriceController = TextEditingController();
-  final TextEditingController _discountController = TextEditingController();
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _priceController;
+  late TextEditingController _originalPriceController;
+  late TextEditingController _discountController;
 
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
@@ -29,6 +31,24 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
 
   String? _selectedSubject;
   final List<String> _subjects = ["Science", "Maths", "English", "Gujarati", "Social Science", "Sanskrit", "Computer"];
+
+  bool get _isEditing => widget.productToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.productToEdit?['name'] ?? "");
+    _descriptionController = TextEditingController(text: "Mock Description for ${widget.productToEdit?['name'] ?? ''}"); 
+    _priceController = TextEditingController(text: widget.productToEdit?['price'] ?? "");
+    _originalPriceController = TextEditingController(text: widget.productToEdit?['originalPrice'] ?? "");
+    _discountController = TextEditingController(); 
+
+    if (_isEditing) {
+      _selectedCategory = widget.productToEdit?['category'];
+      _selectedSubject = "Science"; 
+      _calculateDiscount();
+    }
+  }
 
   @override
   void dispose() {
@@ -68,17 +88,81 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
     }
   }
 
+  void _handleSave() {
+    if (_formKey.currentState!.validate()) {
+      if (!_isEditing && _imageFile == null) {
+        CustomToast.showError(context, "Please upload an image");
+        return;
+      }
+      if (_selectedCategory == null) {
+        CustomToast.showError(context, "Please select a category");
+        return;
+      }
+      
+      if (_isEditing) {
+         CustomToast.showSuccess(context, "Product Updated Successfully!");
+         Navigator.pop(context); 
+      } else {
+         CustomToast.showSuccess(context, "Product Added Successfully!");
+         // Reset Form
+        _formKey.currentState!.reset();
+        _nameController.clear();
+        _descriptionController.clear();
+        _priceController.clear();
+        _originalPriceController.clear();
+        _discountController.clear();
+        setState(() {
+            _imageFile = null;
+            _selectedCategory = null;
+            _selectedSubject = null;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          "Add Product",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          _isEditing ? "Edit Product" : "Add Product",
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold, 
+            color: Colors.white
+          ),
         ),
-        automaticallyImplyLeading: false,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade900, Colors.blue.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        automaticallyImplyLeading: _isEditing,
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        actions: [
+          if (!_isEditing)
+             TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminProductHistoryScreen()),
+                );
+              },
+              child: Text(
+                "History", 
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold, 
+                  color: Colors.white,
+                )
+              ),
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -106,7 +190,10 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                     children: [
                       Icon(Icons.add_a_photo_outlined, size: 48, color: Colors.grey.shade400),
                       const SizedBox(height: 8),
-                      Text("Upload Product Image", style: GoogleFonts.poppins(color: Colors.grey.shade600)),
+                      Text(
+                        _isEditing ? "Tap to Change Image" : "Upload Product Image", 
+                        style: GoogleFonts.poppins(color: Colors.grey.shade600)
+                      ),
                     ],
                   ) : null,
                 ),
@@ -195,34 +282,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      if (_imageFile == null) {
-                        CustomToast.showError(context, "Please upload an image");
-                        return;
-                      }
-                      if (_selectedCategory == null) {
-                        CustomToast.showError(context, "Please select a category");
-                        return;
-                      }
-                      
-                      // Mock Submission
-                      CustomToast.showSuccess(context, "Product Added Successfully!");
-                      
-                      // Reset Form
-                      _formKey.currentState!.reset();
-                      _nameController.clear();
-                      _descriptionController.clear();
-                      _priceController.clear();
-                      _originalPriceController.clear();
-                      _discountController.clear();
-                      setState(() {
-                         _imageFile = null;
-                         _selectedCategory = null;
-                         _selectedSubject = null;
-                      });
-                    }
-                  },
+                  onPressed: _handleSave,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade900,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -230,7 +290,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                     shadowColor: Colors.blue.shade200,
                   ),
                   child: Text(
-                    "Add Product",
+                    _isEditing ? "Update Product" : "Add Product",
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

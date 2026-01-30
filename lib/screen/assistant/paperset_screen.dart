@@ -50,33 +50,27 @@ class _PapersetScreenState extends State<PapersetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     final filteredPapers = _selectedStatus == "All" 
         ? _papers 
         : _papers.where((p) => p["status"] == _selectedStatus).toList();
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "Paperset Management",
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
-        // flexibleSpace removed to use theme color
-        // elevation: 0,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.add_circle_outline), // Removed color: Colors.white
-        //     onPressed: _showCreatePaperDialog,
-        //     tooltip: "Create Paper (Admin)",
-        //   ),
-        // ],
       ),
       body: Column(
         children: [
           // Filter Section
           Container(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            color: Colors.grey.shade50,
+            color: theme.scaffoldBackgroundColor,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -95,15 +89,15 @@ class _PapersetScreenState extends State<PapersetScreen> {
                         }
                       },
                       selectedColor: Colors.blue.shade900,
-                      backgroundColor: Colors.white,
+                      backgroundColor: isDark ? Colors.grey.shade800 : Colors.white,
                       labelStyle: GoogleFonts.poppins(
-                        color: isSelected ? Colors.white : Colors.grey.shade700,
+                        color: isSelected ? Colors.white : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                         side: BorderSide(
-                          color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                          color: isSelected ? Colors.transparent : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
                         ),
                       ),
                     ),
@@ -145,15 +139,17 @@ class _PapersetScreenState extends State<PapersetScreen> {
   Widget _buildPaperCard(Map<String, dynamic> paper) {
     // Determine index in original list for updating
     final originalIndex = _papers.indexOf(paper);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -176,7 +172,7 @@ class _PapersetScreenState extends State<PapersetScreen> {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.bold,
                           fontSize: 18, // Slightly larger
-                          color: Colors.black87,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -184,14 +180,14 @@ class _PapersetScreenState extends State<PapersetScreen> {
                         "${paper["date"]} • ${paper["batch"]}",
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: Colors.grey.shade600,
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                       ),
                       Text(
                         "${paper["stream"]} • ${paper["medium"]}",
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: Colors.grey.shade600,
+                          color: theme.textTheme.bodyMedium?.color,
                         ),
                       ),
                     ],
@@ -201,7 +197,7 @@ class _PapersetScreenState extends State<PapersetScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            const Divider(height: 1),
+            Divider(height: 1, color: theme.dividerColor),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -211,7 +207,7 @@ class _PapersetScreenState extends State<PapersetScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+                    color: theme.textTheme.bodyMedium?.color,
                   ),
                 ),
                 ElevatedButton.icon(
@@ -219,8 +215,8 @@ class _PapersetScreenState extends State<PapersetScreen> {
                   icon: const Icon(Icons.edit_note, size: 18),
                   label: Text("Update Status", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade50,
-                    foregroundColor: Colors.blue.shade800,
+                    backgroundColor: isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.blue.shade50,
+                    foregroundColor: isDark ? Colors.blue.shade200 : Colors.blue.shade800,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -239,27 +235,28 @@ class _PapersetScreenState extends State<PapersetScreen> {
   Widget _buildStatusBadge(String status) {
     Color bgColor;
     Color textColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     switch (status) {
       case "Created":
-        bgColor = Colors.grey.shade200;
-        textColor = Colors.grey.shade800;
+        bgColor = isDark ? Colors.grey.shade800 : Colors.grey.shade200;
+        textColor = isDark ? Colors.grey.shade300 : Colors.grey.shade800;
         break;
       case "Collected":
-        bgColor = Colors.blue.shade100;
-        textColor = Colors.blue.shade900;
+        bgColor = isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.blue.shade100;
+        textColor = isDark ? Colors.blue.shade200 : Colors.blue.shade900;
         break;
       case "Checked":
-        bgColor = Colors.orange.shade100;
-        textColor = Colors.orange.shade900;
+        bgColor = isDark ? Colors.orange.shade900.withOpacity(0.5) : Colors.orange.shade100;
+        textColor = isDark ? Colors.orange.shade200 : Colors.orange.shade900;
         break;
       case "Rechecked":
-        bgColor = Colors.green.shade100;
-        textColor = Colors.green.shade900;
+        bgColor = isDark ? Colors.green.shade900.withOpacity(0.5) : Colors.green.shade100;
+        textColor = isDark ? Colors.green.shade200 : Colors.green.shade900;
         break;
       default:
-        bgColor = Colors.grey.shade100;
-        textColor = Colors.black;
+        bgColor = isDark ? Colors.grey.shade800 : Colors.grey.shade100;
+        textColor = isDark ? Colors.grey.shade300 : Colors.black;
     }
 
     return Container(
@@ -280,14 +277,17 @@ class _PapersetScreenState extends State<PapersetScreen> {
   }
 
   void _openStatusUpdateDialog(int index) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
           ),
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -299,13 +299,13 @@ class _PapersetScreenState extends State<PapersetScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade900,
+                  color: Colors.blue.shade900, // Kept branding color
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                  "Select the new status for ${_papers[index]["subject"]}",
-                 style: GoogleFonts.poppins(color: Colors.grey.shade600),
+                 style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color),
               ),
               const SizedBox(height: 20),
               Wrap(
@@ -326,10 +326,10 @@ class _PapersetScreenState extends State<PapersetScreen> {
                     },
                     selectedColor: Colors.blue.shade100,
                     labelStyle: GoogleFonts.poppins(
-                      color: isSelected ? Colors.blue.shade900 : Colors.black87,
+                      color: isSelected ? Colors.blue.shade900 : theme.textTheme.bodyLarge?.color,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
-                    backgroundColor: Colors.grey.shade100,
+                    backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   );
                 }).toList(),

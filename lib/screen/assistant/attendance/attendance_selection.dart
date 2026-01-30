@@ -25,9 +25,11 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('dd MMM yyyy').format(DateTime.now());
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "New Attendance",
@@ -56,13 +58,13 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: isDark ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.blue.shade100),
+                  border: Border.all(color: isDark ? Colors.blue.shade900 : Colors.blue.shade100),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, color: Colors.blue.shade900),
+                    Icon(Icons.calendar_today, color: isDark ? Colors.blue.shade200 : Colors.blue.shade900),
                     const SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +73,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                           "Date (Auto-picked)",
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.blue.shade700,
+                            color: isDark ? Colors.blue.shade200 : Colors.blue.shade700,
                           ),
                         ),
                         Text(
@@ -79,7 +81,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade900,
+                            color: isDark ? Colors.blue.shade100 : Colors.blue.shade900,
                           ),
                         ),
                       ],
@@ -93,7 +95,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -105,7 +107,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                             color: _isStudent ? Colors.white : Colors.transparent,
+                             color: _isStudent ? theme.cardColor : Colors.transparent,
                              borderRadius: BorderRadius.circular(10),
                              boxShadow: _isStudent ? [BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
                           ),
@@ -114,7 +116,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                             "Students",
                             style: GoogleFonts.poppins(
                               fontWeight: _isStudent ? FontWeight.bold : FontWeight.w500,
-                              color: _isStudent ? Colors.blue.shade900 : Colors.grey.shade600,
+                              color: _isStudent ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
                             ),
                           ),
                         ),
@@ -127,7 +129,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                             color: !_isStudent ? Colors.white : Colors.transparent,
+                             color: !_isStudent ? theme.cardColor : Colors.transparent,
                              borderRadius: BorderRadius.circular(10),
                              boxShadow: !_isStudent ? [BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
                           ),
@@ -136,7 +138,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                             "History", 
                             style: GoogleFonts.poppins(
                               fontWeight: !_isStudent ? FontWeight.bold : FontWeight.w500,
-                              color: !_isStudent ? Colors.blue.shade900 : Colors.grey.shade600,
+                              color: !_isStudent ? theme.primaryColor : theme.textTheme.bodyMedium?.color,
                             ),
                           ),
                         ),
@@ -151,11 +153,11 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                   color: Colors.white,
+                   color: theme.cardColor,
                    borderRadius: BorderRadius.circular(20),
                    boxShadow: [
                      BoxShadow(
-                       color: Colors.blue.withOpacity(0.05),
+                       color: isDark ? Colors.black.withOpacity(0.3) : Colors.blue.withOpacity(0.05),
                        blurRadius: 20,
                        offset: const Offset(0, 10),
                      ),
@@ -169,7 +171,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 18, 
                         fontWeight: FontWeight.bold, 
-                        color: Colors.blue.shade900
+                        color: theme.primaryColor
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -177,7 +179,7 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
                       _isStudent ? "Filter students to mark attendance" : "Select class to view past records",
                       style: GoogleFonts.poppins(
                         fontSize: 14, 
-                        color: Colors.grey.shade600
+                        color: theme.textTheme.bodyMedium?.color
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -258,6 +260,9 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
   }
 
   Widget _buildDropdown(String label, List<String> items, String? value, Function(String?) onChanged) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -266,24 +271,25 @@ class _AttendanceSelectionScreenState extends State<AttendanceSelectionScreen> {
           style: GoogleFonts.poppins(
             fontSize: 14, 
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800
+            color: theme.textTheme.bodyLarge?.color
           )
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            border: Border.all(color: Colors.grey.shade300),
+            color: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
+            border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
-              hint: Text("Select $label", style: GoogleFonts.poppins(color: Colors.grey.shade400)),
+              dropdownColor: theme.cardColor,
+              hint: Text("Select $label", style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color)),
               icon: Icon(Icons.keyboard_arrow_down_rounded, color: Colors.blue.shade700),
-              items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(color: Colors.black87)))).toList(),
+              items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(color: theme.textTheme.bodyLarge?.color)))).toList(),
               onChanged: onChanged,
             ),
           ),

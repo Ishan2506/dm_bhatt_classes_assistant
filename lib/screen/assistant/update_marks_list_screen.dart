@@ -41,8 +41,11 @@ class _UpdateMarksListScreenState extends State<UpdateMarksListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,25 +80,25 @@ class _UpdateMarksListScreenState extends State<UpdateMarksListScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: _students.length,
-              separatorBuilder: (context, index) => const Divider(),
+              separatorBuilder: (context, index) => Divider(color: theme.dividerColor),
               itemBuilder: (context, index) {
                 final student = _students[index];
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
-                    backgroundColor: Colors.blue.shade50,
+                    backgroundColor: isDark ? Colors.blue.shade900.withOpacity(0.4) : Colors.blue.shade50,
                     child: Text(
                       student["roll"].substring(student["roll"].length - 2), // Show last 2 digits
-                      style: GoogleFonts.poppins(color: Colors.blue.shade900, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.poppins(color: isDark ? Colors.blue.shade200 : Colors.blue.shade900, fontWeight: FontWeight.bold),
                     ),
                   ),
                   title: Text(
                     student["name"],
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: theme.textTheme.bodyLarge?.color),
                   ),
                   subtitle: Text(
                     "Roll No: ${student["roll"]}",
-                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+                    style: GoogleFonts.poppins(fontSize: 12, color: theme.textTheme.bodyMedium?.color),
                   ),
                   trailing: SizedBox(
                     width: 70,
@@ -105,17 +108,24 @@ class _UpdateMarksListScreenState extends State<UpdateMarksListScreen> {
                       textAlign: TextAlign.center,
                       decoration: InputDecoration(
                         hintText: "0",
+                        hintStyle: TextStyle(color: isDark ? Colors.grey.shade500 : Colors.grey.shade400),
                         contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.blue.shade700, width: 2),
                         ),
+                        filled: true,
+                         fillColor: isDark ? Colors.grey.shade900 : Colors.indigo.shade50.withOpacity(0.3),
                       ),
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color),
                     ),
                   ),
                 );
@@ -125,10 +135,10 @@ class _UpdateMarksListScreenState extends State<UpdateMarksListScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -5),
                 )
