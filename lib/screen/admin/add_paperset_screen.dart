@@ -1,4 +1,5 @@
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -24,8 +25,13 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
   bool _isEditing = false;
   int? _editingIndex;
 
+  String? _selectedStandard;
+  String? _selectedStream = 'None'; // Default
+
   final List<String> _subjects = ["Maths", "Science", "English", "Gujarati", "SS", "Computer"];
   final List<String> _mediums = ["English", "Gujarati"];
+  final List<String> _standards = ["8", "9", "10", "11", "12"];
+  final List<String> _streams = ["None", "Science", "General"];
 
   // Mock History Data
   final List<Map<String, String>> _history = [
@@ -33,18 +39,44 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
     {"name": "Science_20Jan2024", "date": "20 Jan 2024", "subject": "Science", "medium": "Gujarati"},
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
+  Future<void> _createPaperSet() async {
+    showDialog(
+      context: context, 
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator())
+    );
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _examNameController.dispose();
-    _dateController.dispose();
-    super.dispose();
+    try {
+      final response = await ApiService.createPaperSet(
+        examName: _examNameController.text,
+        date: _selectedDate!.toIso8601String(),
+        subject: _selectedSubject!,
+        medium: _selectedMedium!,
+        standard: _selectedStandard!,
+        stream: _selectedStream ?? "None",
+      );
+
+      Navigator.pop(context); // Hide loader
+
+      if (response.statusCode == 201) {
+        CustomToast.showSuccess(context, "Paper Set Created Successfully!");
+        // Reset
+        setState(() {
+          _examNameController.clear();
+          _dateController.clear();
+          _selectedSubject = null;
+          _selectedMedium = null;
+          _selectedStandard = null;
+          _selectedStream = "None";
+          _selectedDate = null;
+        });
+      } else {
+        CustomToast.showError(context, "Failed: ${response.body}");
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      CustomToast.showError(context, "Error: $e");
+    }
   }
 
   void _updateExamName() {
@@ -82,314 +114,193 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
     }
   }
 
-  void _createOrUpdatePaperset() {
-     if (_formKey.currentState!.validate()) {
-         if (_isEditing) {
-           CustomToast.showSuccess(context, "Paper Set Updated (Mock)");
-           if (_editingIndex != null && _editingIndex! < _history.length) {
-              setState(() {
-                _history[_editingIndex!] = {
-                  "name": _examNameController.text,
-                  "date": _dateController.text,
-                  "subject": _selectedSubject ?? "",
-                  "medium": _selectedMedium ?? "",
-                };
-              });
-           }
-           _resetForm();
-         } else {
-           CustomToast.showSuccess(context, "Paper Set Created: ${_examNameController.text}");
-           // In real app, refresh history here/add to list
-           setState(() {
-             _history.insert(0, {
-                  "name": _examNameController.text,
-                  "date": _dateController.text,
-                  "subject": _selectedSubject ?? "",
-                  "medium": _selectedMedium ?? "",
-             });
-           });
-           _resetForm();
-         }
-     }
-  }
-
-  void _editPaperset(int index) {
-     final item = _history[index];
-     setState(() {
-       _isEditing = true;
-       _editingIndex = index;
-       _examNameController.text = item['name'] ?? "";
-       _dateController.text = item['date'] ?? "";
-       _selectedSubject = item['subject'];
-       _selectedMedium = item['medium'];
-       
-       // Parse date string to DateTime for picker
-       try {
-         _selectedDate = DateFormat('dd MMM yyyy').parse(item['date']!);
-         _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate!); // Reset format for field
-       } catch (e) {
-          debugPrint("Error parsing date: $e");
-          _selectedDate = DateTime.now();
-       }
-     });
-     _tabController.animateTo(0);
-  }
-
-  void _confirmDelete(int index) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: theme.cardColor,
-        title: Row(
-          children: [
-             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.delete_outline, color: Colors.red.shade900, size: 24),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              "Delete Paperset",
-               style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          "Are you sure you want to delete this paperset?",
-           style: GoogleFonts.poppins(
-            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
-            fontSize: 14,
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-             style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-            ),
-            child: Text("Cancel", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() {
-                _history.removeAt(index);
-              });
-              CustomToast.showSuccess(context, "Paperset Deleted Successfully");
-            },
-           style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade700,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text("Delete", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-          )
-        ],
-      ),
-    );
-  }
-
-  void _resetForm() {
-    _examNameController.clear();
-    _dateController.clear();
-    setState(() {
-      _selectedSubject = null;
-      _selectedMedium = null;
-      _selectedDate = null;
-      _isEditing = false;
-      _editingIndex = null;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          "Manage Paper Set",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: Text(
+            "Manage Paper Set",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          ),
+          elevation: 0,
+          bottom: const TabBar(
+             labelColor: Colors.blue,
+            unselectedLabelColor: Colors.grey,
+            tabs: [
+              Tab(text: "Create New"),
+              Tab(text: "History"),
+            ],
+          ),
         ),
-        elevation: 0,
-        bottom: TabBar(
-           controller: _tabController,
-           labelColor: Colors.blue,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(text: "Create New"),
-            Tab(text: "History"),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Tab 1: Create Form
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   _buildSectionTitle("Exam Details"),
-                   const SizedBox(height: 24),
+        body: TabBarView(
+          children: [
+            // Tab 1: Create Form
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                     _buildSectionTitle("Exam Details"),
+                     const SizedBox(height: 24),
 
-                   // Date Picker
-                  _buildTapField(
-                    controller: _dateController,
-                    label: "Date",
-                    icon: Icons.calendar_today,
-                    onTap: _pickDate,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Subject Dropdown
-                  _buildDropdown(
-                    label: "Subject",
-                    icon: Icons.book_outlined,
-                    value: _selectedSubject,
-                    items: _subjects,
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedSubject = val;
-                      });
-                      _updateExamName();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Medium Dropdown
-                  _buildDropdown(
-                    label: "Medium",
-                    icon: Icons.language,
-                    value: _selectedMedium,
-                    items: _mediums,
-                    onChanged: (val) {
-                      setState(() => _selectedMedium = val);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Exam Name (Auto-Generated)
-                  TextFormField(
-                    controller: _examNameController,
-                    readOnly: false, // User can edit if they want, but it's auto-suggested
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                    validator: (v) => v!.isEmpty ? "Required" : null,
-                    decoration: InputDecoration(
-                      labelText: "Exam Name (Auto-Suggested)",
-                      labelStyle: GoogleFonts.poppins(color: Colors.grey),
-                      floatingLabelBehavior: FloatingLabelBehavior.always,
-                      hintText: "Subject_Date",
-                      prefixIcon: Icon(Icons.edit_note, color: Colors.blue.shade900),
-                       filled: true,
-                      fillColor: Colors.blue.shade50,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.blue.shade100),
-                      ),
+                     // Date Picker
+                    _buildTapField(
+                      controller: _dateController,
+                      label: "Date",
+                      icon: Icons.calendar_today,
+                      onTap: _pickDate,
                     ),
-                  ),
+                    const SizedBox(height: 16),
 
-                  const SizedBox(height: 32),
+                    // Subject Dropdown
+                    _buildDropdown(
+                      label: "Subject",
+                      icon: Icons.book_outlined,
+                      value: _selectedSubject,
+                      items: _subjects,
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedSubject = val;
+                        });
+                        _updateExamName();
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _createOrUpdatePaperset,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade900,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 2,
-                      ),
-                      child: Text(
-                        _isEditing ? "Update Paper Set" : "Create Paper Set",
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    // Medium Dropdown
+                    _buildDropdown(
+                      label: "Medium",
+                      icon: Icons.language,
+                      value: _selectedMedium,
+                      items: _mediums,
+                      onChanged: (val) {
+                        setState(() => _selectedMedium = val);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Standard Dropdown (NEW)
+                    _buildDropdown(
+                      label: "Standard",
+                      icon: Icons.class_outlined,
+                      value: _selectedStandard,
+                      items: _standards,
+                      onChanged: (val) {
+                        setState(() => _selectedStandard = val);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Stream Dropdown (NEW)
+                    _buildDropdown(
+                      label: "Stream",
+                      icon: Icons.school_outlined,
+                      value: _selectedStream,
+                      items: _streams,
+                      onChanged: (val) {
+                        setState(() => _selectedStream = val);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Exam Name (Auto-Generated)
+                    TextFormField(
+                      controller: _examNameController,
+                      readOnly: false,
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      validator: (v) => v!.isEmpty ? "Required" : null,
+                      decoration: InputDecoration(
+                        labelText: "Exam Name (Auto-Suggested)",
+                        labelStyle: GoogleFonts.poppins(color: Colors.grey),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: "Subject_Date",
+                        prefixIcon: Icon(Icons.edit_note, color: Colors.blue.shade900),
+                         filled: true,
+                        fillColor: Colors.blue.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.blue.shade100),
                         ),
                       ),
                     ),
-                  ),
-                  if (_isEditing)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
-                        child: TextButton(
-                          onPressed: _resetForm,
-                          child: Text("Cancel Edit", style: TextStyle(color: Colors.red)),
+
+                    const SizedBox(height: 32),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () {
+                           if (_formKey.currentState!.validate()) {
+                              if (_selectedStandard == null) {
+                                CustomToast.showError(context, "Please select Standard");
+                                return;
+                              }
+                              // Call API
+                              _createPaperSet();
+                           }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade900,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          "Create Paper Set",
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          
-          // Tab 2: History List
-          ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _history.length,
-            itemBuilder: (context, index) {
-              final item = _history[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: 0,
-                 color: Colors.grey.shade50,
-                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey.shade200),
-                  ),
-                child: ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      shape: BoxShape.circle,
+            
+            // Tab 2: History List
+            ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _history.length,
+              itemBuilder: (context, index) {
+                final item = _history[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 0,
+                   color: Colors.grey.shade50,
+                   shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
                     ),
-                    child: Icon(Icons.description_outlined, color: Colors.orange.shade900),
-                  ),
-                  title: Text(item['name']!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                  subtitle: Text("${item['subject']} • ${item['date']}", style: GoogleFonts.poppins(fontSize: 12)),
-                  trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _editPaperset(index),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(index),
-                        ),
-                      ],
+                  child: ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.description_outlined, color: Colors.orange.shade900),
                     ),
-                ),
-              );
-            },
-          ),
-        ],
+                    title: Text(item['name']!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    subtitle: Text("${item['subject']} • ${item['date']}", style: GoogleFonts.poppins(fontSize: 12)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

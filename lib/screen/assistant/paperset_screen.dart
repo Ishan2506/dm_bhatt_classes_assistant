@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,39 +12,79 @@ class PapersetScreen extends StatefulWidget {
 }
 
 class _PapersetScreenState extends State<PapersetScreen> {
-  // Dummy Data acting as "Admin created" papers
-  final List<Map<String, dynamic>> _papers = [
-    {
-      "id": "1",
-      "subject": "Maths Paper",
-      "date": "25th January 2024",
-      "batch": "Std 10",
-      "stream": "English",
-      "medium": "GSEB",
-      "status": "Collected",
-      "color": Colors.blue,
-    },
-    {
-      "id": "2",
-      "subject": "Science Test",
-      "date": "28th January 2024",
-      "batch": "Std 12",
-      "stream": "Science",
-      "medium": "English",
-      "status": "Collected", // Changed from Created as we are removing it from options
-      "color": Colors.green,
-    },
-    {
-      "id": "3",
-      "subject": "English Grammar",
-      "date": "30th January 2024",
-      "batch": "Std 9",
-      "stream": "General",
-      "medium": "Gujarati",
-      "status": "Checked",
-      "color": Colors.orange,
-    },
-  ];
+  List<Map<String, dynamic>> _papers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPaperSets();
+  }
+
+  Future<void> _fetchPaperSets() async {
+    try {
+      final response = await ApiService.getAllPaperSets();
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          _papers = data.map((item) => {
+            "id": item['_id'],
+            "subject": item['subject'],
+            "date": _formatDate(item['date']),
+            "batch": "Std ${item['standard']}",
+            "stream": item['stream'] ?? "-",
+            "medium": item['medium'],
+            "status": item['status'],
+            "color": _getStatusColor(item['status']),
+          }).toList().cast<Map<String, dynamic>>();
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if(mounted) setState(() => _isLoading = false);
+      debugPrint("Error: $e");
+    }
+  }
+
+  Future<void> _updateStatus(String id, String newStatus) async {
+    Navigator.pop(context); // Close dialog
+    // Optimistic Update
+    final index = _papers.indexWhere((p) => p['id'] == id);
+    if (index != -1) {
+      setState(() {
+        _papers[index]['status'] = newStatus;
+        _papers[index]['color'] = _getStatusColor(newStatus);
+      });
+    }
+
+    try {
+      await ApiService.updatePaperSetStatus(id, newStatus);
+    } catch (e) {
+      // Revert if error (optional)
+       CustomToast.showError(context, "Update Failed");
+    }
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      DateTime dt = DateTime.parse(dateStr);
+      // Helper date formatting if needed, or just return basic
+      return "${dt.day}/${dt.month}/${dt.year}";
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+     switch (status) {
+      case "Collected": return Colors.blue;
+      case "Checked": return Colors.orange;
+      case "Rechecked": return Colors.green;
+      default: return Colors.grey;
+     }
+  }
 
   final List<String> _validStatuses = ["Collected", "Checked", "Rechecked"];
 
@@ -318,10 +361,7 @@ class _PapersetScreenState extends State<PapersetScreen> {
                     selected: isSelected,
                     onSelected: (selected) {
                       if (selected) {
-                        setState(() {
-                          _papers[index]["status"] = status;
-                        });
-                        Navigator.pop(context);
+                        _updateStatus(_papers[index]["id"], status);
                       }
                     },
                     selectedColor: Colors.blue.shade100,

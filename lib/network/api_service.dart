@@ -1,9 +1,44 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ApiService {
-  static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+  // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+  static const String baseUrl = "http://localhost:5000/api";
+
+  static Future<http.Response> addExploreProduct({
+    required String name,
+    required String description,
+    required String category,
+    String? subject,
+    required double price,
+    required double originalPrice,
+    required double discount,
+    required XFile imageFile,
+  }) async {
+    final uri = Uri.parse("$baseUrl/explore/add");
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['name'] = name;
+    request.fields['description'] = description;
+    request.fields['category'] = category;
+    if (subject != null) request.fields['subject'] = subject;
+    request.fields['price'] = price.toString();
+    request.fields['originalPrice'] = originalPrice.toString();
+    request.fields['discount'] = discount.toString();
+
+    final bytes = await imageFile.readAsBytes();
+    final multipartFile = http.MultipartFile.fromBytes(
+      'image',
+      bytes,
+      filename: imageFile.name,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
 
   static Future<http.Response> loginUser({
     required String role,
@@ -32,7 +67,7 @@ class ApiService {
   static Future<http.Response> addStudent({
     required String name,
     required String phone,
-    required String password, // Added password
+    required String password,
     required String parentPhone,
     required String standard,
     required String medium,
@@ -48,7 +83,7 @@ class ApiService {
 
     request.fields['name'] = name;
     request.fields['phone'] = phone;
-    request.fields['password'] = password; // Added password
+    request.fields['password'] = password;
     request.fields['parentPhone'] = parentPhone;
     request.fields['standard'] = standard;
     request.fields['medium'] = medium;
@@ -59,12 +94,57 @@ class ApiService {
     request.fields['schoolName'] = schoolName;
 
     if (imageFile != null) {
-      final multipartFile = await http.MultipartFile.fromPath('image', imageFile.path); // Matched backend 'image'
+      final multipartFile = await http.MultipartFile.fromPath('image', imageFile.path);
       request.files.add(multipartFile);
     }
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> createPaperSet({
+    required String examName,
+    required String date,
+    required String subject,
+    required String medium,
+    required String standard,
+    required String stream,
+  }) async {
+    final uri = Uri.parse("$baseUrl/paperset/create");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'examName': examName,
+        'date': date,
+        'subject': subject,
+        'medium': medium,
+        'standard': standard,
+        'stream': stream,
+      }),
+    );
+  }
+
+  static Future<http.Response> getAllPaperSets() async {
+    final uri = Uri.parse("$baseUrl/paperset/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> updatePaperSetStatus(String id, String status, {String performedBy = 'Assistant'}) async {
+    final uri = Uri.parse("$baseUrl/paperset/update-status/$id");
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'status': status,
+        'performedBy': performedBy, 
+      }),
+    );
+  }
+
+  static Future<http.Response> getPaperSetLogs() async {
+    final uri = Uri.parse("$baseUrl/paperset/logs");
+    return await http.get(uri);
   }
 
   static Future<http.Response> addAssistant({
@@ -84,8 +164,8 @@ class ApiService {
       body: jsonEncode({
         'name': name,
         'phone': phone,
-        'password': password, // Added password
-        'aadharNumber': aadharNumber, // Changed from aadharName
+        'password': password,
+        'aadharNumber': aadharNumber,
         'address': address,
       }),
     );

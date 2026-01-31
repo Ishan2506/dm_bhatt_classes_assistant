@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/paper_set_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,30 +39,80 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
     },
   ];
 
-  // Mock Data for Paper Set Logs
-  final List<Map<String, String>> _paperSetLogs = [
-    {
-      "assistant": "Ravi Patel",
-      "action": "Collected",
-      "exam": "Maths Unit 1",
-      "status": "Checked",
-      "date": "22 Jan 2024",
-      "time": "11:00 AM"
-    },
-    {
-      "assistant": "Priya Shah",
-      "action": "Distributed",
-      "exam": "Science Ch 5",
-      "status": "Pending",
-      "date": "21 Jan 2024",
-      "time": "02:30 PM"
-    },
-  ];
+  List<Map<String, dynamic>> _paperSetLogs = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchPaperSetLogs();
+  }
+
+  Future<void> _fetchPaperSetLogs() async {
+    try {
+      final response = await ApiService.getPaperSetLogs();
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          _paperSetLogs = data.map((item) => {
+            "assistant": item['createdBy'] ?? "Unknown",
+            "action": _parseAction(item['action']),
+            "exam": item['examName'] ?? "Unknown Exam",
+            "status": item['status'],
+            "date": _formatDate(item['createdAt']),
+            "time": _formatTime(item['createdAt']),
+            "fullAction": item['action'], // For internal use if needed
+          }).toList().cast<Map<String, dynamic>>();
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      debugPrint("Error fetching logs: $e");
+    }
+  }
+
+  String _parseAction(String? fullAction) {
+    if (fullAction == null) return "";
+    // If backend sends "Updated Status to Collected", we might just want "Collected" or the full string
+    // Based on existing UI mock: "Collected", "Distributed"
+    if (fullAction.contains("Collected")) return "Collected";
+    if (fullAction.contains("Checked")) return "Checked";
+    if (fullAction.contains("Rechecked")) return "Rechecked";
+    return fullAction;
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return "";
+    try {
+      DateTime dt = DateTime.parse(dateStr).toLocal();
+      return "${dt.day} ${_getMonthName(dt.month)} ${dt.year}";
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _formatTime(String? dateStr) {
+    if (dateStr == null) return "";
+     try {
+      DateTime dt = DateTime.parse(dateStr).toLocal();
+      String period = dt.hour >= 12 ? "PM" : "AM";
+      int hour = dt.hour > 12 ? dt.hour - 12 : dt.hour;
+      if (hour == 0) hour = 12;
+      String minute = dt.minute.toString().padLeft(2, '0');
+      return "$hour:$minute $period";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    if (month >= 1 && month <= 12) return months[month - 1];
+    return "";
   }
 
   @override
