@@ -40,6 +40,52 @@ class ApiService {
     return await http.Response.fromStream(streamResponse);
   }
 
+  static Future<http.Response> getExploreProducts() async {
+    final uri = Uri.parse("$baseUrl/explore/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> editExploreProduct({
+    required String id,
+    String? name,
+    String? description,
+    String? category,
+    String? subject,
+    double? price,
+    double? originalPrice,
+    double? discount,
+    XFile? imageFile,
+  }) async {
+    final uri = Uri.parse("$baseUrl/explore/edit/$id");
+    final request = http.MultipartRequest('PUT', uri);
+
+    if (name != null) request.fields['name'] = name;
+    if (description != null) request.fields['description'] = description;
+    if (category != null) request.fields['category'] = category;
+    if (subject != null) request.fields['subject'] = subject;
+    if (price != null) request.fields['price'] = price.toString();
+    if (originalPrice != null) request.fields['originalPrice'] = originalPrice.toString();
+    if (discount != null) request.fields['discount'] = discount.toString();
+
+    if (imageFile != null) {
+      final bytes = await imageFile.readAsBytes();
+      final multipartFile = http.MultipartFile.fromBytes(
+        'image',
+        bytes,
+        filename: imageFile.name,
+      );
+      request.files.add(multipartFile);
+    }
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> deleteExploreProduct(String id) async {
+    final uri = Uri.parse("$baseUrl/explore/delete/$id");
+    return await http.delete(uri);
+  }
+
   static Future<http.Response> loginUser({
     required String role,
     required String loginCode,

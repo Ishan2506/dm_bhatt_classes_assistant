@@ -41,9 +41,9 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.productToEdit?['name'] ?? "");
-    _descriptionController = TextEditingController(text: "Mock Description for ${widget.productToEdit?['name'] ?? ''}"); 
-    _priceController = TextEditingController(text: widget.productToEdit?['price'] ?? "");
-    _originalPriceController = TextEditingController(text: widget.productToEdit?['originalPrice'] ?? "");
+    _descriptionController = TextEditingController(text: widget.productToEdit?['description'] ?? "Mock Description"); 
+    _priceController = TextEditingController(text: widget.productToEdit?['price']?.toString() ?? "");
+    _originalPriceController = TextEditingController(text: widget.productToEdit?['originalPrice']?.toString() ?? "");
     _discountController = TextEditingController(); 
 
     if (_isEditing) {
@@ -102,23 +102,69 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
         return;
       }
       
+      // Call API
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
       if (_isEditing) {
-         CustomToast.showSuccess(context, "Product Updated Successfully!");
-         Navigator.pop(context); 
+         ApiService.editExploreProduct(
+          id: widget.productToEdit!['_id'],
+          name: _nameController.text,
+          description: _descriptionController.text,
+          category: _selectedCategory,
+          subject: _selectedSubject,
+          price: double.tryParse(_priceController.text),
+          originalPrice: double.tryParse(_originalPriceController.text),
+          discount: double.tryParse(_discountController.text),
+          imageFile: _imageFile
+         ).then((response) {
+            Navigator.pop(context); // Hide loader
+            if (response.statusCode == 200) {
+               CustomToast.showSuccess(context, "Product Updated Successfully!");
+               Navigator.pop(context); 
+            } else {
+               CustomToast.showError(context, "Failed: ${response.body}");
+            }
+         }).catchError((e) {
+            Navigator.pop(context);
+            CustomToast.showError(context, "Error: $e");
+         });
       } else {
-         CustomToast.showSuccess(context, "Product Added Successfully!");
-         // Reset Form
-        _formKey.currentState!.reset();
-        _nameController.clear();
-        _descriptionController.clear();
-        _priceController.clear();
-        _originalPriceController.clear();
-        _discountController.clear();
-        setState(() {
-            _imageFile = null;
-            _selectedCategory = null;
-            _selectedSubject = null;
-        });
+          ApiService.addExploreProduct(
+            name: _nameController.text,
+            description: _descriptionController.text,
+            category: _selectedCategory!,
+            subject: _selectedSubject,
+            price: double.parse(_priceController.text),
+            originalPrice: double.parse(_originalPriceController.text),
+            discount: double.tryParse(_discountController.text) ?? 0.0,
+            imageFile: _imageFile!,
+          ).then((response) {
+            Navigator.pop(context); // Hide loader
+            if (response.statusCode == 201) {
+               CustomToast.showSuccess(context, "Product Added Successfully!");
+               // Reset
+              _formKey.currentState!.reset();
+              _nameController.clear();
+              _descriptionController.clear();
+              _priceController.clear();
+              _originalPriceController.clear();
+              _discountController.clear();
+              setState(() {
+                 _imageFile = null;
+                 _selectedCategory = null;
+                 _selectedSubject = null;
+              });
+            } else {
+              CustomToast.showError(context, "Failed: ${response.body}");
+            }
+          }).catchError((e) {
+             Navigator.pop(context);
+             CustomToast.showError(context, "Error: $e");
+          });
       }
     }
   }
@@ -183,14 +229,22 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                    image: _imageFile != null ? DecorationImage(
-                      image: kIsWeb 
-                        ? NetworkImage(_imageFile!.path) as ImageProvider
-                        : FileImage(File(_imageFile!.path)),
-                      fit: BoxFit.cover,
-                    ) : null,
+                    image: _imageFile != null 
+                      ? DecorationImage(
+                          image: kIsWeb 
+                            ? NetworkImage(_imageFile!.path) as ImageProvider
+                            : FileImage(File(_imageFile!.path)),
+                          fit: BoxFit.cover,
+                        )
+                      : (widget.productToEdit != null && widget.productToEdit!['image'] != null)
+                        ? DecorationImage(
+                            image: NetworkImage(widget.productToEdit!['image']),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  child: _imageFile == null ? Column(
+                  child: (_imageFile == null && (widget.productToEdit == null || widget.productToEdit!['image'] == null)) 
+                    ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.add_a_photo_outlined, size: 48, color: Colors.grey.shade400),
@@ -287,58 +341,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      if (_imageFile == null) {
-                        CustomToast.showError(context, "Please upload an image");
-                        return;
-                      }
-                      if (_selectedCategory == null) {
-                        CustomToast.showError(context, "Please select a category");
-                        return;
-                      }
-                      
-                      // Call API
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => const Center(child: CircularProgressIndicator()),
-                      );
-
-                      ApiService.addExploreProduct(
-                        name: _nameController.text,
-                        description: _descriptionController.text,
-                        category: _selectedCategory!,
-                        subject: _selectedSubject,
-                        price: double.parse(_priceController.text),
-                        originalPrice: double.parse(_originalPriceController.text),
-                        discount: double.tryParse(_discountController.text) ?? 0.0,
-                        imageFile: _imageFile!,
-                      ).then((response) {
-                        Navigator.pop(context); // Hide loader
-                        if (response.statusCode == 201) {
-                           CustomToast.showSuccess(context, "Product Added Successfully!");
-                           // Reset
-                          _formKey.currentState!.reset();
-                          _nameController.clear();
-                          _descriptionController.clear();
-                          _priceController.clear();
-                          _originalPriceController.clear();
-                          _discountController.clear();
-                          setState(() {
-                             _imageFile = null;
-                             _selectedCategory = null;
-                             _selectedSubject = null;
-                          });
-                        } else {
-                          CustomToast.showError(context, "Failed: ${response.body}");
-                        }
-                      }).catchError((e) {
-                         Navigator.pop(context);
-                         CustomToast.showError(context, "Error: $e");
-                      });
-                    }
-                  },
+                  onPressed: _handleSave,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade900,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

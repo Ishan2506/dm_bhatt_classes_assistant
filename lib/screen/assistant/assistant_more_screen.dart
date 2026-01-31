@@ -1,4 +1,5 @@
 import 'package:dm_bhatt_classes_new/screen/assistant/help_support_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/my_profile_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/settings_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/import_students_screen.dart';
@@ -118,7 +119,13 @@ class AssistantMoreScreen extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+               // Clear Session
+               final prefs = await SharedPreferences.getInstance();
+               await prefs.clear();
+
+               if (!context.mounted) return;
+
                // Pop dialog first
                Navigator.pop(context);
                // Navigate to Welcome Screen and clear stack

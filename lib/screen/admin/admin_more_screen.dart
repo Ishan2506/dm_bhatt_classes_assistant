@@ -1,4 +1,5 @@
 import 'package:dm_bhatt_classes_new/screen/admin/admin_log_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/import_students_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/import_students_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
@@ -115,7 +116,13 @@ class AdminMoreScreen extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+               // Clear Session
+               final prefs = await SharedPreferences.getInstance();
+               await prefs.clear();
+
+               if (!context.mounted) return;
+
                // Pop dialog first
                Navigator.pop(context);
                // Navigate to Welcome Screen and clear stack

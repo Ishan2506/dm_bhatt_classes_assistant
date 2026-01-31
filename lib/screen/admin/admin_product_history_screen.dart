@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_explore_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
@@ -11,49 +13,32 @@ class AdminProductHistoryScreen extends StatefulWidget {
 }
 
 class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
-  // Mock Data
-  final List<Map<String, dynamic>> _products = [
-    {
-      "id": "1",
-      "name": "Maths Formula Book",
-      "category": "Books",
-      "price": "150",
-      "originalPrice": "200",
-      "image": "assets/images/book_placeholder.png"
-    },
-    {
-      "id": "2",
-      "name": "Science NCERT Guide",
-      "category": "Books",
-      "price": "250",
-      "originalPrice": "300",
-      "image": "assets/images/book_placeholder.png"
-    },
-    {
-      "id": "3",
-      "name": "Geometry Box",
-      "category": "Stationery",
-      "price": "100",
-      "originalPrice": "120",
-      "image": "assets/images/stationery_placeholder.png"
-    },
-    {
-      "id": "4",
-      "name": "Graph Papers (Pack of 50)",
-      "category": "Stationery",
-      "price": "50",
-      "originalPrice": "60",
-      "image": "assets/images/stationery_placeholder.png"
-    },
-    {
-      "id": "5",
-      "name": "Physics Diagrams",
-      "category": "Diagram",
-      "price": "80",
-      "originalPrice": "100",
-      "image": "assets/images/diagram_placeholder.png"
-    },
-  ];
+  List<dynamic> _products = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProducts();
+  }
+
+  Future<void> _fetchProducts() async {
+    try {
+      final response = await ApiService.getExploreProducts();
+      if (response.statusCode == 200) {
+        setState(() {
+          _products = jsonDecode(response.body);
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+        CustomToast.showError(context, "Failed to load products");
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      CustomToast.showError(context, "Error: $e");
+    }
+  }
 
   void _deleteProduct(String id) {
     final theme = Theme.of(context);
@@ -104,10 +89,18 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              setState(() {
-                _products.removeWhere((element) => element['id'] == id);
+              ApiService.deleteExploreProduct(id).then((response) {
+                 if (response.statusCode == 200) {
+                   setState(() {
+                    _products.removeWhere((element) => element['_id'] == id);
+                   });
+                   CustomToast.showSuccess(context, "Product Deleted Successfully");
+                 } else {
+                    CustomToast.showError(context, "Failed to delete product");
+                 }
+              }).catchError((e) {
+                 CustomToast.showError(context, "Error: $e");
               });
-              CustomToast.showSuccess(context, "Product Deleted Successfully");
             },
            style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade700,
@@ -132,7 +125,7 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
         builder: (context) => AdminExploreScreen(productToEdit: product),
       ),
     ).then((_) {
-      // Refresh list if needed in real app
+      _fetchProducts(); // Refresh list after edit
     });
   }
 
@@ -208,8 +201,16 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(8),
+                      image: product['image'] != null && product['image'].isNotEmpty 
+                        ? DecorationImage(
+                            image: NetworkImage(product['image']),
+                            fit: BoxFit.cover,
+                          ) 
+                        : null,
                     ),
-                    child: const Icon(Icons.image, color: Colors.grey),
+                    child: product['image'] == null || product['image'].isEmpty 
+                      ? const Icon(Icons.image, color: Colors.grey) 
+                      : null,
                   ),
                   title: Text(
                     product['name'],
@@ -228,7 +229,7 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteProduct(product['id']),
+                        onPressed: () => _deleteProduct(product['_id']),
                       ),
                     ],
                   ),
