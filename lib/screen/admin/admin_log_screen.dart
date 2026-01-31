@@ -152,117 +152,116 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildLogList(List<Map<String, String>> logs, {required bool isStudentLog}) {
+  Widget _buildLogList(List<Map<String, dynamic>> logs, {required bool isStudentLog}) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: logs.length,
       itemBuilder: (context, index) {
         final log = logs[index];
-                return InkWell(
-                  onTap: () {
-                    if (!isStudentLog) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PaperSetDetailScreen(
-                            examName: log['exam'] ?? "Unknown Exam",
-                            date: log['date'] ?? "",
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon / Avatar
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: _getActionColor(log['action'] ?? "").withOpacity(0.1),
-                  child: Icon(
-                    isStudentLog ? Icons.person : Icons.description,
-                    color: _getActionColor(log['action'] ?? ""),
+        return InkWell(
+          onTap: () {
+            if (!isStudentLog) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PaperSetDetailScreen(
+                    examName: (log['exam'] ?? "Unknown Exam").toString(),
+                    date: (log['date'] ?? "").toString(),
                   ),
                 ),
-                const SizedBox(width: 16),
-                
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            log['assistant'] ?? "",
-                            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          Text(
-                            log['date'] ?? "",
-                            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
-                          children: [
-                            TextSpan(
-                                text: "${log['action']} ",
-                                style: TextStyle(color: _getActionColor(log['action'] ?? ""), fontWeight: FontWeight.w600)),
-                            TextSpan(text: isStudentLog ? "student " : "paper set "),
-                            TextSpan(
-                                text: isStudentLog ? log['student'] : log['exam'],
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                       if (!isStudentLog) ...[
-                         const SizedBox(height: 8),
-                         Container(
-                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                           decoration: BoxDecoration(
-                             color: log['status'] == 'Checked' ? Colors.green.shade50 : Colors.orange.shade50,
-                             borderRadius: BorderRadius.circular(8),
-                           ),
-                           child: Text(
-                             log['status'] ?? "",
-                             style: GoogleFonts.poppins(
-                               fontSize: 12,
-                               color: log['status'] == 'Checked' ? Colors.green : Colors.orange,
-                               fontWeight: FontWeight.w600
-                             ),
-                           ),
-                         ),
-                       ],
-                    ],
-                  ),
+              );
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-          ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon / Avatar
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: _getActionColor((log['action'] ?? "").toString()).withOpacity(0.1),
+                    child: Icon(
+                      isStudentLog ? Icons.person : Icons.description,
+                      color: _getActionColor((log['action'] ?? "").toString()),
+                    ),
                   ),
-                );
-              },
-            );
-          }
+                  const SizedBox(width: 16),
+
+                  // Content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              (log['assistant'] ?? "").toString(),
+                              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Text(
+                              (log['date'] ?? "").toString(),
+                              style: GoogleFonts.poppins(color: Colors.grey, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        RichText(
+                          text: TextSpan(
+                            style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
+                            children: [
+                              TextSpan(
+                                  text: "${log['action']} ",
+                                  style: TextStyle(color: _getActionColor((log['action'] ?? "").toString()), fontWeight: FontWeight.w600)),
+                              TextSpan(text: isStudentLog ? "student " : "paper set "),
+                              TextSpan(
+                                  text: (isStudentLog ? log['student'] : log['exam'])?.toString() ?? "",
+                                  style: const TextStyle(fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                        if (!isStudentLog) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: log['status'] == 'Checked' ? Colors.green.shade50 : Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              (log['status'] ?? "").toString(),
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: log['status'] == 'Checked' ? Colors.green : Colors.orange,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Color _getActionColor(String action) {
     if (action.contains("Collected") || action.contains("Added")) return Colors.green;
