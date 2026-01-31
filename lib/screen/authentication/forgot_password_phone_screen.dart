@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/forgot_password_otp_screen.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 
 class ForgotPasswordPhoneScreen extends StatefulWidget {
@@ -142,11 +145,19 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
                        ScaffoldMessenger.of(context).showSnackBar(
                          const SnackBar(content: Text("Sending OTP...")),
                        );
-                       
-                       Navigator.push(
-                         context, 
-                         MaterialPageRoute(builder: (context) => ForgotPasswordOtpScreen(phone: _phoneController.text)),
-                       );
+
+                       ApiService.forgetPassword(phone: _phoneController.text).then((response) {
+                          if (response.statusCode == 200) {
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(builder: (context) => ForgotPasswordOtpScreen(phone: _phoneController.text)),
+                            );
+                          } else {
+                            CustomToast.showError(context, "Failed to send OTP. User may not exist.");
+                          }
+                       }).catchError((e) {
+                          CustomToast.showError(context, "Error: $e");
+                       });
                     }
                   },
                   style: ElevatedButton.styleFrom(

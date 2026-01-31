@@ -1,12 +1,15 @@
 import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+  final String phone;
+  const ResetPasswordScreen({super.key, required this.phone});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -144,16 +147,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                        // Perform Reset Logic (API call etc)
-                       CustomToast.showSuccess(context, "Password Reset Successful");
-                       
-                       // Navigate back to Login/Welcome
-                       // Going back to Welcome Screen to restart flow, as LoginScreen needs role which we might not have here without passing it around.
-                       // Alternatively, we could go back to LoginScreen if we knew the role. But WelcomeScreen is safer.
-                       Navigator.pushAndRemoveUntil(
-                         context, 
-                         MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-                         (route) => false
-                       );
+                       ApiService.resetPassword(phone: widget.phone, newPassword: _newPasswordController.text).then((response) {
+                          if (response.statusCode == 200) {
+                             CustomToast.showSuccess(context, "Password Reset Successful");
+                             
+                             Navigator.pushAndRemoveUntil(
+                               context, 
+                               MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                               (route) => false
+                             );
+                          } else {
+                             CustomToast.showError(context, "Failed to reset password");
+                          }
+                       }).catchError((e) {
+                          CustomToast.showError(context, "Error: $e");
+                       });
                     }
                   },
                   style: ElevatedButton.styleFrom(
