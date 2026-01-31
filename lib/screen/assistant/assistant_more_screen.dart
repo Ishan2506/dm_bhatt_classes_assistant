@@ -2,6 +2,7 @@ import 'package:dm_bhatt_classes_new/screen/assistant/help_support_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/my_profile_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/settings_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/import_students_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/top_rankers_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/update_marks_selection_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
@@ -54,6 +55,9 @@ class AssistantMoreScreen extends StatelessWidget {
           }),
           _buildOptionTile(context, Icons.emoji_events_outlined, "Manage Top Rankers", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const TopRankersScreen()));
+          }),
+          _buildOptionTile(context, Icons.event, "Manage Events", () {
+             Navigator.push(context, MaterialPageRoute(builder: (context) => const ManageEventsScreen()));
           }),
           const SizedBox(height: 24),
           _buildOptionTile(context, Icons.logout, "Logout", () {

@@ -1,5 +1,7 @@
 import 'package:dm_bhatt_classes_new/screen/admin/admin_log_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/import_students_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/import_students_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/help_support_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/my_profile_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/settings_screen.dart';
@@ -50,6 +52,9 @@ class AdminMoreScreen extends StatelessWidget {
           }),
           _buildOptionTile(context, Icons.file_upload_outlined, "Import Students", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminImportStudentsScreen()));
+          }),
+          _buildOptionTile(context, Icons.event, "Manage Events", () {
+             Navigator.push(context, MaterialPageRoute(builder: (context) => const ManageEventsScreen()));
           }),
           const SizedBox(height: 24),
           _buildOptionTile(context, Icons.logout, "Logout", () {
