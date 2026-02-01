@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ApiService {
-  static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
-  // static const String baseUrl = "http://localhost:5000/api";
+  // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+  static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -418,5 +418,43 @@ class ApiService {
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
+  }
+
+  // --- Exam APIs ---
+
+  static Future<http.Response> uploadExamPdf({required List<int> bytes, required String filename}) async {
+    final uri = Uri.parse("$baseUrl/exam/upload-pdf");
+    final request = http.MultipartRequest('POST', uri);
+
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: filename,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> createExam({
+    required String name,
+    required String subject,
+    required int totalMarks,
+    required int duration,
+    required List<Map<String, dynamic>> questions,
+  }) async {
+    final uri = Uri.parse("$baseUrl/exam/create");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "name": name,
+        "subject": subject,
+        "totalMarks": totalMarks,
+        "duration": duration,
+        "questions": questions,
+      }),
+    );
   }
 }

@@ -1,6 +1,12 @@
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/review_questions_screen.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Mock Model for YouthEducation Data
 class Chapter {
@@ -29,18 +35,18 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   String? _selectedStandard;
   String? _selectedSubject;
   String? _selectedMedium;
-  String? _selectedUnit;
+  // String? _selectedUnit; // Removed in favor of PDF
 
   // Mock Data
   final List<String> _standards = ["9", "10", "11", "12"];
   final List<String> _subjects = ["Maths", "Science", "English"];
   final List<String> _mediums = ["English", "Gujarati"];
   
-  List<Chapter> _chapters = [];
-  Chapter? _selectedChapter;
+  // List<Chapter> _chapters = []; // Not used in PDF flow
+  // Chapter? _selectedChapter; // Not used
   
-  List<MCQ> _availableMCQs = [];
-  final Set<String> _selectedMCQIds = {};
+  // List<MCQ> _availableMCQs = []; 
+  // final Set<String> _selectedMCQIds = {};
 
   bool _isLoading = false;
 
@@ -50,59 +56,117 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
      {"name": "Science Ch 5 Quiz", "date": "18 Jan 2024", "marks": "15"},
   ];
 
-  // Mock API Call to fetch Chapters
-  Future<void> _fetchChapters() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulate API
-    setState(() {
-      _chapters = [
-        Chapter("c1", "Unit 1: Introduction"),
-        Chapter("c2", "Unit 2: Advanced Concepts"),
-        Chapter("c3", "Unit 3: Problem Solving"),
-      ];
-      _isLoading = false;
-    });
+  PlatformFile? _pickedPdf;
+
+  Future<void> _pickPdf() async {
+    debugPrint("Picking PDF...");
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.any, // Changed from custom to any to rule out filter issues
+        withData: kIsWeb,
+      );
+
+      debugPrint("FilePicker Result: $result");
+
+      if (result != null && mounted) {
+        setState(() {
+          _pickedPdf = result.files.single;
+        });
+        debugPrint("Selected File: ${_pickedPdf!.name}");
+      } else {
+        debugPrint("File selection cancelled or failed.");
+      }
+    } catch (e) {
+      debugPrint("FilePicker Error: $e");
+      CustomToast.showError(context, "Error: $e");
+    }
   }
 
-  // Mock API Call to fetch MCQs for a Chapter
-  Future<void> _fetchMCQs(String chapterId) async {
+  Future<void> _uploadAndProcessPdf() async {
+    if (_pickedPdf == null) return;
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulate API
-    setState(() {
-      _availableMCQs = List.generate(10, (index) => MCQ("mcq_$index", "Question ${index + 1} from Chapter $chapterId?"));
-      _isLoading = false;
-    });
+
+    try {
+      List<int> fileBytes;
+      if (kIsWeb) {
+         fileBytes = _pickedPdf!.bytes!;
+      } else {
+         fileBytes = await File(_pickedPdf!.path!).readAsBytes();
+      }
+
+      final response = await ApiService.uploadExamPdf(
+        bytes: fileBytes,
+        filename: _pickedPdf!.name
+      );
+      
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response.statusCode == 200) {
+         final body = jsonDecode(response.body);
+         final questions = body['questions'] as List;
+         final rawText = body['rawText'] as String? ?? "No text extracted";
+
+         debugPrint("Parsed Questions: ${questions.length}");
+         debugPrint("Raw Text Preview: ${rawText.substring(0, rawText.length > 200 ? 200 : rawText.length)}");
+
+         if (questions.isEmpty) {
+            // Show Debug Dialog with Raw Text to understand why parsing failed
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text("Parsing Failed"),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("No questions valid found. Here is what the OCR read:"),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        color: Colors.grey.shade100,
+                        height: 300,
+                        width: double.maxFinite,
+                        child: SelectableText(rawText, style: GoogleFonts.robotoMono(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Close"))
+                ],
+              )
+            );
+            return;
+         }
+
+         // Navigate to Review Screen
+         Navigator.push(
+           context, 
+           MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
+             parsedQuestions: questions,
+             examName: "Exam Details", // Could add name field
+             subject: _selectedSubject ?? "General",
+             totalMarks: "20", // Mock or from Step 1
+             duration: "30", // Mock
+           ))
+         );
+
+      } else {
+         CustomToast.showError(context, "Upload Failed: ${response.body}");
+      }
+    } catch (e) {
+       if (mounted) {
+         setState(() => _isLoading = false);
+         CustomToast.showError(context, "Error: $e");
+       }
+    }
   }
 
-  void _showPreview() {
-    final selectedQuestions = _availableMCQs.where((element) => _selectedMCQIds.contains(element.id)).toList();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Exam Preview", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.separated(
-             separatorBuilder: (context, index) => const Divider(),
-             itemCount: selectedQuestions.length,
-             itemBuilder: (context, index) {
-               return ListTile(
-                 leading: CircleAvatar(
-                   backgroundColor: Colors.blue.shade50,
-                   child: Text("${index + 1}"),
-                 ),
-                 title: Text(selectedQuestions[index].question, style: GoogleFonts.poppins()),
-               );
-             },
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Close")),
-        ],
-      ),
-    );
-  }
+  // Not used in PDF flow, but keeping if needed later or deleting?
+  // _fetchChapters, _fetchMCQs, _showPreview removed for clarity since we are doing PDF only now as per request.
 
   @override
   Widget build(BuildContext context) {
@@ -134,26 +198,15 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
               onStepContinue: () {
                 if (_currentStep == 0) {
                   if (_selectedStandard != null && _selectedSubject != null && _selectedMedium != null) {
-                    _fetchChapters();
                     setState(() => _currentStep++);
                   } else {
                     CustomToast.showError(context, "Please select Standard, Subject and Medium");
                   }
                 } else if (_currentStep == 1) {
-                   if (_selectedChapter != null) {
-                     _fetchMCQs(_selectedChapter!.id);
-                     setState(() => _currentStep++);
+                   if (_pickedPdf != null) {
+                     _uploadAndProcessPdf();
                    } else {
-                     CustomToast.showError(context, "Please select a Unit/Chapter");
-                   }
-                } else if (_currentStep == 2) {
-                   if (_selectedMCQIds.isNotEmpty) {
-                     // Final Creation
-                     CustomToast.showSuccess(context, "Exam Created with ${_selectedMCQIds.length} questions!");
-                     // Navigate or Reset
-                     // Navigator.pop(context);
-                   } else {
-                     CustomToast.showError(context, "Please select at least one question");
+                     CustomToast.showError(context, "Please upload a PDF");
                    }
                 }
               },
@@ -173,21 +226,11 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                           backgroundColor: Colors.blue.shade900,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Text(_currentStep == 2 ? "Finish & Create" : "Continue", style: GoogleFonts.poppins(color: Colors.white)),
+                        child: _isLoading 
+                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                           : Text(_currentStep == 1 ? "Process PDF" : "Continue", style: GoogleFonts.poppins(color: Colors.white)),
                       ),
                       const SizedBox(width: 12),
-                      if (_currentStep == 2) ...[
-                        OutlinedButton.icon(
-                          onPressed: _showPreview,
-                          icon: const Icon(Icons.visibility),
-                          label: const Text("Preview"),
-                           style: OutlinedButton.styleFrom(
-                             foregroundColor: Colors.blue.shade900,
-                             side: BorderSide(color: Colors.blue.shade900),
-                           ),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
                       if (_currentStep > 0)
                         TextButton(
                           onPressed: details.onStepCancel,
@@ -212,45 +255,37 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                   isActive: _currentStep >= 0,
                 ),
                 Step(
-                  title: Text("Select Unit (YouthEducation API)", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                  content: _isLoading 
-                      ? const Center(child: CircularProgressIndicator())
-                      : Column(
-                        children: _chapters.map((chapter) => RadioListTile<Chapter>(
-                          title: Text(chapter.name, style: GoogleFonts.poppins()),
-                          value: chapter,
-                          groupValue: _selectedChapter,
-                          onChanged: (val) => setState(() => _selectedChapter = val),
-                          activeColor: Colors.blue.shade900,
-                        )).toList(),
-                      ),
+                  title: Text("Upload Question PDF", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  content: Column(
+                    children: [
+                       Container(
+                         width: double.infinity,
+                         padding: const EdgeInsets.all(24),
+                         decoration: BoxDecoration(
+                           border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                           borderRadius: BorderRadius.circular(12),
+                           color: Colors.grey.shade50,
+                         ),
+                         child: Column(
+                           children: [
+                             Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.blue.shade300),
+                             const SizedBox(height: 16),
+                             ElevatedButton(
+                               onPressed: _pickPdf,
+                               child: Text(_pickedPdf != null ? "Change File" : "Select PDF"),
+                             ),
+                             if (_pickedPdf != null) ...[
+                               const SizedBox(height: 12),
+                               Text("Selected: ${_pickedPdf!.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                             ]
+                           ],
+                         ),
+                       ),
+                       const SizedBox(height: 12),
+                       const Text("Ensure format: 1. Question... A)... B)... Answer: A", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
                   isActive: _currentStep >= 1,
-                ),
-                Step(
-                  title: Text("Select Questions", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                   content: _isLoading 
-                      ? const Center(child: CircularProgressIndicator())
-                      : Column(
-                        children: [
-                           Text("Total Selected: ${_selectedMCQIds.length}", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.blue.shade900)),
-                           const SizedBox(height: 8),
-                           ..._availableMCQs.map((mcq) => CheckboxListTile(
-                              title: Text(mcq.question, style: GoogleFonts.poppins()),
-                               value: _selectedMCQIds.contains(mcq.id),
-                               activeColor: Colors.blue.shade900,
-                               onChanged: (bool? value) {
-                                 setState(() {
-                                   if (value == true) {
-                                     _selectedMCQIds.add(mcq.id);
-                                   } else {
-                                     _selectedMCQIds.remove(mcq.id);
-                                   }
-                                 });
-                               },
-                            )),
-                        ],
-                      ),
-                  isActive: _currentStep >= 2,
                 ),
               ],
             ),
