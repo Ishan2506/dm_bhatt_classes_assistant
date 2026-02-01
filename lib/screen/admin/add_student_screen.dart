@@ -624,7 +624,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                ? const Center(child: CircularProgressIndicator()) 
                : _students.isEmpty 
                    ? Center(child: Text("No students found", style: GoogleFonts.poppins(color: Colors.grey)))
-                   : ListView.builder(
+                   : RefreshIndicator(
+                       onRefresh: _fetchStudents,
+                       child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _students.length,
               itemBuilder: (context, index) {
@@ -665,8 +667,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                     ),
                   ),
                 );
+
               },
             ),
+          ),
           ],
         ),
     );

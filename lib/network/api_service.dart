@@ -404,4 +404,19 @@ class ApiService {
     );
     return response;
   }
+
+  static Future<http.Response> importStudents({required List<int> bytes, required String filename}) async {
+    final uri = Uri.parse("$baseUrl/admin/import-students");
+    final request = http.MultipartRequest('POST', uri);
+    
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: filename,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
 }

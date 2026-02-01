@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:excel/excel.dart' hide Border, BorderStyle;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -18,6 +20,7 @@ class AdminImportStudentsScreen extends StatefulWidget {
 
 class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
   String? _selectedFileName;
+  PlatformFile? _pickedFile;
   bool _isUploading = false;
 
   Future<void> _pickFile() async {
@@ -25,11 +28,13 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
+        withData: kIsWeb, // Important for Web to get bytes
       );
 
       if (result != null && mounted) {
         setState(() {
           _selectedFileName = result.files.single.name;
+          _pickedFile = result.files.single;
         });
       }
     } catch (e) {
@@ -40,7 +45,7 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
   }
 
   Future<void> _uploadFile() async {
-    if (_selectedFileName == null) {
+    if (_pickedFile == null) {
       CustomToast.showError(context, "Please select a file");
       return;
     }
@@ -49,15 +54,52 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       _isUploading = true;
     });
 
-    // Simulate upload delay
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      List<int> fileBytes;
+      if (kIsWeb) {
+        if (_pickedFile!.bytes != null) {
+          fileBytes = _pickedFile!.bytes!;
+        } else {
+          throw Exception("File data not found");
+        }
+      } else {
+        // Native
+        fileBytes = await File(_pickedFile!.path!).readAsBytes();
+      }
 
-    if (mounted) {
-      setState(() {
-        _isUploading = false;
-        _selectedFileName = null; // Clear selection on success
-      });
-      CustomToast.showSuccess(context, "Student data imported successfully");
+      final response = await ApiService.importStudents(
+        bytes: fileBytes, 
+        filename: _pickedFile!.name
+      );
+      
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+
+        if (response.statusCode == 200) {
+           final body = jsonDecode(response.body);
+           final results = body['results'];
+           
+           setState(() {
+             _selectedFileName = null;
+             _pickedFile = null;
+           });
+           
+           if (results['success'] > 0) {
+              CustomToast.showSuccess(context, "Imported: ${results['success']}, Failed: ${results['failed']}");
+           } else {
+              CustomToast.showError(context, "Import Failed. 0 students added. Failed: ${results['failed']}");
+           }
+        } else {
+           CustomToast.showError(context, "Failed: ${response.body}");
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploading = false);
+        CustomToast.showError(context, "Error: $e");
+      }
     }
   }
 
