@@ -25,16 +25,35 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
   bool _isEditing = false;
   int? _editingIndex;
   
-  // Mock History Data
-  final List<Map<String, String>> _history = [
-    {"name": "Ravi Patel", "role": "Assistant", "date": "24 Jan 2024", "phone": "9998887776", "aadhar": "123412341234", "address": "Ahmedabad"},
-    {"name": "Priya Shah", "role": "Assistant", "date": "20 Jan 2024", "phone": "8887776665", "aadhar": "567856785678", "address": "Baroda"},
-  ];
+  // Real Data
+  List<dynamic> _assistants = [];
+  bool _isLoadingList = true;
+  String? _editingId;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchAssistants();
+  }
+  
+  Future<void> _fetchAssistants() async {
+    setState(() => _isLoadingList = true);
+    try {
+      final response = await ApiService.getAllAssistants();
+      if (response.statusCode == 200) {
+        setState(() {
+          _assistants = jsonDecode(response.body);
+          _isLoadingList = false;
+        });
+      } else {
+        setState(() => _isLoadingList = false);
+        CustomToast.showError(context, "Failed to load assistants");
+      }
+    } catch (e) {
+      setState(() => _isLoadingList = false);
+      debugPrint("Error fetching assistants: $e");
+    }
   }
 
   @override
@@ -51,23 +70,32 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
   void _createOrUpdateAssistant() async {
      if (_formKey.currentState!.validate()) {
         try {
-          if (_isEditing) {
-              CustomToast.showSuccess(context, "Assistant Updated (Mock)");
+          if (_isEditing && _editingId != null) {
+              // Edit Logic
+              CustomToast.showSuccess(context, "Updating Assistant...");
               
-              if (_editingIndex != null && _editingIndex! < _history.length) {
-                setState(() {
-                  _history[_editingIndex!] = {
-                    "name": _nameController.text,
-                    "role": "Assistant",
-                    "date": _history[_editingIndex!]['date']!,
-                    "phone": _phoneController.text,
-                    "aadhar": _aadharNumberController.text,
-                    "address": _addressController.text,
-                  };
-                });
-              }
-              _resetForm();
+              final response = await ApiService.editAssistant(
+                id: _editingId!,
+                name: _nameController.text,
+                phone: _phoneController.text,
+                password: _passwordController.text, // Optional
+                address: _addressController.text,
+                aadharNumber: _aadharNumberController.text,
+              );
+
+               if (!mounted) return;
+
+               if (response.statusCode == 200) {
+                 CustomToast.showSuccess(context, "Assistant Updated Successfully");
+                 _resetForm();
+                 _fetchAssistants();
+               } else {
+                 final error = jsonDecode(response.body);
+                 CustomToast.showError(context, error['message'] ?? "Failed to update assistant");
+               }
+
           } else {
+             // Create Logic
              CustomToast.showSuccess(context, "Adding Assistant...");
 
              final response = await ApiService.addAssistant(
@@ -83,7 +111,7 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
               if (response.statusCode == 200 || response.statusCode == 201) {
                 CustomToast.showSuccess(context, "Assistant Added Successfully");
                 _resetForm();
-                // In real app, refresh history here
+                _fetchAssistants(); 
               } else {
                 final error = jsonDecode(response.body);
                 CustomToast.showError(context, error['message'] ?? "Failed to add assistant");
@@ -98,15 +126,14 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
   }
 
   void _editAssistant(int index) {
-    final item = _history[index];
+    final item = _assistants[index];
     setState(() {
       _isEditing = true;
-      _editingIndex = index;
+      _editingId = item['_id'];
       _nameController.text = item['name'] ?? "";
       _phoneController.text = item['phone'] ?? "";
-      _aadharNumberController.text = item['aadhar'] ?? "";
+      _aadharNumberController.text = item['aadharNum'] ?? "";
       _addressController.text = item['address'] ?? "";
-      // Password usually kept blank or handled securely. Leaving blank implies "no change"
       _passwordController.clear();
     });
     _tabController.animateTo(0);
@@ -115,6 +142,8 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
   void _confirmDelete(int index) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final item = _assistants[index];
+    final String id = item['_id'];
 
     showDialog(
       context: context,
@@ -143,7 +172,7 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
           ],
         ),
         content: Text(
-          "Are you sure you want to delete this assistant? This action cannot be undone.",
+          "Are you sure you want to delete ${item['name']}? This action cannot be undone.",
           style: GoogleFonts.poppins(
             color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
             fontSize: 14,
@@ -159,12 +188,21 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
             child: Text("Cancel", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              setState(() {
-                _history.removeAt(index);
-              });
-              CustomToast.showSuccess(context, "Assistant Deleted Successfully");
+              try {
+                final response = await ApiService.deleteAssistant(id);
+                if (!mounted) return;
+
+                if (response.statusCode == 200) {
+                   CustomToast.showSuccess(context, "Assistant Deleted Successfully");
+                   _fetchAssistants();
+                } else {
+                   CustomToast.showError(context, "Failed to delete assistant");
+                }
+              } catch (e) {
+                 if (mounted) CustomToast.showError(context, "Error: $e");
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade700,
@@ -190,7 +228,7 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
     _addressController.clear();
     setState(() {
       _isEditing = false;
-      _editingIndex = null;
+      _editingId = null;
     });
   }
 
@@ -315,11 +353,15 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
           ),
 
           // Tab 2: History List
-          ListView.builder(
+          _isLoadingList 
+             ? const Center(child: CircularProgressIndicator()) 
+             : _assistants.isEmpty 
+                 ? Center(child: Text("No assistants found", style: GoogleFonts.poppins(color: Colors.grey)))
+                 : ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: _history.length,
+            itemCount: _assistants.length,
             itemBuilder: (context, index) {
-              final item = _history[index];
+              final item = _assistants[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 elevation: 0,
@@ -331,10 +373,10 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: Colors.blue.shade100,
-                    child: Text(item['name']![0], style: TextStyle(color: Colors.blue.shade900)),
+                    child: Text((item['name'] != null && item['name'].isNotEmpty) ? item['name'][0] : "?", style: TextStyle(color: Colors.blue.shade900)),
                   ),
-                  title: Text(item['name']!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                  subtitle: Text("Added on ${item['date']}", style: GoogleFonts.poppins(fontSize: 12)),
+                  title: Text(item['name'] ?? "Unknown", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  subtitle: Text("${item['phone']} • Aadhar: ${item['aadharNum'] ?? 'N/A'}", style: GoogleFonts.poppins(fontSize: 12)),
                   trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
