@@ -1,3 +1,4 @@
+import 'package:dm_bhatt_classes_new/screen/admin/admin_ai_assistant.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_log_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/import_students_screen.dart';
@@ -10,8 +11,30 @@ import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class AdminMoreScreen extends StatelessWidget {
+class AdminMoreScreen extends StatefulWidget {
   const AdminMoreScreen({super.key});
+
+  @override
+  State<AdminMoreScreen> createState() => _AdminMoreScreenState();
+}
+
+class _AdminMoreScreenState extends State<AdminMoreScreen> {
+
+  String? _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _role = prefs.getString('user_role');
+    });
+    debugPrint("Role: ${_role}");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +65,20 @@ class AdminMoreScreen extends StatelessWidget {
           _buildOptionTile(context, Icons.person_outline, "My Profile", () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const MyProfileScreen()));
           }),
+          if (_role == "Admin")
+            _buildOptionTile(
+              context,
+              Icons.smart_toy_outlined,
+              "AI Assistant",
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminAIAssistantScreen(),
+                  ),
+                );
+              },
+            ),
           _buildOptionTile(context, Icons.settings_outlined, "Settings", () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
           }),
