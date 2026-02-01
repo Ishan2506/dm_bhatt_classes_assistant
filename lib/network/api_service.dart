@@ -148,6 +148,55 @@ class ApiService {
     return await http.Response.fromStream(streamResponse);
   }
 
+  static Future<http.Response> getAllStudents() async {
+    final uri = Uri.parse("$baseUrl/admin/all-students");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> editStudent({
+    required String id,
+    String? name,
+    String? phone,
+    String? password,
+    String? parentPhone,
+    String? standard,
+    String? medium,
+    String? stream,
+    String? state,
+    String? city,
+    String? address,
+    String? schoolName,
+    File? imageFile,
+  }) async {
+    final uri = Uri.parse("$baseUrl/admin/edit-student/$id");
+    final request = http.MultipartRequest('PUT', uri);
+
+    if (name != null) request.fields['name'] = name;
+    if (phone != null) request.fields['phone'] = phone;
+    if (password != null && password.isNotEmpty) request.fields['password'] = password;
+    if (parentPhone != null) request.fields['parentPhone'] = parentPhone;
+    if (standard != null) request.fields['standard'] = standard;
+    if (medium != null) request.fields['medium'] = medium;
+    if (stream != null) request.fields['stream'] = stream;
+    if (state != null) request.fields['state'] = state;
+    if (city != null) request.fields['city'] = city;
+    if (address != null) request.fields['address'] = address;
+    if (schoolName != null) request.fields['schoolName'] = schoolName;
+
+    if (imageFile != null) {
+      final multipartFile = await http.MultipartFile.fromPath('image', imageFile.path);
+      request.files.add(multipartFile);
+    }
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> deleteStudent(String id) async {
+    final uri = Uri.parse("$baseUrl/admin/delete-student/$id");
+    return await http.delete(uri);
+  }
+
   static Future<http.Response> createPaperSet({
     required String examName,
     required String date,

@@ -41,7 +41,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
-   // Data Lists
+  // Data Lists
   final List<String> _standards = ["6", "7", "8", "9", "10", "11", "12"];
   final List<String> _mediums = ["English", "Gujarati"];
   final List<String> _streams = ["Science", "Commerce", "General"];
@@ -52,16 +52,35 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
     "Rajasthan": ["Jaipur", "Udaipur", "Jodhpur", "Kota"],
   };
 
-  // Mock History
-  final List<Map<String, String>> _history = [
-    {"name": "Devarsh Shah", "std": "12", "stream": "Science", "date": "25 Jan 2024", "phone": "1234567890", "medium": "English"},
-    {"name": "Rahul Verma", "std": "10", "stream": "", "date": "22 Jan 2024", "phone": "9876543210", "medium": "Gujarati"},
-  ];
+  // Real Data
+  List<dynamic> _students = [];
+  bool _isLoadingList = true;
+  String? _editingId; // Store backend ID for editing
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchStudents();
+  }
+
+  Future<void> _fetchStudents() async {
+    setState(() => _isLoadingList = true);
+    try {
+      final response = await ApiService.getAllStudents();
+      if (response.statusCode == 200) {
+        setState(() {
+          _students = jsonDecode(response.body);
+          _isLoadingList = false;
+        });
+      } else {
+        setState(() => _isLoadingList = false);
+        CustomToast.showError(context, "Failed to load students");
+      }
+    } catch (e) {
+      setState(() => _isLoadingList = false);
+      debugPrint("Error fetching students: $e");
+    }
   }
 
   @override
@@ -117,27 +136,35 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
         try {
           CustomLoader.show(context); // Show Loader
           
-          if (_isEditing) {
-             // Mock Update Logic
-             await Future.delayed(const Duration(seconds: 1)); // Simulate local update delay
+          if (_isEditing && _editingId != null) {
+             // Edit Logic
+             final response = await ApiService.editStudent(
+                id: _editingId!,
+                name: _nameController.text,
+                phone: _phoneController.text,
+                password: _passwordController.text, // Optional in edit
+                parentPhone: _parentPhoneController.text,
+                standard: _selectedStandard,
+                medium: _selectedMedium,
+                stream: _selectedStream,
+                state: _selectedState,
+                city: _cityController.text,
+                address: _addressController.text,
+                schoolName: _schoolNameController.text,
+                imageFile: _imageFile,
+             );
+
              if (!mounted) return;
              CustomLoader.hide(context);
-             CustomToast.showSuccess(context, 'Student Updated Successfully (Mock)');
-              
-             // Update local history for demo
-             if (_editingIndex != null && _editingIndex! < _history.length) {
-                setState(() {
-                   _history[_editingIndex!] = {
-                     "name": _nameController.text,
-                     "std": _selectedStandard ?? "",
-                     "stream": _selectedStream ?? "",
-                     "date": _history[_editingIndex!]['date']!, // Keep original date
-                     "phone": _phoneController.text,
-                     "medium": _selectedMedium ?? "",
-                   };
-                });
+
+             if (response.statusCode == 200) {
+               CustomToast.showSuccess(context, 'Student Updated Successfully');
+               _resetForm();
+               _fetchStudents(); // Refresh list
+             } else {
+               final error = jsonDecode(response.body);
+               CustomToast.showError(context, error['message'] ?? "Failed to update student");
              }
-             _resetForm();
 
           } else {
               // Create Logic
@@ -162,6 +189,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
               if (response.statusCode == 200 || response.statusCode == 201) {
                 CustomToast.showSuccess(context, 'Student Added Successfully');
                 _resetForm();
+                _fetchStudents(); // Refresh list
               } else {
                  final error = jsonDecode(response.body);
                  CustomToast.showError(context, error['message'] ?? "Failed to add student");
@@ -177,17 +205,25 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   }
   
   void _editStudent(int index) {
-     final item = _history[index];
+     final item = _students[index];
      setState(() {
        _isEditing = true;
-       _editingIndex = index;
+       _editingId = item['_id']; // MongoDB ID
        _nameController.text = item['name'] ?? "";
-       _phoneController.text = item['phone'] ?? ""; // Assuming we have this in history or fetch it
-       _selectedStandard = item['std'];
-       _selectedStream = (item['stream'] == "" || item['stream'] == "-") ? null : item['stream'];
-       _selectedMedium = item['medium'];
-       // For mock purposes other fields might be empty or defaults
-       _cityController.text = "Ahmedabad"; 
+       _phoneController.text = item['phone'] ?? "";
+       _parentPhoneController.text = item['parentPhone'] ?? "";
+       
+       // Handle dropdowns safely
+       _selectedStandard = item['std'] != null && _standards.contains(item['std']) ? item['std'] : null;
+       _selectedMedium = item['medium'] != null && _mediums.contains(item['medium']) ? item['medium'] : null;
+       _selectedStream = item['stream'] != null && _streams.contains(item['stream']) ? item['stream'] : null;
+       
+       _cityController.text = item['city'] ?? "";
+       _addressController.text = item['address'] ?? "";
+       _schoolNameController.text = item['school'] ?? "";
+       
+       // Note: Image handling would require showing network image if available, skipped for brevity in form setup.
+       // Password remains empty for security, user enters only if changing.
      });
      _tabController.animateTo(0); // Switch to "Create New" tab form
   }
@@ -195,6 +231,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   void _confirmDelete(int index) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final item = _students[index];
+    final String id = item['_id'];
 
     showDialog(
       context: context,
@@ -223,7 +261,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
           ],
         ),
         content: Text(
-          "Are you sure you want to delete this student? This action cannot be undone.",
+          "Are you sure you want to delete ${item['name']}? This action cannot be undone.",
           style: GoogleFonts.poppins(
             color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
             fontSize: 14,
@@ -239,12 +277,24 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
             child: Text("Cancel", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              setState(() {
-                _history.removeAt(index);
-              });
-              CustomToast.showSuccess(context, "Student Deleted Successfully");
+              try {
+                CustomLoader.show(context);
+                final response = await ApiService.deleteStudent(id);
+                if (!mounted) return;
+                CustomLoader.hide(context);
+
+                if (response.statusCode == 200) {
+                   CustomToast.showSuccess(context, "Student Deleted Successfully");
+                   _fetchStudents();
+                } else {
+                   CustomToast.showError(context, "Failed to delete student");
+                }
+              } catch (e) {
+                 if (mounted) CustomLoader.hide(context);
+                 CustomToast.showError(context, "Error: $e");
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade700,
@@ -276,7 +326,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
       _selectedMedium = null;
       _selectedStream = null;
       _isEditing = false;
-      _editingIndex = null;
+      _editingId = null;
     });
   }
 
@@ -323,6 +373,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                             child: CircleAvatar(
                               radius: 50,
                               backgroundColor: Colors.white,
+                              // TODO: Show network image if editing and _imageFile is null
                               backgroundImage: _imageFile != null 
                                   ? FileImage(_imageFile!) 
                                   : const AssetImage("assets/images/user_placeholder.png") as ImageProvider,
@@ -467,9 +518,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                             _schoolNameController.text = selection;
                           },
                           fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                             // Sync with main controller
                              textEditingController.addListener(() {
                                 _schoolNameController.text = textEditingController.text;
                              });
+                             // Set initial value if editing
+                             if (_schoolNameController.text.isNotEmpty && textEditingController.text.isEmpty) {
+                               textEditingController.text = _schoolNameController.text;
+                             }
                             
                             return Container(
                               decoration: BoxDecoration(
@@ -563,12 +619,21 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
               ),
             ),
             
-            // Tab 2: History
-             ListView.builder(
+            // Tab 2: History (Now Real List)
+            _isLoadingList 
+               ? const Center(child: CircularProgressIndicator()) 
+               : _students.isEmpty 
+                   ? Center(child: Text("No students found", style: GoogleFonts.poppins(color: Colors.grey)))
+                   : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _history.length,
+              itemCount: _students.length,
               itemBuilder: (context, index) {
-                final item = _history[index];
+                final item = _students[index];
+                final String name = item['name'] ?? "Unknown";
+                final String std = item['std'] ?? "?";
+                final String? stream = item['stream'];
+                final String phone = item['phone'] ?? "";
+                
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   elevation: 0,
@@ -581,10 +646,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: CircleAvatar(
                        backgroundColor: Colors.blue.shade100,
-                       child: Text(item['name']![0], style: TextStyle(color: Colors.blue.shade900)),
+                       child: Text(name.isNotEmpty ? name[0] : "?", style: TextStyle(color: Colors.blue.shade900)),
                     ),
-                    title: Text(item['name']!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    subtitle: Text("Std: ${item['std']} ${item['stream']} • ${item['date']}", style: GoogleFonts.poppins(fontSize: 12)),
+                    title: Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    subtitle: Text("Std: $std ${stream != null ? '($stream)' : ''} • $phone", style: GoogleFonts.poppins(fontSize: 12)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
