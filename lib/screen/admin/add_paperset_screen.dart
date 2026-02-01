@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:flutter/material.dart';
@@ -33,50 +34,180 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
   final List<String> _standards = ["8", "9", "10", "11", "12"];
   final List<String> _streams = ["None", "Science", "General"];
 
-  // Mock History Data
-  final List<Map<String, String>> _history = [
-    {"name": "Maths_24Jan2024", "date": "24 Jan 2024", "subject": "Maths", "medium": "English"},
-    {"name": "Science_20Jan2024", "date": "20 Jan 2024", "subject": "Science", "medium": "Gujarati"},
-  ];
+  // Real Data
+  List<dynamic> _paperSets = [];
+  bool _isLoadingList = true;
+  String? _editingId;
 
-  Future<void> _createPaperSet() async {
-    showDialog(
-      context: context, 
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator())
-    );
+  @override
+  void initState() {
+    super.initState();
+    // TabController initialized in build via DefaultTabController? 
+    // Wait, typical use is TabController in initState if using TabBar in AppBar bottom with a Controller.
+    // The previous code used DefaultTabController in build (line 119). So no explicit controller needed if TabBarView uses DefaultTabController.
+    // But for programmatic tab switching (Editor -> Form), we SHOULD use an explicit TabController.
+    // I will switch to explicit TabController to support switching tabs on Edit.
+    _tabController = TabController(length: 2, vsync: this);
+    _fetchPaperSets();
+  }
 
+  @override 
+  void dispose() {
+    _tabController.dispose();
+    _dateController.dispose();
+    _examNameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchPaperSets() async {
+    setState(() => _isLoadingList = true);
     try {
-      final response = await ApiService.createPaperSet(
-        examName: _examNameController.text,
-        date: _selectedDate!.toIso8601String(),
-        subject: _selectedSubject!,
-        medium: _selectedMedium!,
-        standard: _selectedStandard!,
-        stream: _selectedStream ?? "None",
-      );
-
-      Navigator.pop(context); // Hide loader
-
-      if (response.statusCode == 201) {
-        CustomToast.showSuccess(context, "Paper Set Created Successfully!");
-        // Reset
+      final response = await ApiService.getAllPaperSets();
+      if (response.statusCode == 200) {
         setState(() {
-          _examNameController.clear();
-          _dateController.clear();
-          _selectedSubject = null;
-          _selectedMedium = null;
-          _selectedStandard = null;
-          _selectedStream = "None";
-          _selectedDate = null;
+          _paperSets = jsonDecode(response.body);
+          _isLoadingList = false;
         });
       } else {
-        CustomToast.showError(context, "Failed: ${response.body}");
+        setState(() => _isLoadingList = false);
+        CustomToast.showError(context, "Failed to load paper sets");
       }
     } catch (e) {
-      Navigator.pop(context);
-      CustomToast.showError(context, "Error: $e");
+      setState(() => _isLoadingList = false);
+      debugPrint("Error fetching paper sets: $e");
     }
+  }
+
+  Future<void> _createOrUpdatePaperSet() async {
+    if (_formKey.currentState!.validate()) {
+       if (_selectedStandard == null) {
+         CustomToast.showError(context, "Please select Standard");
+         return;
+       }
+       
+       showDialog(
+          context: context, 
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator())
+       );
+
+       try {
+         if (_isEditing && _editingId != null) {
+            // Edit
+            final response = await ApiService.editPaperSet(
+              id: _editingId!,
+              examName: _examNameController.text,
+              date: _selectedDate!.toIso8601String(),
+              subject: _selectedSubject,
+              medium: _selectedMedium,
+              standard: _selectedStandard,
+              stream: _selectedStream,
+            );
+            
+            Navigator.pop(context); // Hide loader
+
+            if (response.statusCode == 200) {
+              CustomToast.showSuccess(context, "Paper Set Updated Successfully");
+              _resetForm();
+              _fetchPaperSets();
+            } else {
+               CustomToast.showError(context, "Failed: ${response.body}");
+            }
+
+         } else {
+            // Create
+            final response = await ApiService.createPaperSet(
+              examName: _examNameController.text,
+              date: _selectedDate!.toIso8601String(),
+              subject: _selectedSubject!,
+              medium: _selectedMedium!,
+              standard: _selectedStandard!,
+              stream: _selectedStream ?? "None",
+            );
+
+            Navigator.pop(context); // Hide loader
+
+            if (response.statusCode == 201) {
+              CustomToast.showSuccess(context, "Paper Set Created Successfully!");
+              _resetForm();
+              _fetchPaperSets();
+            } else {
+              CustomToast.showError(context, "Failed: ${response.body}");
+            }
+         }
+       } catch (e) {
+         Navigator.pop(context); // Hide loader
+         CustomToast.showError(context, "Error: $e");
+       }
+    }
+  }
+
+  void _editPaperSet(int index) {
+    final item = _paperSets[index];
+    setState(() {
+      _isEditing = true;
+      _editingId = item['_id'];
+      
+      _examNameController.text = item['examName'] ?? "";
+      _selectedSubject = item['subject']; // Ensure item value matches dropdown list exactly
+      _selectedMedium = item['medium'];
+      _selectedStandard = item['standard'] ?? item['std']; // Backend might return 'std' or 'standard'
+      _selectedStream = item['stream'] ?? "None";
+
+      if (item['date'] != null) {
+        try {
+          _selectedDate = DateTime.parse(item['date']);
+          _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate!);
+        } catch (e) {
+          debugPrint("Date parse error: $e");
+        }
+      }
+    });
+
+    // Check if dropdown values exist in lists, if not default to null or handle
+    if (!_subjects.contains(_selectedSubject)) _selectedSubject = null;
+    if (!_mediums.contains(_selectedMedium)) _selectedMedium = null;
+    if (!_standards.contains(_selectedStandard)) _selectedStandard = null;
+    if (!_streams.contains(_selectedStream)) _selectedStream = "None";
+
+    _tabController.animateTo(0);
+  }
+
+  void _confirmDelete(int index) {
+      final item = _paperSets[index];
+      final String id = item['_id'];
+      
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text("Delete Paper Set", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          content: Text("Are you sure you want to delete ${item['examName']}?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text("Cancel", style: GoogleFonts.poppins()),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                 Navigator.pop(ctx);
+                 try {
+                   final response = await ApiService.deletePaperSet(id);
+                   if (response.statusCode == 200) {
+                      CustomToast.showSuccess(context, "Deleted Successfully");
+                      _fetchPaperSets();
+                   } else {
+                      CustomToast.showError(context, "Failed to delete");
+                   }
+                 } catch (e) {
+                    CustomToast.showError(context, "Error: $e");
+                 }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: Text("Delete", style: GoogleFonts.poppins(color: Colors.white)),
+            )
+          ],
+        ),
+      );
   }
 
   void _updateExamName() {
@@ -114,11 +245,24 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
     }
   }
 
+  void _resetForm() {
+    setState(() {
+      _isEditing = false;
+      _editingId = null;
+      _examNameController.clear();
+      _dateController.clear();
+      _selectedSubject = null;
+      _selectedMedium = null;
+      _selectedStandard = null;
+      _selectedStream = "None";
+      _selectedDate = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
+    // Removed DefaultTabController to use explicit _tabController
+    return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
           title: Text(
@@ -126,16 +270,18 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
             style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
           ),
           elevation: 0,
-          bottom: const TabBar(
+          bottom: TabBar(
+             controller: _tabController,
              labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
-            tabs: [
-              Tab(text: "Create New"),
-              Tab(text: "History"),
-            ],
+             unselectedLabelColor: Colors.grey,
+             tabs: const [
+               Tab(text: "Create New"),
+               Tab(text: "History"),
+             ],
           ),
         ),
         body: TabBarView(
+          controller: _tabController,
           children: [
             // Tab 1: Create Form
             SingleChildScrollView(
@@ -145,9 +291,9 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                     _buildSectionTitle("Exam Details"),
+                     _buildSectionTitle(_isEditing ? "Edit Exam Details" : "Exam Details"),
                      const SizedBox(height: 24),
-
+                     
                      // Date Picker
                     _buildTapField(
                       controller: _dateController,
@@ -239,23 +385,14 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
-                           if (_formKey.currentState!.validate()) {
-                              if (_selectedStandard == null) {
-                                CustomToast.showError(context, "Please select Standard");
-                                return;
-                              }
-                              // Call API
-                              _createPaperSet();
-                           }
-                        },
+                        onPressed: _createOrUpdatePaperSet,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue.shade900,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 2,
                         ),
                         child: Text(
-                          "Create Paper Set",
+                          _isEditing ? "Update Paper Set" : "Create Paper Set",
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -264,17 +401,42 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                         ),
                       ),
                     ),
+                    if (_isEditing)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Center(
+                          child: TextButton(
+                            onPressed: _resetForm,
+                            child: Text("Cancel Edit", style: TextStyle(color: Colors.red)),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
             
             // Tab 2: History List
-            ListView.builder(
+            _isLoadingList 
+               ? const Center(child: CircularProgressIndicator()) 
+               : _paperSets.isEmpty
+                   ? Center(child: Text("No paper sets found", style: GoogleFonts.poppins(color: Colors.grey)))
+                   : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _history.length,
+              itemCount: _paperSets.length,
               itemBuilder: (context, index) {
-                final item = _history[index];
+                final item = _paperSets[index];
+                
+                // Format Date for display
+                String displayDate = "Unknown Date";
+                if (item['date'] != null) {
+                    try {
+                       displayDate = DateFormat('dd MMM yyyy').format(DateTime.parse(item['date']));
+                    } catch (e) {
+                       displayDate = item['date'];
+                    }
+                }
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   elevation: 0,
@@ -292,16 +454,27 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                       ),
                       child: Icon(Icons.description_outlined, color: Colors.orange.shade900),
                     ),
-                    title: Text(item['name']!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    subtitle: Text("${item['subject']} • ${item['date']}", style: GoogleFonts.poppins(fontSize: 12)),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                    title: Text(item['examName'] ?? "Unnamed", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    subtitle: Text("${item['subject']} • $displayDate", style: GoogleFonts.poppins(fontSize: 12)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _editPaperSet(index),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _confirmDelete(index),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ],
         ),
-      ),
     );
   }
 

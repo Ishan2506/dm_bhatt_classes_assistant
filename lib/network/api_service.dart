@@ -275,6 +275,37 @@ class ApiService {
     return await http.get(uri);
   }
 
+  static Future<http.Response> editPaperSet({
+    required String id,
+    String? examName,
+    String? date,
+    String? subject,
+    String? medium,
+    String? standard,
+    String? stream,
+    // Add other fields if needed for edit
+  }) async {
+    final uri = Uri.parse("$baseUrl/paperset/edit-paperset/$id");
+    final body = {
+      if (examName != null) 'examName': examName,
+      if (date != null) 'date': date,
+      if (subject != null) 'subject': subject,
+      if (medium != null) 'medium': medium,
+      if (standard != null) 'std': standard, // Backend expects 'std' or 'standard'? Controller checks 'std'.
+      if (stream != null) 'stream': stream,
+    };
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+  }
+
+  static Future<http.Response> deletePaperSet(String id) async {
+    final uri = Uri.parse("$baseUrl/paperset/delete-paperset/$id");
+    return await http.delete(uri);
+  }
+
   static Future<http.Response> addAssistant({
     required String name,
     required String phone,
