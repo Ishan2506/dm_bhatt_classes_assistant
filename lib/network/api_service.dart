@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ApiService {
-  static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
-  //static const String baseUrl = "http://localhost:5000/api";
+  // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+  static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -492,6 +492,69 @@ class ApiService {
 
   static Future<http.Response> deleteExam(String id) async {
     final uri = Uri.parse("$baseUrl/exam/delete/$id");
+    return await http.delete(uri);
+  }
+
+  // --- 5 Min Test APIs ---
+
+  static Future<http.Response> createFiveMinTest({
+    required String std,
+    required String medium,
+    String? stream,
+    required String subject,
+    required String unit,
+    required String overview,
+    required List<Map<String, dynamic>> questions,
+  }) async {
+    final uri = Uri.parse("$baseUrl/fiveMinTest/create");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "std": std,
+        "medium": medium,
+        "stream": stream ?? "-",
+        "subject": subject,
+        "unit": unit,
+        "overview": overview,
+        "questions": questions,
+      }),
+    );
+  }
+
+  static Future<http.Response> getAllFiveMinTests() async {
+    final uri = Uri.parse("$baseUrl/fiveMinTest/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> updateFiveMinTest({
+    required String id,
+    required String std,
+    required String medium,
+    String? stream,
+    required String subject,
+    required String unit,
+    required String overview,
+    required List<Map<String, dynamic>> questions,
+  }) async {
+    final uri = Uri.parse("$baseUrl/fiveMinTest/update/$id");
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "std": std,
+        "medium": medium,
+        "stream": stream ?? "-",
+        "subject": subject,
+        "unit": unit,
+        "overview": overview,
+        "questions": questions,
+      }),
+    );
+  }
+
+  static Future<http.Response> deleteFiveMinTest(String id) async {
+    final uri = Uri.parse("$baseUrl/fiveMinTest/delete/$id");
     return await http.delete(uri);
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,6 +26,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
 
   bool _isEditing = false;
   String? _editingId;
+  bool _isLoading = false;
 
   // Questions Data for Form
   List<Map<String, dynamic>> _questions = [];
@@ -38,48 +41,14 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   final List<String> _streams = ["Science", "Commerce", "General"];
   final List<String> _subjects = ['Math', 'Science', 'English', 'Account', 'Statistics', 'Economics', 'BA'];
 
-  // Mock History Data
-  final List<Map<String, dynamic>> _allTests = [
-    {
-      "id": "1",
-      "subject": "Maths",
-      "unit": "Algebra Basics",
-      "overview": "Basic Algebra concepts...",
-      "std": "10",
-      "medium": "English",
-      "stream": "General",
-      "date": "28 Jan 2024",
-      "questions": []
-    },
-    {
-      "id": "2",
-      "subject": "Science",
-      "unit": "Physics Ch 1",
-      "overview": "Physics laws...",
-      "std": "12",
-      "medium": "English",
-      "stream": "Science",
-      "date": "29 Jan 2024",
-      "questions": []
-    },
-     {
-      "id": "3",
-      "subject": "Gujarati",
-      "unit": "Kavita 1",
-      "overview": "Poem summary...",
-      "std": "9",
-      "medium": "Gujarati",
-      "stream": "General",
-      "date": "30 Jan 2024",
-      "questions": []
-    },
-  ];
+  List<dynamic> _allTests = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _resetForm(); // Initialize questions
+    _fetchTests();
   }
 
   @override
@@ -88,6 +57,28 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
     _unitController.dispose();
     _overviewController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchTests() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.getAllFiveMinTests();
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        setState(() {
+          _allTests = jsonDecode(response.body);
+          _isLoading = false;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      debugPrint("Error fetching tests: $e");
+    }
   }
 
   void _resetForm() {
@@ -115,29 +106,45 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   void _editTest(Map<String, dynamic> test) {
     setState(() {
       _isEditing = true;
-      _editingId = test['id'];
+      _editingId = test['_id']; // MongoDB ID
       _selectedCreateSubject = test['subject'];
       _selectedCreateStd = test['std'];
       _selectedCreateMedium = test['medium'];
       _selectedCreateStream = (test['stream'] == "" || test['stream'] == "-") ? null : test['stream'];
       _unitController.text = test['unit'] ?? "";
-      _overviewController.text = test['overview'] ?? "Mock Overview content pre-filled";
+      _overviewController.text = test['overview'] ?? "";
       
-      // Mock loading questions
-      _questions = List.generate(5, (index) => {
-        "question": "Mock Question ${index + 1} for ${test['unit']}",
-        "type": "MCQ", 
-        "optionA": "Op A",
-        "optionB": "Op B",
-        "optionC": "Op C",
-        "optionD": "Op D",
-        "correctAnswer": "Option A",
-      });
+      // Load questions
+      if (test['questions'] != null) {
+        _questions = List<Map<String, dynamic>>.from(
+          (test['questions'] as List).map((q) => {
+            "question": q['question'] ?? "",
+            "type": q['type'] ?? "MCQ",
+            "optionA": q['optionA'] ?? "",
+            "optionB": q['optionB'] ?? "",
+            "optionC": q['optionC'] ?? "",
+            "optionD": q['optionD'] ?? "",
+            "correctAnswer": q['correctAnswer'] ?? "",
+          })
+        );
+        // Ensure strictly 5 questions if needed, or adjust UI to be dynamic
+        // The UI assumes 5, so let's pad or truncate if necessary, 
+        // but typically we save 5 so we get 5.
+        if (_questions.length < 5) {
+          _questions.addAll(List.generate(5 - _questions.length, (i) => {
+             "question": "", "type": "MCQ", "optionA": "", "optionB": "", "optionC": "", "optionD": "", "correctAnswer": ""
+          }));
+        }
+      } else {
+        _questions = List.generate(5, (index) => {
+           "question": "", "type": "MCQ", "optionA": "", "optionB": "", "optionC": "", "optionD": "", "correctAnswer": ""
+        });
+      }
     });
     _tabController.animateTo(0);
   }
 
-  void _submitTest() {
+  Future<void> _submitTest() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedCreateStd == null || _selectedCreateMedium == null) {
         CustomToast.showError(context, "Please select Standard and Medium");
@@ -166,31 +173,61 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
         }
       }
 
-      // Mock Save/Update
-      if (_isEditing) {
-        CustomToast.showSuccess(context, "Test Updated Successfully!");
-        // Update mock list logic could go here
-      } else {
-        CustomToast.showSuccess(context, "5 Min Test Created Successfully!");
-        // Add to mock list logic
-         setState(() {
-           _allTests.insert(0, {
-             "id": DateTime.now().millisecondsSinceEpoch.toString(),
-             "subject": _selectedCreateSubject,
-             "unit": _unitController.text,
-             "std": _selectedCreateStd ?? "",
-             "medium": _selectedCreateMedium ?? "",
-             "stream": _selectedCreateStream ?? "-",
-             "date": "Just Now",
-             "overview": _overviewController.text,
-           });
-         });
+      setState(() => _isLoading = true);
+
+      try {
+        if (_isEditing) {
+           final response = await ApiService.updateFiveMinTest(
+             id: _editingId!,
+             std: _selectedCreateStd!,
+             medium: _selectedCreateMedium!,
+             stream: _selectedCreateStream,
+             subject: _selectedCreateSubject!,
+             unit: _unitController.text,
+             overview: _overviewController.text,
+             questions: _questions
+           );
+           
+           if (response.statusCode == 200) {
+             if(!mounted) return;
+             CustomToast.showSuccess(context, "Test Updated Successfully!");
+             _fetchTests();
+             _resetForm();
+           } else {
+             if(!mounted) return;
+             CustomToast.showError(context, "Failed: ${response.body}");
+           }
+        } else {
+           final response = await ApiService.createFiveMinTest(
+             std: _selectedCreateStd!,
+             medium: _selectedCreateMedium!,
+             stream: _selectedCreateStream,
+             subject: _selectedCreateSubject!,
+             unit: _unitController.text,
+             overview: _overviewController.text,
+             questions: _questions
+           );
+
+           if (response.statusCode == 201) {
+             if(!mounted) return;
+             CustomToast.showSuccess(context, "5 Min Test Created Successfully!");
+             _fetchTests();
+             _resetForm();
+           } else {
+             if(!mounted) return;
+             CustomToast.showError(context, "Failed: ${response.body}");
+           }
+        }
+      } catch (e) {
+        if(!mounted) return;
+        CustomToast.showError(context, "Error: $e");
+      } finally {
+        if(mounted) setState(() => _isLoading = false);
       }
-      _resetForm();
     }
   }
 
-   void _deleteTest(String id) {
+   Future<void> _deleteTest(String id) async {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -237,12 +274,22 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
             child: Text("Cancel", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              setState(() {
-                _allTests.removeWhere((t) => t['id'] == id);
-              });
-              CustomToast.showSuccess(context, "Test Deleted Successfully");
+              setState(() => _isLoading = true);
+              try {
+                final response = await ApiService.deleteFiveMinTest(id);
+                if (response.statusCode == 200) {
+                  CustomToast.showSuccess(context, "Test Deleted Successfully");
+                  _fetchTests();
+                } else {
+                  CustomToast.showError(context, "Failed to delete");
+                }
+              } catch (e) {
+                CustomToast.showError(context, "Error: $e");
+              } finally {
+                if(mounted) setState(() => _isLoading = false);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade700,
@@ -294,13 +341,15 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildCreateTab(),
-          _buildHistoryTab(),
-        ],
-      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator()) 
+        : TabBarView(
+            controller: _tabController,
+            children: [
+              _buildCreateTab(),
+              _buildHistoryTab(),
+            ],
+          ),
     );
   }
 
@@ -509,7 +558,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _deleteTest(test['id']),
+                              onPressed: () => _deleteTest(test['_id']),
                             ),
                           ],
                         ),
@@ -563,8 +612,8 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
           const SizedBox(height: 12),
           
           TextFormField(
-            initialValue: _questions[index]['question'], // Using initialValue because re-renders might wipe if controller not used carefully, but here we rebuild block. Ideally use controllers.
-            // Simplified for brevity in this complex widget, storing in map on change. In prod use controllers list.
+            initialValue: _questions[index]['question'], 
+            key: Key('q_${index}_${_questions[index]['question']}'), // Ensure rebuilds correctly if state changes externally
             decoration: _inputDecoration("Enter Question", Icons.help_outline),
             onChanged: (val) => _questions[index]['question'] = val,
             style: GoogleFonts.poppins(),
@@ -621,6 +670,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
       padding: const EdgeInsets.only(bottom: 8.0),
       child: TextFormField(
         initialValue: _questions[index][key],
+        key: Key('opt_${index}_${key}_${_questions[index][key]}'),
         decoration: InputDecoration(
           prefixIcon: Padding(
             padding: const EdgeInsets.all(12),
