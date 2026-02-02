@@ -457,4 +457,41 @@ class ApiService {
       }),
     );
   }
+
+  static Future<http.Response> getAllExams() async {
+    final uri = Uri.parse("$baseUrl/exam/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> getExamById(String id) async {
+    final uri = Uri.parse("$baseUrl/exam/$id");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> updateExam({
+    required String id,
+    required String name,
+    required String subject,
+    required int totalMarks,
+    required int duration,
+    required List<dynamic> questions,
+  }) async {
+    final uri = Uri.parse("$baseUrl/exam/update/$id");
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "name": name,
+        "subject": subject,
+        "totalMarks": totalMarks,
+        "duration": duration,
+        "questions": questions,
+      }),
+    );
+  }
+
+  static Future<http.Response> deleteExam(String id) async {
+    final uri = Uri.parse("$baseUrl/exam/delete/$id");
+    return await http.delete(uri);
+  }
 }

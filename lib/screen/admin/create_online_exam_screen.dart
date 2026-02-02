@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/review_questions_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/exam_preview_screen.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -50,11 +51,68 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
 
   bool _isLoading = false;
 
-  // Mock Exam History
-  final List<Map<String, String>> _examHistory = [
-     {"name": "Maths Unit 1 Test", "date": "22 Jan 2024", "marks": "20"},
-     {"name": "Science Ch 5 Quiz", "date": "18 Jan 2024", "marks": "15"},
-  ];
+  // Exam History Data
+  List<dynamic> _exams = [];
+  bool _isLoadingHistory = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchExams();
+  }
+
+  Future<void> _fetchExams() async {
+    if(!mounted) return;
+    setState(() => _isLoadingHistory = true);
+    try {
+      final response = await ApiService.getAllExams();
+      if (response.statusCode == 200) {
+        if(!mounted) return;
+        setState(() {
+          _exams = jsonDecode(response.body);
+          _isLoadingHistory = false;
+        });
+      } else {
+        if(!mounted) return;
+        setState(() => _isLoadingHistory = false);
+      }
+    } catch (e) {
+      if(!mounted) return;
+      setState(() => _isLoadingHistory = false);
+      debugPrint("Error fetching exams: $e");
+    }
+  }
+
+  Future<void> _deleteExam(String id) async {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Delete Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: const Text("Are you sure you want to delete this exam?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                final response = await ApiService.deleteExam(id);
+                if (response.statusCode == 200) {
+                  CustomToast.showSuccess(context, "Exam deleted successfully");
+                  _fetchExams();
+                } else {
+                  CustomToast.showError(context, "Failed to delete exam");
+                }
+              } catch (e) {
+                CustomToast.showError(context, "Error: $e");
+              }
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          )
+        ],
+      )
+    );
+  }
 
   PlatformFile? _pickedPdf;
 
@@ -291,28 +349,72 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
             ),
             
             // Tab 2: Exam History
-            ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _examHistory.length,
-              itemBuilder: (context, index) {
-                final exam = _examHistory[index];
-                return Card(
-                   elevation: 0,
-                   color: Colors.grey.shade50,
-                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.grey.shade200),
-                    ),
-                   margin: const EdgeInsets.only(bottom: 12),
-                   child: ListTile(
-                     leading: const Icon(Icons.quiz_outlined, color: Colors.purple),
-                     title: Text(exam['name']!, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                     subtitle: Text("${exam['date']} • ${exam['marks']} questions", style: GoogleFonts.poppins(fontSize: 12)),
-                     trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                   ),
-                );
-              },
-            ),
+            _isLoadingHistory
+                ? const Center(child: CircularProgressIndicator())
+                : _exams.isEmpty
+                    ? Center(child: Text("No exams found", style: GoogleFonts.poppins(color: Colors.grey)))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _exams.length,
+                        itemBuilder: (context, index) {
+                          final exam = _exams[index];
+                          final String id = exam['_id'];
+                          
+                          // Format Date
+                          String displayDate = "--";
+                          if (exam['createdAt'] != null) {
+                             displayDate = exam['createdAt'].toString().split('T')[0];
+                          }
+
+                          return Card(
+                            elevation: 0,
+                            color: Colors.grey.shade50,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: Colors.grey.shade200),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade100,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.quiz_outlined, color: Colors.blue.shade900),
+                              ),
+                              title: Text(exam['name'] ?? "Untitled", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                              subtitle: Text(
+                                "${exam['subject'] ?? 'General'} • $displayDate • ${exam['totalMarks']} Marks", 
+                                style: GoogleFonts.poppins(fontSize: 12)
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ExamPreviewScreen(
+                                            examId: id,
+                                            examName: exam['name'] ?? "Exam Preview",
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _deleteExam(id),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ],
         ),
       ),
