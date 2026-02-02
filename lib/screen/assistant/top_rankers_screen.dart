@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,43 +12,9 @@ class TopRankersScreen extends StatefulWidget {
 }
 
 class _TopRankersScreenState extends State<TopRankersScreen> {
-  // --- MOCK DATABASE ---
-  
-  // All Students (Simulating existing student database)
-  final List<Map<String, String>> _studentDatabase = [
-    {"name": "Rohan Mehta", "std": "9", "stream": "General", "medium": "English", "image": "R"},
-    {"name": "Ayesha Khan", "std": "9", "stream": "General", "medium": "English", "image": "A"},
-    {"name": "Suresh Patel", "std": "9", "stream": "General", "medium": "Gujarati", "image": "S"},
-    {"name": "Aditya Raj", "std": "10", "stream": "Science", "medium": "English", "image": "A"},
-    {"name": "Priya Sharma", "std": "10", "stream": "Science", "medium": "English", "image": "P"},
-    {"name": "Rahul Verma", "std": "10", "stream": "Commerce", "medium": "English", "image": "R"},
-    {"name": "Sneha Gupta", "std": "12", "stream": "Science", "medium": "English", "image": "S"},
-    {"name": "Karan Shah", "std": "12", "stream": "Commerce", "medium": "Gujarati", "image": "K"},
-  ];
-
-  // Existing Rankers (Simulating Ranker History)
-  final List<Map<String, dynamic>> _rankers = [
-    {
-      "name": "Hanshika M Dave",
-      "marks": "98/100",
-      "subject": "English",
-      "rank": "1st",
-      "std": "10",
-      "stream": "Science",
-      "medium": "English",
-      "color": Colors.blue.shade800
-    },
-     {
-      "name": "Ansh K Shah",
-      "marks": "97/100",
-      "subject": "Maths",
-      "rank": "2nd",
-      "std": "10",
-      "stream": "Science",
-      "medium": "English",
-      "color": Colors.red.shade800
-    },
-  ];
+  // --- STATE VARIABLES ---
+  bool _isLoading = false;
+  List<dynamic> _allRankers = [];
 
   // --- SELECTION STATE ---
   String? _selectedStandard;
@@ -53,49 +22,107 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
   String? _selectedStream;
 
   // Dropdown Options
-  final List<String> _standards = ["9", "10", "11", "12"];
+  final List<String> _standards = ["6", "7", "8", "9", "10", "11", "12"];
   final List<String> _mediums = ["English", "Gujarati"];
-  final List<String> _streams = ["Science", "Commerce", "Arts", "General"];
+  final List<String> _streams = ["Science", "Commerce", "General"];
 
-
-  // --- ADD RANKER LOGIC ---
-
+  // --- ADD/EDIT FORM CONTROLLERS ---
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _marksController = TextEditingController();
   final TextEditingController _rankController = TextEditingController();
-  Map<String, String>? _selectedStudentForAdd;
+  
+  bool _isEditing = false;
+  String? _editingId;
 
-  void _showAddRankerDialog() {
-    // Validation: Must select Filters first
-    if (_selectedStandard == null || _selectedMedium == null || _selectedStream == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Please select Standard, Medium, and Stream to add a ranker.", style: GoogleFonts.poppins()),
-          backgroundColor: Colors.red.shade700,
-        )
-      );
+  @override
+  void initState() {
+    super.initState();
+    _fetchRankers();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _subjectController.dispose();
+    _marksController.dispose();
+    _rankController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchRankers() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.getAllTopRankers();
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        setState(() {
+          _allRankers = jsonDecode(response.body);
+          _isLoading = false;
+        });
+      } else {
+         if (!mounted) return;
+         setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // --- LOGIC ---
+
+  List<dynamic> _getFilteredRankers() {
+    if (_selectedStandard == null || _selectedMedium == null) {
+      return [];
+    }
+    // Check stream requirement for 11/12
+    if ((_selectedStandard == "11" || _selectedStandard == "12") && _selectedStream == null) {
+      return [];
+    }
+
+    return _allRankers.where((r) {
+      final stdMatch = r['standard'] == _selectedStandard;
+      final medMatch = r['medium'] == _selectedMedium;
+      
+      bool streamMatch = true;
+      if (_selectedStandard == "11" || _selectedStandard == "12") {
+        streamMatch = r['stream'] == _selectedStream;
+      }
+      
+      return stdMatch && medMatch && streamMatch;
+    }).toList();
+  }
+
+  void _showAddEditDialog({Map<String, dynamic>? ranker}) {
+    // Validation: Must select Filters first to know where to add
+    // OR allow selecting in dialog. Let's force selection on screen first for simplicity & context.
+    if (_selectedStandard == null || _selectedMedium == null) {
+      CustomToast.showError(context, "Please select Standard and Medium first.");
+      return;
+    }
+    if ((_selectedStandard == "11" || _selectedStandard == "12") && _selectedStream == null) {
+      CustomToast.showError(context, "Please select a Stream first.");
       return;
     }
 
-    // Validation: Max 5 Rankers
-    final currentRankers = _getFilteredRankers();
-    if (currentRankers.length >= 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Maximum 5 rankers allowed for this category.", style: GoogleFonts.poppins()),
-          backgroundColor: Colors.orange.shade800,
-        )
-      );
-      return;
-    }
+    _isEditing = ranker != null;
+    _editingId = ranker?['_id'];
     
-    // Filter Mock Database for Autocomplete
-    final eligibleStudents = _studentDatabase.where((s) => 
-      s['std'] == _selectedStandard && 
-      s['medium'] == _selectedMedium && 
-      s['stream'] == _selectedStream
-    ).toList();
+    // Pre-fill or Clear
+    if (_isEditing) {
+      _nameController.text = ranker!['studentName'] ?? "";
+      _subjectController.text = ranker['subject'] ?? "";
+      _rankController.text = ranker['rank'] ?? "";
+      _marksController.text = ranker['percentage'] ?? "";
+    } else {
+      _nameController.clear();
+      _subjectController.clear();
+      _rankController.clear();
+      _marksController.clear();
+    }
 
     showModalBottomSheet(
       context: context,
@@ -114,73 +141,25 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
                Text(
-                "Add Top Ranker",
+                _isEditing ? "Edit Top Ranker" : "Add Top Ranker",
                 style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue.shade900),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                "Std $_selectedStandard • $_selectedMedium • $_selectedStream",
+                "Std $_selectedStandard • $_selectedMedium${(_selectedStandard == "11" || _selectedStandard == "12") ? " • $_selectedStream" : ""}",
                 style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
 
-              // Student Search (Autocomplete)
-              Autocomplete<Map<String, String>>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text == '') {
-                    return const Iterable<Map<String, String>>.empty();
-                  }
-                  return eligibleStudents.where((Map<String, String> option) {
-                    return option['name']!.toLowerCase().contains(textEditingValue.text.toLowerCase());
-                  });
-                },
-                displayStringForOption: (Map<String, String> option) => option['name']!,
-                onSelected: (Map<String, String> selection) {
-                  _selectedStudentForAdd = selection;
-                },
-                fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                  return TextFormField(
-                    controller: textEditingController,
-                    focusNode: focusNode,
-                    decoration: _inputDecoration("Search Student Name", Icons.search),
-                    validator: (v) => _selectedStudentForAdd == null ? "Please select a valid student" : null,
-                  );
-                },
-                optionsViewBuilder: (context, onSelected, options) {
-                  return Align(
-                    alignment: Alignment.topLeft,
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.white,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width - 48,
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        child: ListView.builder(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          itemCount: options.length,
-                          itemBuilder: (context, index) {
-                            final option = options.elementAt(index);
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.blue.shade50,
-                                child: Text(option['name']![0], style: TextStyle(color: Colors.blue.shade900)),
-                              ),
-                              title: Text(option['name']!, style: GoogleFonts.poppins()),
-                              onTap: () => onSelected(option),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
+              TextFormField(
+                controller: _nameController,
+                decoration: _inputDecoration("Student Name", Icons.person),
+                validator: (v) => v!.isEmpty ? "Required" : null,
               ),
-
               const SizedBox(height: 16),
+              
               Row(
                 children: [
                   Expanded(
@@ -203,45 +182,24 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _marksController,
-                decoration: _inputDecoration("Marks (e.g. 98/100)", Icons.grade),
+                decoration: _inputDecoration("Marks/Percentage", Icons.grade),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 32),
               
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate() && _selectedStudentForAdd != null) {
-                    setState(() {
-                      _rankers.add({
-                        "name": _selectedStudentForAdd!['name'],
-                        "subject": _subjectController.text,
-                        "rank": _rankController.text,
-                        "marks": _marksController.text,
-                        "std": _selectedStandard,
-                        "medium": _selectedMedium,
-                        "stream": _selectedStream,
-                        "color": Colors.purple.shade700, 
-                      });
-                    });
-                    
-                    // Reset
-                    _selectedStudentForAdd = null;
-                    _subjectController.clear();
-                    _rankController.clear();
-                    _marksController.clear();
-                    Navigator.pop(context);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.blue.shade900,
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: Text(
-                  "Add Ranker",
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _submitRanker,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade900,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text(
+                    _isEditing ? "Update Ranker" : "Add Ranker",
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -249,6 +207,93 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _submitRanker() async {
+    if (_formKey.currentState!.validate()) {
+      Navigator.pop(context); // Close sheet immediately
+      setState(() => _isLoading = true);
+
+      try {
+        if (_isEditing) {
+          final response = await ApiService.updateTopRanker(
+            id: _editingId!,
+            studentName: _nameController.text,
+            percentage: _marksController.text, // Using marks/percentage field
+            subject: _subjectController.text,
+            rank: _rankController.text,
+            standard: _selectedStandard!,
+            medium: _selectedMedium!,
+            stream: (_selectedStandard == "11" || _selectedStandard == "12") ? _selectedStream : "-",
+          );
+          
+          if (response.statusCode == 200) {
+            if (!mounted) return;
+            CustomToast.showSuccess(context, "Ranker Updated Successfully");
+            _fetchRankers();
+          } else {
+            if (!mounted) return;
+            CustomToast.showError(context, "Failed: ${response.body}");
+          }
+        } else {
+          final response = await ApiService.createTopRanker(
+            studentName: _nameController.text,
+            percentage: _marksController.text,
+            subject: _subjectController.text,
+            rank: _rankController.text,
+            standard: _selectedStandard!,
+            medium: _selectedMedium!,
+            stream: (_selectedStandard == "11" || _selectedStandard == "12") ? _selectedStream : "-",
+          );
+
+          if (response.statusCode == 201) {
+            if (!mounted) return;
+            CustomToast.showSuccess(context, "Ranker Added Successfully");
+            _fetchRankers();
+          } else {
+            if (!mounted) return;
+            CustomToast.showError(context, "Failed: ${response.body}");
+          }
+        }
+      } catch (e) {
+        if (!mounted) return;
+        CustomToast.showError(context, "Error: $e");
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _deleteRanker(String id) async {
+    // Confirmation Dialog
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Ranker"),
+        content: const Text("Are you sure you want to delete this ranker?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      setState(() => _isLoading = true);
+      try {
+        final response = await ApiService.deleteTopRanker(id);
+        if (response.statusCode == 200) {
+          CustomToast.showSuccess(context, "Deleted Successfully");
+          _fetchRankers();
+        } else {
+          CustomToast.showError(context, "Failed to delete");
+        }
+      } catch (e) {
+         CustomToast.showError(context, "Error: $e");
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) {
@@ -269,17 +314,6 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
       fillColor: Colors.grey.shade50,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
-  }
-
-  List<Map<String, dynamic>> _getFilteredRankers() {
-    if (_selectedStandard == null || _selectedMedium == null || _selectedStream == null) {
-      return [];
-    }
-    return _rankers.where((r) => 
-      r['std'] == _selectedStandard && 
-      r['medium'] == _selectedMedium && 
-      r['stream'] == _selectedStream
-    ).toList();
   }
 
   @override
@@ -312,89 +346,105 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddRankerDialog,
+        onPressed: () => _showAddEditDialog(),
         backgroundColor: Colors.blue.shade900,
         icon: const Icon(Icons.add, color: Colors.white),
         label: Text("Add Ranker", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white)),
       ),
-      body: Column(
-        children: [
-          // FILTERS SECTION
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Select Category", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: theme.textTheme.bodyMedium?.color)),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDropdown("Standard", _standards, _selectedStandard, (v) => setState(() => _selectedStandard = v)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildDropdown("Medium", _mediums, _selectedMedium, (v) => setState(() => _selectedMedium = v)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _buildDropdown("Stream", _streams, _selectedStream, (v) => setState(() => _selectedStream = v)),
-              ],
-            ),
-          ),
-
-          // LIST SECTION
-          Expanded(
-            child: _selectedStandard == null || _selectedMedium == null || _selectedStream == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator()) 
+        : Column(
+          children: [
+            // FILTERS SECTION
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Select Category", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: theme.textTheme.bodyMedium?.color)),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      Icon(Icons.filter_list, size: 64, color: isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.blue.shade100),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Please select filters to view rankers",
-                        style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color),
+                      Expanded(
+                        child: _buildDropdown("Standard", _standards, _selectedStandard, (v) {
+                          setState(() {
+                            _selectedStandard = v;
+                            // Reset stream if changed from 11/12 to lower std
+                            if (_selectedStandard != "11" && _selectedStandard != "12") {
+                              _selectedStream = null;
+                            } else {
+                              _selectedStream = null; // Reset selection anyway when std changes
+                            }
+                          });
+                        }),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildDropdown("Medium", _mediums, _selectedMedium, (v) => setState(() => _selectedMedium = v)),
                       ),
                     ],
                   ),
-                )
-              : filteredRankers.isEmpty 
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.emoji_events_outlined, size: 64, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          Text(
-                            "No Top Rankers added yet for this category.",
-                            style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: filteredRankers.length,
-                      itemBuilder: (context, index) {
-                        return _buildRankerCard(filteredRankers[index]);
-                      },
+                  
+                  if (_selectedStandard == "11" || _selectedStandard == "12") ...[
+                    const SizedBox(height: 12),
+                    _buildDropdown("Stream", _streams, _selectedStream, (v) => setState(() => _selectedStream = v)),
+                  ]
+                ],
+              ),
+            ),
+
+            // LIST SECTION
+            Expanded(
+              child: (_selectedStandard == null || _selectedMedium == null) || 
+                     ((_selectedStandard == "11" || _selectedStandard == "12") && _selectedStream == null)
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.filter_list, size: 64, color: isDark ? Colors.blue.shade900.withOpacity(0.5) : Colors.blue.shade100),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Please select filters to view rankers",
+                          style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color),
+                        ),
+                      ],
                     ),
-          ),
-        ],
-      ),
+                  )
+                : filteredRankers.isEmpty 
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.emoji_events_outlined, size: 64, color: Colors.grey.shade300),
+                            const SizedBox(height: 16),
+                            Text(
+                              "No Top Rankers added yet for this category.",
+                              style: GoogleFonts.poppins(color: theme.textTheme.bodyMedium?.color),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredRankers.length,
+                        itemBuilder: (context, index) {
+                          return _buildRankerCard(filteredRankers[index]);
+                        },
+                      ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -421,12 +471,10 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
     );
   }
 
-  // Adapted from StudentDashboardWidgets
   Widget _buildRankerCard(Map<String, dynamic> ranker) {
-    // ... same as before
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final color = ranker['color'] as Color;
+    final color = Colors.blue.shade800; // Static color since we don't save per-user color preference
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -465,7 +513,7 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
                     radius: 28,
                     backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
                     child: Text(
-                      ranker['name'][0], // Initials if no image
+                      ranker['studentName'][0].toUpperCase(), 
                       style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: color),
                     ),
                   ),
@@ -492,7 +540,7 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        ranker['name'],
+                        ranker['studentName'],
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -500,7 +548,7 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
                         ),
                       ),
                       Text(
-                        "${ranker['marks']} Marks",
+                        "${ranker['percentage']}",
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -510,15 +558,19 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.grey),
-                  onPressed: () {
-                    // Logic to remove ranker
-                    setState(() {
-                      _rankers.remove(ranker);
-                    });
-                  },
-                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => _showAddEditDialog(ranker: ranker),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _deleteRanker(ranker['_id']),
+                    ),
+                  ],
+                )
               ],
             ),
           ),

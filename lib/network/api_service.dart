@@ -557,4 +557,71 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/fiveMinTest/delete/$id");
     return await http.delete(uri);
   }
+
+  // --- Top Ranker APIs ---
+
+  static Future<http.Response> createTopRanker({
+    required String studentName,
+    required String percentage,
+    required String subject,
+    required String rank,
+    required String standard,
+    required String medium,
+    String? stream,
+    String? photo,
+  }) async {
+    final uri = Uri.parse("$baseUrl/topRanker/create");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "studentName": studentName,
+        "percentage": percentage,
+        "subject": subject,
+        "rank": rank,
+        "standard": standard,
+        "medium": medium,
+        "stream": stream ?? "-",
+        "photo": photo,
+      }),
+    );
+  }
+
+  static Future<http.Response> getAllTopRankers() async {
+    final uri = Uri.parse("$baseUrl/topRanker/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> updateTopRanker({
+    required String id,
+    required String studentName,
+    required String percentage,
+    required String subject,
+    required String rank,
+    required String standard,
+    required String medium,
+    String? stream,
+    String? photo,
+  }) async {
+    final uri = Uri.parse("$baseUrl/topRanker/update/$id");
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "studentName": studentName,
+        "percentage": percentage,
+        "subject": subject,
+        "rank": rank,
+        "standard": standard,
+        "medium": medium,
+        "stream": stream ?? "-",
+        "photo": photo,
+      }),
+    );
+  }
+
+  static Future<http.Response> deleteTopRanker(String id) async {
+    final uri = Uri.parse("$baseUrl/topRanker/delete/$id");
+    return await http.delete(uri);
+  }
 }
