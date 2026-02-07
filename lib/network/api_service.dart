@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ApiService {
-  static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
-  // static const String baseUrl = "http://localhost:5000/api";
+  // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+  static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -438,10 +438,11 @@ class ApiService {
   }
 
   static Future<http.Response> createExam({
-    required String name,
     required String subject,
+    required String std,
+    required String medium,
+    required String unit,
     required int totalMarks,
-    required int duration,
     required List<Map<String, dynamic>> questions,
   }) async {
     final uri = Uri.parse("$baseUrl/exam/create");
@@ -449,10 +450,11 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "name": name,
         "subject": subject,
+        "std": std,
+        "medium": medium,
+        "unit": unit,
         "totalMarks": totalMarks,
-        "duration": duration,
         "questions": questions,
       }),
     );
@@ -470,10 +472,11 @@ class ApiService {
 
   static Future<http.Response> updateExam({
     required String id,
-    required String name,
     required String subject,
+    required String std,
+    required String medium,
+    required String unit,
     required int totalMarks,
-    required int duration,
     required List<dynamic> questions,
   }) async {
     final uri = Uri.parse("$baseUrl/exam/update/$id");
@@ -481,10 +484,11 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "name": name,
         "subject": subject,
+        "std": std,
+        "medium": medium,
+        "unit": unit,
         "totalMarks": totalMarks,
-        "duration": duration,
         "questions": questions,
       }),
     );

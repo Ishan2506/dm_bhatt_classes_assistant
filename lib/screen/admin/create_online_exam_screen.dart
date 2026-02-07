@@ -42,6 +42,9 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   final List<String> _standards = ["9", "10", "11", "12"];
   final List<String> _subjects = ["Maths", "Science", "English"];
   final List<String> _mediums = ["English", "Gujarati"];
+  final List<String> _marks = ["20", "30", "40", "50"];
+  
+  String? _selectedMarks;
   
   // List<Chapter> _chapters = []; // Not used in PDF flow
   // Chapter? _selectedChapter; // Not used
@@ -50,6 +53,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   // final Set<String> _selectedMCQIds = {};
 
   bool _isLoading = false;
+  final TextEditingController _unitController = TextEditingController();
 
   // Exam History Data
   List<dynamic> _exams = [];
@@ -205,10 +209,11 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
            context, 
            MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
              parsedQuestions: questions,
-             examName: "Exam Details", // Could add name field
              subject: _selectedSubject ?? "General",
-             totalMarks: "20", // Mock or from Step 1
-             duration: "30", // Mock
+             std: _selectedStandard ?? "",
+             medium: _selectedMedium ?? "",
+             unit: _unitController.text,
+             totalMarks: _selectedMarks ?? "20", 
            ))
          );
 
@@ -255,10 +260,10 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
               currentStep: _currentStep,
               onStepContinue: () {
                 if (_currentStep == 0) {
-                  if (_selectedStandard != null && _selectedSubject != null && _selectedMedium != null) {
+                  if (_selectedStandard != null && _selectedSubject != null && _selectedMedium != null && _selectedMarks != null && _unitController.text.isNotEmpty) {
                     setState(() => _currentStep++);
                   } else {
-                    CustomToast.showError(context, "Please select Standard, Subject and Medium");
+                    CustomToast.showError(context, "Please select Standard, Subject, Medium, Marks and enter Unit");
                   }
                 } else if (_currentStep == 1) {
                    if (_pickedPdf != null) {
@@ -308,6 +313,17 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                       _buildDropdown("Medium", _selectedMedium, _mediums, (val) => setState(() => _selectedMedium = val)),
                       const SizedBox(height: 16),
                       _buildDropdown("Subject", _selectedSubject, _subjects, (val) => setState(() => _selectedSubject = val)),
+                      const SizedBox(height: 16),
+                      _buildDropdown("Marks", _selectedMarks, _marks, (val) => setState(() => _selectedMarks = val)),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _unitController,
+                        decoration: InputDecoration(
+                          labelText: "Unit / Chapter",
+                          labelStyle: GoogleFonts.poppins(),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                     ],
                   ),
                   isActive: _currentStep >= 0,
@@ -399,7 +415,6 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                                         MaterialPageRoute(
                                           builder: (context) => ExamPreviewScreen(
                                             examId: id,
-                                            examName: exam['name'] ?? "Exam Preview",
                                           ),
                                         ),
                                       );

@@ -6,17 +6,19 @@ import 'dart:convert';
 
 class ReviewQuestionsScreen extends StatefulWidget {
   final List<dynamic> parsedQuestions;
-  final String examName;
   final String subject;
-  final String duration; // or int
+  final String std;
+  final String medium;
+  final String unit;
   final String totalMarks; // or int
 
   const ReviewQuestionsScreen({
     super.key,
     required this.parsedQuestions,
-    required this.examName,
     required this.subject,
-    required this.duration,
+    required this.std,
+    required this.medium,
+    required this.unit,
     required this.totalMarks,
   });
 
@@ -31,7 +33,15 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
   @override
   void initState() {
     super.initState();
-    _questions = widget.parsedQuestions; // Copy list to modify
+    _questions = List.from(widget.parsedQuestions); // Copy list to modify
+    
+    // Logic: If more questions uploaded than marks, pick random ones
+    int target = int.tryParse(widget.totalMarks) ?? 0;
+    if (_questions.length > target && target > 0) {
+       _questions.shuffle();
+       _questions = _questions.sublist(0, target);
+       debugPrint("Randomly selected $target questions from imported list.");
+    }
   }
 
   void _saveExam() async {
@@ -45,15 +55,23 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
         return;
       }
 
+      int target = int.tryParse(widget.totalMarks) ?? 0;
+      if (_questions.length != target) {
+        CustomToast.showError(context, "Question count (${_questions.length}) does not match Total Marks ($target). Please add or remove questions.");
+        setState(() => _isSaving = false);
+        return;
+      }
+
       // Convert format if needed or send as is (assuming Backend expects this structure)
       // Backend expects: { name, subject, totalMarks, duration, questions: [{ questionText, options: [{key, text}], correctAnswer }] }
       // Our _questions matches this roughly.
 
       final response = await ApiService.createExam(
-        name: widget.examName,
         subject: widget.subject,
+        std: widget.std,
+        medium: widget.medium,
+        unit: widget.unit,
         totalMarks: int.tryParse(widget.totalMarks) ?? 0,
-        duration: int.tryParse(widget.duration) ?? 0,
         questions: List<Map<String, dynamic>>.from(_questions),
       );
 
@@ -87,6 +105,26 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
     final TextEditingController qCtrl = TextEditingController(text: q['questionText']);
     final TextEditingController ansCtrl = TextEditingController(text: q['correctAnswer']);
     
+    // Extract existing option texts if they exist
+    String optA = "";
+    String optB = "";
+    String optC = "";
+    String optD = "";
+    
+    if (q['options'] != null) {
+      for (var opt in q['options']) {
+        if (opt['key'] == 'A') optA = opt['text'] ?? "";
+        if (opt['key'] == 'B') optB = opt['text'] ?? "";
+        if (opt['key'] == 'C') optC = opt['text'] ?? "";
+        if (opt['key'] == 'D') optD = opt['text'] ?? "";
+      }
+    }
+
+    final TextEditingController optACtrl = TextEditingController(text: optA);
+    final TextEditingController optBCtrl = TextEditingController(text: optB);
+    final TextEditingController optCCtrl = TextEditingController(text: optC);
+    final TextEditingController optDCtrl = TextEditingController(text: optD);
+    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -101,11 +139,15 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
                 maxLines: 3,
               ),
               const SizedBox(height: 10),
+              TextField(controller: optACtrl, decoration: const InputDecoration(labelText: "Option A")),
+              TextField(controller: optBCtrl, decoration: const InputDecoration(labelText: "Option B")),
+              TextField(controller: optCCtrl, decoration: const InputDecoration(labelText: "Option C")),
+              TextField(controller: optDCtrl, decoration: const InputDecoration(labelText: "Option D")),
+              const SizedBox(height: 10),
               TextField(
                 controller: ansCtrl,
                 decoration: const InputDecoration(labelText: "Correct Answer (A, B, C, D)"),
               ),
-              // Options editing could be complex, omitting for MVP unless requested
             ],
           ),
         ),
@@ -116,10 +158,70 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
               setState(() {
                 q['questionText'] = qCtrl.text;
                 q['correctAnswer'] = ansCtrl.text.toUpperCase();
+                q['options'] = [
+                  {'key': 'A', 'text': optACtrl.text},
+                  {'key': 'B', 'text': optBCtrl.text},
+                  {'key': 'C', 'text': optCCtrl.text},
+                  {'key': 'D', 'text': optDCtrl.text},
+                ];
               });
               Navigator.pop(ctx);
             },
             child: const Text("Save"),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _addQuestion() {
+    final TextEditingController qCtrl = TextEditingController();
+    final TextEditingController ansCtrl = TextEditingController();
+    final TextEditingController optACtrl = TextEditingController();
+    final TextEditingController optBCtrl = TextEditingController();
+    final TextEditingController optCCtrl = TextEditingController();
+    final TextEditingController optDCtrl = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Add Question"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: qCtrl, decoration: const InputDecoration(labelText: "Question Text"), maxLines: 2),
+              TextField(controller: optACtrl, decoration: const InputDecoration(labelText: "Option A")),
+              TextField(controller: optBCtrl, decoration: const InputDecoration(labelText: "Option B")),
+              TextField(controller: optCCtrl, decoration: const InputDecoration(labelText: "Option C")),
+              TextField(controller: optDCtrl, decoration: const InputDecoration(labelText: "Option D")),
+              TextField(controller: ansCtrl, decoration: const InputDecoration(labelText: "Correct Answer (A, B, C, D)")),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () {
+              if (qCtrl.text.isEmpty || ansCtrl.text.isEmpty || optACtrl.text.isEmpty || optBCtrl.text.isEmpty) {
+                CustomToast.showError(context, "Please fill basic fields.");
+                return;
+              }
+              setState(() {
+                _questions.add({
+                  'questionText': qCtrl.text,
+                  'options': [
+                    {'key': 'A', 'text': optACtrl.text},
+                    {'key': 'B', 'text': optBCtrl.text},
+                    {'key': 'C', 'text': optCCtrl.text},
+                    {'key': 'D', 'text': optDCtrl.text},
+                  ],
+                  'correctAnswer': ansCtrl.text.toUpperCase(),
+                });
+              });
+              Navigator.pop(ctx);
+            },
+            child: const Text("Add"),
           )
         ],
       ),
@@ -131,8 +233,13 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text("Review Import (${_questions.length})", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text("Review Import (${_questions.length}/${widget.totalMarks})", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _addQuestion,
+            tooltip: "Add Question",
+          ),
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: _saveExam,

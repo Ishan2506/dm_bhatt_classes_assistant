@@ -6,9 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 class ExamPreviewScreen extends StatefulWidget {
   final String examId;
-  final String examName;
 
-  const ExamPreviewScreen({super.key, required this.examId, required this.examName});
+  const ExamPreviewScreen({super.key, required this.examId});
 
   @override
   State<ExamPreviewScreen> createState() => _ExamPreviewScreenState();
@@ -21,7 +20,9 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
 
   // Controllers for Header
   final TextEditingController _subjectController = TextEditingController();
-  final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _stdController = TextEditingController();
+  final TextEditingController _mediumController = TextEditingController();
+  final TextEditingController _unitController = TextEditingController();
   final TextEditingController _marksController = TextEditingController();
 
   List<dynamic> _questions = [];
@@ -35,7 +36,9 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
   @override 
   void dispose() {
     _subjectController.dispose();
-    _durationController.dispose();
+    _stdController.dispose();
+    _mediumController.dispose();
+    _unitController.dispose();
     _marksController.dispose();
     super.dispose();
   }
@@ -52,7 +55,9 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
           
           // Init Controllers
           _subjectController.text = data['subject'] ?? "";
-          _durationController.text = (data['durationMinutes'] ?? 0).toString();
+          _stdController.text = data['std'] ?? "";
+          _mediumController.text = data['medium'] ?? "";
+          _unitController.text = data['unit'] ?? "";
           _marksController.text = (data['totalMarks'] ?? 0).toString();
           
           _questions = data['questions'] ?? [];
@@ -75,10 +80,11 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
      try {
        final response = await ApiService.updateExam(
          id: widget.examId,
-         name: widget.examName, // Keep name same for now or add controller if needed
          subject: _subjectController.text,
+         std: _stdController.text,
+         medium: _mediumController.text,
+         unit: _unitController.text,
          totalMarks: int.tryParse(_marksController.text) ?? 0,
-         duration: int.tryParse(_durationController.text) ?? 0,
          questions: _questions
        );
        
@@ -182,7 +188,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text(widget.examName, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text("Exam Preview", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         elevation: 0,
         actions: [
            IconButton(
@@ -218,7 +224,11 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                  children: [
                     _buildEditableRow(Icons.book, "Subject", _subjectController),
                     const SizedBox(height: 12),
-                    _buildEditableRow(Icons.access_time, "Duration (mins)", _durationController, isNumber: true),
+                    _buildEditableRow(Icons.school, "Standard", _stdController),
+                    const SizedBox(height: 12),
+                    _buildEditableRow(Icons.language, "Medium", _mediumController),
+                    const SizedBox(height: 12),
+                    _buildEditableRow(Icons.topic, "Unit", _unitController),
                     const SizedBox(height: 12),
                     _buildEditableRow(Icons.star, "Total Marks", _marksController, isNumber: true),
                  ],
