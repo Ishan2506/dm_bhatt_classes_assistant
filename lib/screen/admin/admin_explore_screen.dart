@@ -3,7 +3,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/admin_product_history_screen.d
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 
@@ -26,8 +26,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
   late TextEditingController _originalPriceController;
   late TextEditingController _discountController;
 
-  XFile? _imageFile;
-  final ImagePicker _picker = ImagePicker();
+  PlatformFile? _selectedFile;
+  String? _fileType; // 'image' or 'pdf'
 
   String? _selectedCategory;
   final List<String> _categories = ["Material", "Diagram", "Phantom material", "Books", "Stationery"];
@@ -63,12 +63,23 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickFile() async {
     try {
-      final XFile? photo = await _picker.pickImage(source: ImageSource.gallery);
-      if (photo != null) {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      );
+
+      if (result != null) {
         setState(() {
-          _imageFile = photo;
+          _selectedFile = result.files.first;
+          // Determine file type
+          String extension = _selectedFile!.extension?.toLowerCase() ?? '';
+          if (['jpg', 'jpeg', 'png'].contains(extension)) {
+            _fileType = 'image';
+          } else if (extension == 'pdf') {
+            _fileType = 'pdf';
+          }
         });
       }
     } catch (e) {
@@ -93,8 +104,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
 
   void _handleSave() {
     if (_formKey.currentState!.validate()) {
-      if (!_isEditing && _imageFile == null) {
-        CustomToast.showError(context, "Please upload an image");
+      if (!_isEditing && _selectedFile == null) {
+        CustomToast.showError(context, "Please upload a file (image or PDF)");
         return;
       }
       if (_selectedCategory == null) {
@@ -119,7 +130,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
           price: double.tryParse(_priceController.text),
           originalPrice: double.tryParse(_originalPriceController.text),
           discount: double.tryParse(_discountController.text),
-          imageFile: _imageFile
+          file: _selectedFile
          ).then((response) {
             Navigator.pop(context); // Hide loader
             if (response.statusCode == 200) {
@@ -141,7 +152,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
             price: double.parse(_priceController.text),
             originalPrice: double.parse(_originalPriceController.text),
             discount: double.tryParse(_discountController.text) ?? 0.0,
-            imageFile: _imageFile!,
+            file: _selectedFile!,
           ).then((response) {
             Navigator.pop(context); // Hide loader
             if (response.statusCode == 201) {
@@ -154,7 +165,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
               _originalPriceController.clear();
               _discountController.clear();
               setState(() {
-                 _imageFile = null;
+                 _selectedFile = null;
+                 _fileType = null;
                  _selectedCategory = null;
                  _selectedSubject = null;
               });
@@ -220,20 +232,20 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Image Picker
+              // File Picker (Images and PDFs)
               GestureDetector(
-                onTap: _pickImage,
+                onTap: _pickFile,
                 child: Container(
                   height: 200,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                    image: _imageFile != null 
+                    image: (_selectedFile != null && _fileType == 'image')
                       ? DecorationImage(
                           image: kIsWeb 
-                            ? NetworkImage(_imageFile!.path) as ImageProvider
-                            : FileImage(File(_imageFile!.path)),
+                            ? NetworkImage(_selectedFile!.path!) as ImageProvider
+                            : FileImage(File(_selectedFile!.path!)),
                           fit: BoxFit.cover,
                         )
                       : (widget.productToEdit != null && widget.productToEdit!['image'] != null)
@@ -243,18 +255,44 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                           )
                         : null,
                   ),
-                  child: (_imageFile == null && (widget.productToEdit == null || widget.productToEdit!['image'] == null)) 
+                  child: (_selectedFile == null && (widget.productToEdit == null || widget.productToEdit!['image'] == null)) 
                     ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_a_photo_outlined, size: 48, color: Colors.grey.shade400),
+                      Icon(Icons.upload_file_outlined, size: 48, color: Colors.grey.shade400),
                       const SizedBox(height: 8),
                       Text(
-                        _isEditing ? "Tap to Change Image" : "Upload Product Image", 
+                        _isEditing ? "Tap to Change File" : "Upload Product Image or PDF", 
                         style: GoogleFonts.poppins(color: Colors.grey.shade600)
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Supported: JPG, PNG, PDF",
+                        style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 12)
+                      ),
                     ],
-                  ) : null,
+                  ) : (_selectedFile != null && _fileType == 'pdf')
+                    ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.picture_as_pdf, size: 64, color: Colors.red.shade400),
+                        const SizedBox(height: 12),
+                        Text(
+                          _selectedFile!.name,
+                          style: GoogleFonts.poppins(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "${(_selectedFile!.size / 1024).toStringAsFixed(2)} KB",
+                          style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      ],
+                    )
+                    : null,
                 ),
               ),
               const SizedBox(height: 24),

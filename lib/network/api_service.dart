@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ApiService {
   // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
@@ -15,7 +15,7 @@ class ApiService {
     required double price,
     required double originalPrice,
     required double discount,
-    required XFile imageFile,
+    required PlatformFile file,
   }) async {
     final uri = Uri.parse("$baseUrl/explore/add");
     final request = http.MultipartRequest('POST', uri);
@@ -28,11 +28,11 @@ class ApiService {
     request.fields['originalPrice'] = originalPrice.toString();
     request.fields['discount'] = discount.toString();
 
-    final bytes = await imageFile.readAsBytes();
+    final bytes = file.bytes ?? await File(file.path!).readAsBytes();
     final multipartFile = http.MultipartFile.fromBytes(
       'image',
       bytes,
-      filename: imageFile.name,
+      filename: file.name,
     );
     request.files.add(multipartFile);
 
@@ -54,7 +54,7 @@ class ApiService {
     double? price,
     double? originalPrice,
     double? discount,
-    XFile? imageFile,
+    PlatformFile? file,
   }) async {
     final uri = Uri.parse("$baseUrl/explore/edit/$id");
     final request = http.MultipartRequest('PUT', uri);
@@ -67,12 +67,12 @@ class ApiService {
     if (originalPrice != null) request.fields['originalPrice'] = originalPrice.toString();
     if (discount != null) request.fields['discount'] = discount.toString();
 
-    if (imageFile != null) {
-      final bytes = await imageFile.readAsBytes();
+    if (file != null) {
+      final bytes = file.bytes ?? await File(file.path!).readAsBytes();
       final multipartFile = http.MultipartFile.fromBytes(
         'image',
         bytes,
-        filename: imageFile.name,
+        filename: file.name,
       );
       request.files.add(multipartFile);
     }
