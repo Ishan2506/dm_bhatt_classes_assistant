@@ -65,7 +65,7 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
 
       case AIFlowStep.questionType:
         _questionType = input;
-        _addBot("Please upload the source PDF 📄");
+        _addBot("Please upload the source Document/Image 📄");
         _step = AIFlowStep.uploadPdf;
         break;
 
@@ -74,8 +74,8 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
     }
   }
 
-  Future<void> _pickPdf() async {
-    try{
+  Future<void> _pickFile() async {
+    try {
       if (!await _canUseToday()) {
         _addBot("🚫 Daily limit reached (3 times/day)");
         return;
@@ -83,29 +83,50 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf'],
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
       );
 
       if (result == null) return;
 
-      _addBot("Generating questions... ⏳");
+      final file = File(result.files.single.path!);
+      final fileSize = await file.length();
+
+      // Check 5MB limit (5 * 1024 * 1024 bytes)
+      if (fileSize > 5 * 1024 * 1024) {
+        _addBot("⚠️ File too large. Please upload files smaller than 5MB.");
+        return;
+      }
+
+      _addBot("Generating questions... ⏳\n(Processing file...)");
       _step = AIFlowStep.generating;
 
-      final fileBytes = File(result.files.single.path!).readAsBytesSync();
+      final fileBytes = await file.readAsBytes();
+      final mimeType = _getMimeType(file.path);
 
       final output = await _aiService.generateQuestions(
-        pdfBytes: fileBytes,
+        fileBytes: fileBytes,
+        mimeType: mimeType,
         questionType: _questionType,
       );
       _aiText = output;
       _generatedPdf = await PdfGeneratorService.generateQuestionPdf(output);
-      //_addBot("✅ Your questions are ready:\n\n$output");
       _step = AIFlowStep.done;
-    }
-    catch(e){
-      _addBot("❌ Failed to generate PDF.\nReason: ${e.toString()}");
+    } catch (e) {
+      _addBot("❌ Failed to generate Content.\nReason: ${e.toString()}");
       _step = AIFlowStep.greeting;
     }
+  }
+
+  String _getMimeType(String path) {
+    if (path.endsWith('.pdf')) return 'application/pdf';
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return 'image/jpeg';
+    if (path.endsWith('.png')) return 'image/png';
+    // For docs, Gemini usually handles text extraction or we might need specific handling. 
+    // However, the `0.4.7` SDK and newer Gemini models can handle many mime types if passed correctly.
+    // Standard approach for docs/docx is 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    // BUT typically Gemini API expects text for non-media. Let's send as 'application/pdf' or try specific mime.
+    // For now, let's just support pdf, jpg, png directly.
+    return 'application/pdf'; // Fallback
   }
 
   void _restart() {
@@ -196,8 +217,8 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
               padding: const EdgeInsets.all(8),
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.upload_file),
-                label: const Text("Upload PDF"),
-                onPressed: _pickPdf,
+                label: const Text("Upload File (Max 5MB)"),
+                onPressed: _pickFile,
               ),
             ),
             

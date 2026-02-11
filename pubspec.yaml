@@ -28,7 +28,7 @@ dependencies:
   path_provider: ^2.1.5
   permission_handler: ^12.0.1
   universal_html: ^2.3.0
-  google_generative_ai: ^0.4.0
+  google_generative_ai: ^0.4.7
   open_filex: ^4.7.0
   pdf: ^3.11.3
 

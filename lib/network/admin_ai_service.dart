@@ -10,7 +10,8 @@ class AdminAIService {
   );
 
   Future<String> generateQuestions({
-    required Uint8List pdfBytes,
+    required Uint8List fileBytes,
+    required String mimeType,
     required String questionType,
   }) async {
 //     final prompt = '''
@@ -56,17 +57,17 @@ C. Option C
 D. Option D
 Ans. (CorrectOptionLetter) Correct Option Text
 
-LANGUAGE: Gujarati + English (as per PDF)
+LANGUAGE: Gujarati + English (as per Document)
 LEVEL: School
 QUESTION TYPE: $questionType
 
-Generate questions ONLY based on the uploaded PDF.
+Generate questions ONLY based on the uploaded Document.
 ''';
 
 
     final content = [
       Content.multi([
-        DataPart('application/pdf', pdfBytes),
+        DataPart(mimeType, fileBytes),
         TextPart(prompt),
       ])
     ];
