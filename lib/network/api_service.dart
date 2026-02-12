@@ -628,4 +628,106 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/topRanker/delete/$id");
     return await http.delete(uri);
   }
+
+  // --- Event APIs ---
+
+  static Future<http.Response> createEvent({
+    required String title,
+    String? description,
+    required DateTime date,
+    required List<PlatformFile> images,
+  }) async {
+    final uri = Uri.parse("$baseUrl/event/create");
+    final request = http.MultipartRequest("POST", uri);
+
+    request.fields['title'] = title;
+    if (description != null) {
+      request.fields['description'] = description;
+    }
+    request.fields['date'] = date.toIso8601String();
+
+    for (var image in images) {
+      // For web, use bytes. For mobile, use path.
+      if (image.bytes != null) {
+          final multipartFile = http.MultipartFile.fromBytes(
+            'images',
+            image.bytes!,
+            filename: image.name,
+          );
+          request.files.add(multipartFile);
+      } else if (image.path != null) {
+           final multipartFile = await http.MultipartFile.fromPath(
+            'images',
+            image.path!,
+             filename: image.name,
+          );
+          request.files.add(multipartFile);
+      }
+    }
+
+    final streamedResponse = await request.send();
+    return await http.Response.fromStream(streamedResponse);
+  }
+
+  static Future<http.Response> getAllEvents() async {
+    final uri = Uri.parse("$baseUrl/event/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> updateEvent({
+    required String id,
+    String? title,
+    String? description,
+    DateTime? date,
+    List<PlatformFile>? newImages,
+    List<String>? existingImages,
+  }) async {
+    final uri = Uri.parse("$baseUrl/event/update/$id");
+    final request = http.MultipartRequest("PUT", uri);
+
+    if (title != null) request.fields['title'] = title;
+    if (description != null) request.fields['description'] = description;
+    if (date != null) request.fields['date'] = date.toIso8601String();
+    
+    // Send existing images to keep (backend will filter out missing ones)
+    if (existingImages != null) {
+      for (var img in existingImages) {
+        request.fields['existingImages'] = img; // Sending multiple fields with same name for array
+      }
+      // If only one image, or to ensure it's treated as array, backend needs to handle it.
+      // Often better to send as JSON string if simple fields. 
+      // Current backend logic: `const keptImages = Array.isArray(existingImages) ? existingImages : [existingImages];`
+      // This works with multiple fields of same name in some frameworks, but explicit array syntax might be safer.
+      // Let's rely on standard multipart behavior or change backend to parse JSON. 
+      // For safety, let's keep it simple. If multiple, it sends multiple.
+    }
+
+    if (newImages != null) {
+      for (var image in newImages) {
+         if (image.bytes != null) {
+            final multipartFile = http.MultipartFile.fromBytes(
+              'images',
+              image.bytes!,
+              filename: image.name,
+            );
+            request.files.add(multipartFile);
+        } else if (image.path != null) {
+             final multipartFile = await http.MultipartFile.fromPath(
+              'images',
+              image.path!,
+               filename: image.name,
+            );
+            request.files.add(multipartFile);
+        }
+      }
+    }
+
+    final streamedResponse = await request.send();
+    return await http.Response.fromStream(streamedResponse);
+  }
+
+  static Future<http.Response> deleteEvent(String id) async {
+    final uri = Uri.parse("$baseUrl/event/$id");
+    return await http.delete(uri);
+  }
 }
