@@ -730,4 +730,29 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/event/$id");
     return await http.delete(uri);
   }
+
+  // --- Game APIs ---
+
+  static Future<http.Response> addGameQuestion({
+    required String gameType,
+    required String questionText,
+    required List<String> options,
+    required String correctAnswer,
+    required String difficulty,
+    Map<String, dynamic>? meta,
+  }) async {
+    final uri = Uri.parse("$baseUrl/games/add");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "gameType": gameType,
+        "questionText": questionText,
+        "options": options,
+        "correctAnswer": correctAnswer,
+        "difficulty": difficulty,
+        "meta": meta ?? {},
+      }),
+    );
+  }
 }
