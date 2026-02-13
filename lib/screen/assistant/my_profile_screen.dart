@@ -1,8 +1,12 @@
 import 'dart:io';
+import 'dart:convert';
 
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/edit_profile_screen.dart';
+import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -12,18 +16,154 @@ class MyProfileScreen extends StatefulWidget {
 }
 
 class _MyProfileScreenState extends State<MyProfileScreen> {
-  String _name = "Devarsh Shah";
+  String _assistantId = "";
+  String _name = "User";
   String _role = "Assistant";
-  String _mobile = "+91 9106315912";
-  String _aadhar = "XXXX-XXXX-1234";
-  String _address = "123, Some Street, Ahmedabad.";
+  String _mobile = "-";
+  String _aadhar = "-";
+  String _address = "-";
+  bool _isLoading = true;
   File? _profileImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileFromApi();
+  }
+
+  String _normalizePhone(String value) {
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  Map<String, dynamic>? _decodeJwtPayload(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      final normalized = base64Url.normalize(parts[1]);
+      final payload = utf8.decode(base64Url.decode(normalized));
+      final decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } catch (_) {}
+    return null;
+  }
+
+  String _readStringFromMap(Map<String, dynamic> map, List<String> keys, {String fallback = ''}) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return fallback;
+  }
+
+  Future<void> _loadProfileFromApi() async {
+    setState(() => _isLoading = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedRole = prefs.getString('user_role') ?? _role;
+      final savedPhone = prefs.getString('user_phone') ?? '';
+      final savedUserDataRaw = prefs.getString('user_data');
+      final token = prefs.getString('auth_token') ?? '';
+
+      Map<String, dynamic>? savedUserData;
+      if (savedUserDataRaw != null && savedUserDataRaw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(savedUserDataRaw);
+          if (decoded is Map<String, dynamic>) {
+            savedUserData = decoded;
+          }
+        } catch (_) {}
+      }
+
+      final jwtPayload = token.isNotEmpty ? _decodeJwtPayload(token) : null;
+      final jwtId = _readStringFromMap(jwtPayload ?? const {}, ['_id', 'id', 'userId']);
+      final jwtPhone = _readStringFromMap(jwtPayload ?? const {}, ['phone', 'mobile', 'phoneNum']);
+
+      final effectivePhone = savedPhone.isNotEmpty ? savedPhone : jwtPhone;
+
+      Map<String, dynamic>? apiProfile;
+
+      // Assistant profile from API list endpoint
+      if (savedRole == "Assistant") {
+        final response = await ApiService.getAllAssistants();
+        if (response.statusCode == 200) {
+          final decoded = jsonDecode(response.body);
+          List<dynamic> assistantList = [];
+          if (decoded is List) {
+            assistantList = decoded;
+          } else if (decoded is Map<String, dynamic>) {
+            final rawList = decoded['assistants'] ?? decoded['data'] ?? decoded['items'] ?? decoded['result'];
+            if (rawList is List) assistantList = rawList;
+          }
+
+          if (assistantList.isNotEmpty) {
+            final normalizedSavedPhone = _normalizePhone(effectivePhone);
+            final matchById = jwtId.isNotEmpty
+                ? assistantList.firstWhere(
+                    (item) {
+                      if (item is! Map) return false;
+                      final map = Map<String, dynamic>.from(item);
+                      return _readStringFromMap(map, ['_id', 'id']) == jwtId;
+                    },
+                    orElse: () => null,
+                  )
+                : null;
+
+            dynamic match = matchById;
+            if (match == null && normalizedSavedPhone.isNotEmpty) {
+              match = assistantList.firstWhere(
+                (item) {
+                  if (item is! Map) return false;
+                  final map = Map<String, dynamic>.from(item);
+                  final rawPhone = _readStringFromMap(map, ['phone', 'mobile', 'phoneNum']);
+                  final normalizedApiPhone = _normalizePhone(rawPhone);
+                  if (normalizedApiPhone.isEmpty) return false;
+                  return normalizedApiPhone.endsWith(normalizedSavedPhone) ||
+                      normalizedApiPhone == normalizedSavedPhone;
+                },
+                orElse: () => null,
+              );
+            }
+
+            if (match is Map) {
+              apiProfile = Map<String, dynamic>.from(match);
+            }
+          }
+        }
+      }
+
+      final profile = apiProfile ?? savedUserData ?? jwtPayload ?? <String, dynamic>{};
+
+      setState(() {
+        _assistantId = _readStringFromMap(profile, ['_id', 'id']);
+        _name = _readStringFromMap(profile, ['name', 'fullName', 'username'], fallback: _name);
+        _role = _readStringFromMap(profile, ['role'], fallback: savedRole);
+        _mobile = _readStringFromMap(profile, ['phone', 'mobile', 'phoneNum'], fallback: effectivePhone.isNotEmpty ? effectivePhone : '-');
+        _aadhar = _readStringFromMap(profile, ['aadharNum', 'aadharNumber', 'aadhar'], fallback: '-');
+        _address = _readStringFromMap(profile, ['address', 'location'], fallback: '-');
+      });
+
+      if (_mobile != '-' && _mobile.isNotEmpty) {
+        await prefs.setString('user_phone', _mobile);
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomToast.showError(context, "Failed to load profile");
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   void _navigateToEditProfile() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfileScreen(
+          assistantId: _assistantId,
           name: _name,
           role: _role,
           mobile: _mobile,
@@ -34,15 +174,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
 
     if (result != null && result is Map) {
-      setState(() {
-        _name = result['name'];
-        _mobile = result['mobile'];
-        _aadhar = result['aadhar'];
-        _address = result['address'];
-        if (result['image'] != null) {
-          _profileImage = result['image'];
-        }
-      });
+      _loadProfileFromApi();
     }
   }
 
@@ -64,7 +196,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
+        child: _isLoading
+            ? const Center(child: Padding(
+                padding: EdgeInsets.only(top: 120),
+                child: CircularProgressIndicator(),
+              ))
+            : Column(
           children: [
              Center(
               child: Stack(

@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EditProfileScreen extends StatefulWidget {
+  final String assistantId;
   final String name;
   final String role;
   final String mobile;
@@ -13,6 +16,7 @@ class EditProfileScreen extends StatefulWidget {
 
   const EditProfileScreen({
     super.key,
+    required this.assistantId,
     required this.name,
     required this.role,
     required this.mobile,
@@ -60,7 +64,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
     // Validate inputs here if needed
     if (_nameController.text.isEmpty ||
         _mobileController.text.isEmpty ||
@@ -72,14 +76,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
-    // Mock save functionality
-    Navigator.pop(context, {
-      'name': _nameController.text,
-      'mobile': _mobileController.text,
-      'aadhar': _aadharController.text,
-      'address': _addressController.text,
-      'image': _imageFile,
-    });
+    if (widget.assistantId.isEmpty) {
+      CustomToast.showError(context, "Assistant ID not found");
+      return;
+    }
+
+    try {
+      final response = await ApiService.editAssistant(
+        id: widget.assistantId,
+        name: _nameController.text.trim(),
+        phone: _mobileController.text.trim(),
+        address: _addressController.text.trim(),
+        aadharNumber: _aadharController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        CustomToast.showSuccess(context, "Profile updated successfully");
+        Navigator.pop(context, {'updated': true});
+      } else {
+        CustomToast.showError(context, "Failed to update profile");
+      }
+    } catch (e) {
+      if (!mounted) return;
+      CustomToast.showError(context, "Error updating profile");
+    }
   }
 
   @override

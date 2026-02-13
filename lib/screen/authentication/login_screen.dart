@@ -169,10 +169,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 final data = jsonDecode(response.body);
                                 final token = data['token'];
 
-                                // Save token
+                                // Save token and basic user context
                                 final prefs = await SharedPreferences.getInstance();
                                 await prefs.setString('auth_token', token);
                                 await prefs.setString('user_role', _selectedRole);
+                                await prefs.setString('user_phone', _phoneController.text);
+
+                                // Save user payload (if API returns it) for profile fallback.
+                                Map<String, dynamic>? userPayload;
+                                const payloadKeys = ['user', 'assistant', 'admin', 'student', 'data'];
+                                for (final key in payloadKeys) {
+                                  final value = data[key];
+                                  if (value is Map<String, dynamic>) {
+                                    userPayload = value;
+                                    break;
+                                  }
+                                }
+                                if (userPayload != null) {
+                                  await prefs.setString('user_data', jsonEncode(userPayload));
+                                }
 
                                 CustomToast.showSuccess(context, "$_selectedRole Login Successful");
                                 
