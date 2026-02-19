@@ -755,4 +755,39 @@ class ApiService {
       }),
     );
   }
+
+  static Future<http.Response> getGameQuestions(String gameType) async {
+    final uri = Uri.parse("$baseUrl/games/$gameType");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> editGameQuestion({
+    required String id,
+    String? gameType,
+    String? questionText,
+    List<String>? options,
+    String? correctAnswer,
+    String? difficulty,
+    Map<String, dynamic>? meta,
+  }) async {
+    final uri = Uri.parse("$baseUrl/games/edit/$id");
+    final body = {
+      if (gameType != null) "gameType": gameType,
+      if (questionText != null) "questionText": questionText,
+      if (options != null) "options": options,
+      if (correctAnswer != null) "correctAnswer": correctAnswer,
+      if (difficulty != null) "difficulty": difficulty,
+      if (meta != null) "meta": meta,
+    };
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+  }
+
+  static Future<http.Response> deleteGameQuestion(String id) async {
+    final uri = Uri.parse("$baseUrl/games/delete/$id");
+    return await http.delete(uri);
+  }
 }
