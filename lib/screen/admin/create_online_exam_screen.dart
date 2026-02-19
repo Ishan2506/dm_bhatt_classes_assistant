@@ -58,6 +58,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   // Exam History Data
   List<dynamic> _exams = [];
   bool _isLoadingHistory = true;
+  bool _isManualEntry = false;
 
   @override
   void initState() {
@@ -266,10 +267,26 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                     CustomToast.showError(context, "Please select Standard, Subject, Medium, Marks and enter Unit");
                   }
                 } else if (_currentStep == 1) {
-                   if (_pickedPdf != null) {
-                     _uploadAndProcessPdf();
+                   if (_isManualEntry) {
+                     // Manual Entry Flow
+                     Navigator.push(
+                       context, 
+                       MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
+                         parsedQuestions: const [],
+                         subject: _selectedSubject ?? "General",
+                         std: _selectedStandard ?? "",
+                         medium: _selectedMedium ?? "",
+                         unit: _unitController.text,
+                         totalMarks: _selectedMarks ?? "20", 
+                       ))
+                     );
                    } else {
-                     CustomToast.showError(context, "Please upload a PDF");
+                     // PDF Upload Flow
+                     if (_pickedPdf != null) {
+                       _uploadAndProcessPdf();
+                     } else {
+                       CustomToast.showError(context, "Please upload a PDF");
+                     }
                    }
                 }
               },
@@ -291,7 +308,12 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                         ),
                         child: _isLoading 
                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                           : Text(_currentStep == 1 ? "Process PDF" : "Continue", style: GoogleFonts.poppins(color: Colors.white)),
+                           : Text(
+                               _currentStep == 1 
+                                 ? (_isManualEntry ? "Start Adding Questions" : "Process PDF") 
+                                 : "Continue", 
+                               style: GoogleFonts.poppins(color: Colors.white)
+                             ),
                       ),
                       const SizedBox(width: 12),
                       if (_currentStep > 0)
@@ -329,34 +351,81 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                   isActive: _currentStep >= 0,
                 ),
                 Step(
-                  title: Text("Upload Question PDF", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  title: Text("Questions Mode", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                   content: Column(
                     children: [
-                       Container(
-                         width: double.infinity,
-                         padding: const EdgeInsets.all(24),
-                         decoration: BoxDecoration(
-                           border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                           borderRadius: BorderRadius.circular(12),
-                           color: Colors.grey.shade50,
-                         ),
-                         child: Column(
-                           children: [
-                             Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.blue.shade300),
-                             const SizedBox(height: 16),
-                             ElevatedButton(
-                               onPressed: _pickPdf,
-                               child: Text(_pickedPdf != null ? "Change File" : "Select PDF"),
+                       // Toggle
+                       Row(
+                         children: [
+                           Expanded(
+                             child: RadioListTile<bool>(
+                               title: Text("Upload PDF", style: GoogleFonts.poppins()),
+                               value: false, 
+                               groupValue: _isManualEntry, 
+                               onChanged: (val) => setState(() => _isManualEntry = val!),
                              ),
-                             if (_pickedPdf != null) ...[
-                               const SizedBox(height: 12),
-                               Text("Selected: ${_pickedPdf!.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                             ]
-                           ],
-                         ),
+                           ),
+                           Expanded(
+                             child: RadioListTile<bool>(
+                               title: Text("Manual Entry", style: GoogleFonts.poppins()),
+                               value: true, 
+                               groupValue: _isManualEntry, 
+                               onChanged: (val) => setState(() => _isManualEntry = val!),
+                             ),
+                           ),
+                         ],
                        ),
-                       const SizedBox(height: 12),
-                       const Text("Ensure format: 1. Question... A)... B)... Answer: A", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                       
+                       const SizedBox(height: 16),
+
+                       if (!_isManualEntry) ...[
+                         Container(
+                           width: double.infinity,
+                           padding: const EdgeInsets.all(24),
+                           decoration: BoxDecoration(
+                             border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                             borderRadius: BorderRadius.circular(12),
+                             color: Colors.grey.shade50,
+                           ),
+                           child: Column(
+                             children: [
+                               Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.blue.shade300),
+                               const SizedBox(height: 16),
+                               ElevatedButton(
+                                 onPressed: _pickPdf,
+                                 child: Text(_pickedPdf != null ? "Change File" : "Select PDF"),
+                               ),
+                               if (_pickedPdf != null) ...[
+                                 const SizedBox(height: 12),
+                                 Text("Selected: ${_pickedPdf!.name}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                               ]
+                             ],
+                           ),
+                         ),
+                         const SizedBox(height: 12),
+                         const Text("Ensure format: 1. Question... A)... B)... Answer: A", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                       ] else ...[
+                         Container(
+                           width: double.infinity,
+                           padding: const EdgeInsets.all(24),
+                           decoration: BoxDecoration(
+                             border: Border.all(color: Colors.blue.shade100, style: BorderStyle.solid),
+                             borderRadius: BorderRadius.circular(12),
+                             color: Colors.blue.shade50,
+                           ),
+                           child: Column(
+                             children: [
+                               Icon(Icons.edit_note, size: 48, color: Colors.blue.shade700),
+                               const SizedBox(height: 16),
+                               Text(
+                                 "You will manually add ${_selectedMarks ?? '20'} questions in the next screen.",
+                                 textAlign: TextAlign.center,
+                                 style: GoogleFonts.poppins(color: Colors.blue.shade900),
+                               ),
+                             ],
+                           ),
+                         ),
+                       ]
                     ],
                   ),
                   isActive: _currentStep >= 1,
