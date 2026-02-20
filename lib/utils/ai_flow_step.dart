@@ -1,4 +1,5 @@
 enum AIFlowStep {
+  initial,
   greeting,
   questionType,
   uploadPdf,

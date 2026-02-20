@@ -23,13 +23,13 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
   final _aiService = AdminAIService();
   File? _generatedPdf;
   String? _aiText;
-  AIFlowStep _step = AIFlowStep.greeting;
+  AIFlowStep _step = AIFlowStep.initial;
   String _questionType = "";
 
   @override
   void initState() {
     super.initState();
-    _addBot("👋 Hello Admin! How can I help you?");
+    // Start with a clean state, no immediate bot message
   }
 
   void _addBot(String text) {
@@ -51,14 +51,19 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
     return true;
   }
 
-  Future<void> _handleSubmit() async {
-    final input = _controller.text.trim();
+  Future<void> _handleSubmit({String? manualInput}) async {
+    final input = manualInput ?? _controller.text.trim();
     if (input.isEmpty) return;
 
     _controller.clear();
     _addUser(input);
 
     switch (_step) {
+      case AIFlowStep.initial:
+        _addBot("Hey! What can i help you!");
+        _step = AIFlowStep.greeting;
+        break;
+
       case AIFlowStep.greeting:
         _addBot("Great! Which type of questions?\n• Fill in the Blanks\n• True / False");
         _step = AIFlowStep.questionType;
@@ -77,10 +82,10 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
 
   Future<void> _pickFile() async {
     try {
-      if (!await _canUseToday()) {
-        _addBot("🚫 Daily limit reached (3 times/day)");
-        return;
-      }
+      // if (!await _canUseToday()) {
+      //   _addBot("🚫 Daily limit reached (3 times/day)");
+      //   return;
+      // }
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -98,23 +103,30 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
         return;
       }
 
-      _addBot("Generating questions... ⏳\n(Processing file...)");
+      _addBot("Generating questions... ⏳\n(This may take up to 90 seconds for large documents)");
       _step = AIFlowStep.generating;
 
       final fileBytes = await file.readAsBytes();
-      final mimeType = _getMimeType(file.path);
 
       final output = await _aiService.generateQuestions(
         fileBytes: fileBytes,
-        mimeType: mimeType,
         questionType: _questionType,
       );
+
+      if (output.startsWith("ERROR:")) {
+        _addBot("❌ $output");
+        _step = AIFlowStep.uploadPdf; // Allow retry
+        setState(() {});
+        return;
+      }
+
       _aiText = output;
       _generatedPdf = await PdfGeneratorService.generateQuestionPdf(output);
       _step = AIFlowStep.done;
+      _addBot("✅ Questions generated successfully! You can now download the PDF.");
     } catch (e) {
       _addBot("❌ Failed to generate Content.\nReason: ${e.toString()}");
-      _step = AIFlowStep.greeting;
+      _step = AIFlowStep.uploadPdf; // Allow retry instead of greeting
     }
   }
 
@@ -133,9 +145,30 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
   void _restart() {
     setState(() {
       _messages.clear();
-      _step = AIFlowStep.greeting;
+      _generatedPdf = null;
+      _aiText = null;
+      _questionType = "";
+      _step = AIFlowStep.initial;
+      _controller.clear();
     });
-    _addBot("👋 Hello Admin! How can I help you?");
+  }
+
+  Widget _buildQuestionTypeOptions() {
+    return Wrap(
+      spacing: 8,
+      children: [
+        ActionChip(
+          label: const Text("Fill in the Blanks"),
+          onPressed: () => _handleSubmit(manualInput: "Fill in the Blanks"),
+          backgroundColor: Colors.blue.withOpacity(0.1),
+        ),
+        ActionChip(
+          label: const Text("True / False"),
+          onPressed: () => _handleSubmit(manualInput: "True / False"),
+          backgroundColor: Colors.blue.withOpacity(0.1),
+        ),
+      ],
+    );
   }
 
   Future<void> downloadPdf(BuildContext context, File pdfFile) async {
@@ -163,6 +196,9 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
           duration: const Duration(seconds: 3),
         ),
       );
+
+      // Automatically restart the chat after download
+      _restart();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -238,6 +274,11 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
                   onPressed: () => downloadPdf(context, _generatedPdf!),
                 ),
               ),
+        if (_step == AIFlowStep.questionType)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: _buildQuestionTypeOptions(),
+          ),
           Padding(
             padding: const EdgeInsets.all(8),
             child: TextField(

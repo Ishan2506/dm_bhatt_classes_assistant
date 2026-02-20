@@ -31,6 +31,7 @@ dependencies:
   google_generative_ai: ^0.4.7
   open_filex: ^4.7.0
   pdf: ^3.11.3
+  syncfusion_flutter_pdf: ^32.2.5
 
 dev_dependencies:
   flutter_test:
