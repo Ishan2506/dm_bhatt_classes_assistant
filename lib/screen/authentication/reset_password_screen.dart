@@ -1,3 +1,4 @@
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
@@ -147,7 +148,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                        // Perform Reset Logic (API call etc)
+                       CustomLoader.show(context);
                        ApiService.resetPassword(phone: widget.phone, newPassword: _newPasswordController.text).then((response) {
+                          if (!mounted) return;
+                          CustomLoader.hide(context);
                           if (response.statusCode == 200) {
                              CustomToast.showSuccess(context, "Password Reset Successful");
                              
@@ -160,6 +164,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                              CustomToast.showError(context, "Failed to reset password");
                           }
                        }).catchError((e) {
+                          if (mounted) CustomLoader.hide(context);
                           CustomToast.showError(context, "Error: $e");
                        });
                     }

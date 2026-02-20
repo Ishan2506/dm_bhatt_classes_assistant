@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -114,11 +115,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
       }
       
       // Call API
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      CustomLoader.show(context);
 
       if (_isEditing) {
          ApiService.editExploreProduct(
@@ -132,7 +129,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
           discount: double.tryParse(_discountController.text),
           file: _selectedFile
          ).then((response) {
-            Navigator.pop(context); // Hide loader
+            if (!mounted) return;
+            CustomLoader.hide(context); // Hide loader
             if (response.statusCode == 200) {
                CustomToast.showSuccess(context, "Product Updated Successfully!");
                Navigator.pop(context); 
@@ -140,7 +138,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                CustomToast.showError(context, "Failed: ${response.body}");
             }
          }).catchError((e) {
-            Navigator.pop(context);
+            if (mounted) CustomLoader.hide(context);
             CustomToast.showError(context, "Error: $e");
          });
       } else {
@@ -154,7 +152,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
             discount: double.tryParse(_discountController.text) ?? 0.0,
             file: _selectedFile!,
           ).then((response) {
-            Navigator.pop(context); // Hide loader
+            if (!mounted) return;
+            CustomLoader.hide(context); // Hide loader
             if (response.statusCode == 201) {
                CustomToast.showSuccess(context, "Product Added Successfully!");
                // Reset
@@ -174,7 +173,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
               CustomToast.showError(context, "Failed: ${response.body}");
             }
           }).catchError((e) {
-             Navigator.pop(context);
+             if (mounted) CustomLoader.hide(context);
              CustomToast.showError(context, "Error: $e");
           });
       }

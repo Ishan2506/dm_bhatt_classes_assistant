@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/edit_profile_screen.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -198,8 +199,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         padding: const EdgeInsets.all(24),
         child: _isLoading
             ? const Center(child: Padding(
-                padding: EdgeInsets.only(top: 120),
-                child: CircularProgressIndicator(),
+                padding: EdgeInsets.symmetric(vertical: 120),
+                child: CustomLoader(),
               ))
             : Column(
           children: [

@@ -28,7 +28,7 @@ class CustomLoader extends StatelessWidget {
           children: [
             // Logo
             Image.asset(
-              imgDmBhattClassesLogo, // Using App Logo
+              imgLoaderBot, // Using App Logo
               width: 50,
               height: 50,
               fit: BoxFit.contain,
@@ -39,7 +39,7 @@ class CustomLoader extends StatelessWidget {
               height: 100,
               child: CircularProgressIndicator(
                 strokeWidth: 4,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade800), // App Blue
+                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), // App Theme Color
               ),
             ),
           ],

@@ -45,16 +45,17 @@ class PdfGeneratorService {
           margin: const pw.EdgeInsets.all(24),
           pageFormat: PdfPageFormat.a4,
           build: (context) {
-            return [
-              pw.Text(
-                content,
-                style: pw.TextStyle(
-                  font: ttf,
-                  fontSize: 11,
-                  lineSpacing: 5,
-                ),
+            // Split content by \n to allow the layout engine to break between lines/paragraphs
+            final lines = content.split('\n');
+            return lines.map((line) => pw.Paragraph(
+              text: line,
+              style: pw.TextStyle(
+                font: ttf,
+                fontSize: 11,
+                lineSpacing: 2,
               ),
-            ];
+              margin: const pw.EdgeInsets.only(bottom: 4),
+            )).toList();
           },
         ),
       );

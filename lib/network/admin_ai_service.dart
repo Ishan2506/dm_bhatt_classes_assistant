@@ -30,6 +30,8 @@ class AdminAIService {
 //   2. Options (if applicable)
 //   3. Correct Answers at the end
 // ''';
+final isTrueFalse = questionType.toLowerCase().contains("true") || questionType.toLowerCase().contains("false");
+
 final prompt = '''
 You are a question paper generator.
 
@@ -42,20 +44,19 @@ IMPORTANT RULES (MANDATORY):
 - Do NOT add extra text
 
 FORMAT TO FOLLOW EXACTLY:
-
+${isTrueFalse ? '''
+01. Question text
+A. True
+B. False
+Ans. (A or B) Correct Option Text
+''' : '''
 01. Question text
 A. Option A
 B. Option B
 C. Option C
 D. Option D
 Ans. (CorrectOptionLetter) Correct Option Text
-
-02. Question text
-A. Option A
-B. Option B
-C. Option C
-D. Option D
-Ans. (CorrectOptionLetter) Correct Option Text
+'''}
 
 LANGUAGE: Gujarati + English (as per Document)
 LEVEL: School
@@ -72,7 +73,10 @@ Generate questions ONLY based on the uploaded Document.
       ])
     ];
 
-    final response = await _model.generateContent(content);
+    final response = await _model.generateContent(content).timeout(
+      const Duration(seconds: 60),
+      onTimeout: () => throw Exception("AI request timed out. Please try again."),
+    );
     return response.text ?? "No content generated.";
   }
 }

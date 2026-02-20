@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,8 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
   }
 
   Future<void> _saveChanges() async {
-     setState(() => _isSaving = true);
+     // setState(() => _isSaving = true);
+     CustomLoader.show(context);
      
      try {
        final response = await ApiService.updateExam(
@@ -89,7 +91,8 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
        );
        
        if (!mounted) return;
-       setState(() => _isSaving = false);
+       // setState(() => _isSaving = false);
+       CustomLoader.hide(context);
        
        if (response.statusCode == 200) {
          CustomToast.showSuccess(context, "Exam Updated Successfully");
@@ -97,8 +100,8 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
          CustomToast.showError(context, "Update Failed: ${response.body}");
        }
      } catch (e) {
-       if (mounted) setState(() => _isSaving = false);
-       CustomToast.showError(context, "vError: $e");
+       if (mounted) CustomLoader.hide(context);
+       CustomToast.showError(context, "Error: $e");
      }
   }
 
@@ -199,11 +202,10 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
         ],
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator()) 
+          ? const Center(child: CustomLoader()) 
           : _examData == null 
               ? const Center(child: Text("Exam not found or failed to load"))
               : _buildExamContent(),
-      floatingActionButton: _isSaving ? const FloatingActionButton(onPressed: null, child: CircularProgressIndicator(color: Colors.white)) : null,
     );
   }
 

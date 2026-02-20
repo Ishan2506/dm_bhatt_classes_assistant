@@ -621,7 +621,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
             
             // Tab 2: History (Now Real List)
             _isLoadingList 
-               ? const Center(child: CircularProgressIndicator()) 
+               ? const Center(child: CustomLoader()) 
                : _students.isEmpty 
                    ? Center(child: Text("No students found", style: GoogleFonts.poppins(color: Colors.grey)))
                    : RefreshIndicator(

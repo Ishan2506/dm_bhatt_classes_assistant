@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import '../../utils/ai_flow_step.dart';
 
 class AdminAIAssistantScreen extends StatefulWidget {
@@ -118,15 +119,15 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
   }
 
   String _getMimeType(String path) {
-    if (path.endsWith('.pdf')) return 'application/pdf';
-    if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return 'image/jpeg';
-    if (path.endsWith('.png')) return 'image/png';
-    // For docs, Gemini usually handles text extraction or we might need specific handling. 
-    // However, the `0.4.7` SDK and newer Gemini models can handle many mime types if passed correctly.
-    // Standard approach for docs/docx is 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    // BUT typically Gemini API expects text for non-media. Let's send as 'application/pdf' or try specific mime.
-    // For now, let's just support pdf, jpg, png directly.
-    return 'application/pdf'; // Fallback
+    final extension = path.split('.').last.toLowerCase();
+    switch (extension) {
+      case 'pdf': return 'application/pdf';
+      case 'jpg':
+      case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      case 'webp': return 'image/webp';
+      default: return 'application/pdf'; // Fallback
+    }
   }
 
   void _restart() {
@@ -211,6 +212,12 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
               },
             ),
           ),
+
+          if (_step == AIFlowStep.generating)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: CustomLoader(),
+            ),
 
           if (_step == AIFlowStep.uploadPdf)
             Padding(

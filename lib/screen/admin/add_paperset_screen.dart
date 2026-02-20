@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -88,7 +89,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
        showDialog(
           context: context, 
           barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator())
+          builder: (context) => const CustomLoader()
        );
 
        try {
@@ -418,7 +419,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
             
             // Tab 2: History List
             _isLoadingList 
-               ? const Center(child: CircularProgressIndicator()) 
+               ? const Center(child: CustomLoader()) 
                : _paperSets.isEmpty
                    ? Center(child: Text("No paper sets found", style: GoogleFonts.poppins(color: Colors.grey)))
                    : ListView.builder(

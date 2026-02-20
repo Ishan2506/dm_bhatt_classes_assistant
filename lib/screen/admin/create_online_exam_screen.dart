@@ -1,6 +1,7 @@
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/review_questions_screen.dart';
@@ -307,7 +308,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         child: _isLoading 
-                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                           ? const Center(child: CustomLoader())
                            : Text(
                                _currentStep == 1 
                                  ? (_isManualEntry ? "Start Adding Questions" : "Process PDF") 
@@ -435,7 +436,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
             
             // Tab 2: Exam History
             _isLoadingHistory
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CustomLoader())
                 : _exams.isEmpty
                     ? Center(child: Text("No exams found", style: GoogleFonts.poppins(color: Colors.grey)))
                     : ListView.builder(

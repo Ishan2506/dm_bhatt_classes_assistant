@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:excel/excel.dart' hide Border, BorderStyle;
 import 'package:file_picker/file_picker.dart';
@@ -45,17 +46,22 @@ class _ImportStudentsScreenState extends State<ImportStudentsScreen> {
       return;
     }
 
-    setState(() {
+    /* setState(() {
       _isUploading = true;
-    });
+    }); */
+    CustomLoader.show(context);
 
     // Simulate upload delay
     await Future.delayed(const Duration(seconds: 2));
 
     if (mounted) {
-      setState(() {
+      /* setState(() {
         _isUploading = false;
         _selectedFileName = null; // Clear selection on success
+      }); */
+      CustomLoader.hide(context);
+      setState(() {
+         _selectedFileName = null;
       });
       CustomToast.showSuccess(context, "Student data imported successfully");
     }
@@ -272,7 +278,7 @@ class _ImportStudentsScreenState extends State<ImportStudentsScreen> {
 
             // Upload Button
             ElevatedButton(
-              onPressed: _isUploading ? null : _uploadFile,
+              onPressed: _uploadFile,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade900,
                 foregroundColor: Colors.white,
@@ -280,13 +286,7 @@ class _ImportStudentsScreenState extends State<ImportStudentsScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 elevation: 2,
               ),
-              child: _isUploading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Text(
+              child: Text(
                       "Upload Excel File",
                       style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
                     ),

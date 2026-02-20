@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_explore_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -89,7 +90,10 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
+              CustomLoader.show(context);
               ApiService.deleteExploreProduct(id).then((response) {
+                 if (!mounted) return;
+                 CustomLoader.hide(context);
                  if (response.statusCode == 200) {
                    setState(() {
                     _products.removeWhere((element) => element['_id'] == id);
@@ -99,6 +103,7 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
                     CustomToast.showError(context, "Failed to delete product");
                  }
               }).catchError((e) {
+                 if (mounted) CustomLoader.hide(context);
                  CustomToast.showError(context, "Error: $e");
               });
             },

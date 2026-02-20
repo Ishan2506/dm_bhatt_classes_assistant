@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -354,7 +355,7 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
 
           // Tab 2: History List
           _isLoadingList 
-             ? const Center(child: CircularProgressIndicator()) 
+             ? const Center(child: CustomLoader()) 
              : _assistants.isEmpty 
                  ? Center(child: Text("No assistants found", style: GoogleFonts.poppins(color: Colors.grey)))
                  : ListView.builder(

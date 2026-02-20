@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
@@ -173,7 +174,8 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
         }
       }
 
-      setState(() => _isLoading = true);
+      // setState(() => _isLoading = true);
+      CustomLoader.show(context);
 
       try {
         if (_isEditing) {
@@ -188,13 +190,14 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
              questions: _questions
            );
            
+           if (!mounted) return;
+           CustomLoader.hide(context);
+
            if (response.statusCode == 200) {
-             if(!mounted) return;
              CustomToast.showSuccess(context, "Test Updated Successfully!");
              _fetchTests();
              _resetForm();
            } else {
-             if(!mounted) return;
              CustomToast.showError(context, "Failed: ${response.body}");
            }
         } else {
@@ -208,21 +211,22 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
              questions: _questions
            );
 
+           if (!mounted) return;
+           CustomLoader.hide(context);
+
            if (response.statusCode == 201) {
-             if(!mounted) return;
              CustomToast.showSuccess(context, "5 Min Test Created Successfully!");
              _fetchTests();
              _resetForm();
            } else {
-             if(!mounted) return;
              CustomToast.showError(context, "Failed: ${response.body}");
            }
         }
       } catch (e) {
-        if(!mounted) return;
-        CustomToast.showError(context, "Error: $e");
-      } finally {
-        if(mounted) setState(() => _isLoading = false);
+        if (mounted) {
+           CustomLoader.hide(context);
+           CustomToast.showError(context, "Error: $e");
+        }
       }
     }
   }
@@ -276,9 +280,12 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              setState(() => _isLoading = true);
+              // setState(() => _isLoading = true);
+              CustomLoader.show(context);
               try {
                 final response = await ApiService.deleteFiveMinTest(id);
+                if (!mounted) return;
+                CustomLoader.hide(context);
                 if (response.statusCode == 200) {
                   CustomToast.showSuccess(context, "Test Deleted Successfully");
                   _fetchTests();
@@ -286,9 +293,8 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                   CustomToast.showError(context, "Failed to delete");
                 }
               } catch (e) {
+                if (mounted) CustomLoader.hide(context);
                 CustomToast.showError(context, "Error: $e");
-              } finally {
-                if(mounted) setState(() => _isLoading = false);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -342,7 +348,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
         ),
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator()) 
+        ? const Center(child: CustomLoader()) 
         : TabBarView(
             controller: _tabController,
             children: [

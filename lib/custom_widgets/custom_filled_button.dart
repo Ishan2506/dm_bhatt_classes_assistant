@@ -42,7 +42,7 @@ class CustomFilledButton extends StatelessWidget {
       return SizedBox(
         height: S.s24,
         width: S.s24,
-        child: CircularProgressIndicator(strokeWidth: 2),
+        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
       );
     }
     return Text(

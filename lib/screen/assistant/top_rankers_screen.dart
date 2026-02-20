@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -352,7 +353,7 @@ class _TopRankersScreenState extends State<TopRankersScreen> {
         label: Text("Add Ranker", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white)),
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator()) 
+        ? const Center(child: CustomLoader()) 
         : Column(
           children: [
             // FILTERS SECTION

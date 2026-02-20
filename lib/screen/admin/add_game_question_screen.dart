@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -257,7 +258,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white) 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
                     : Text(_editingQuestionId != null ? "Update Question" : "Add Question", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
@@ -293,7 +294,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
         // List
         Expanded(
           child: _isLoadingQuestions 
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CustomLoader())
             : _existingQuestions.isEmpty 
               ? Center(child: Text(_filterGameType == null ? "Select a game type to see questions" : "No questions found.", style: GoogleFonts.poppins(color: Colors.grey)))
               : ListView.builder(

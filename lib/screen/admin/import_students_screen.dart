@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:excel/excel.dart' hide Border, BorderStyle;
@@ -50,9 +51,10 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       return;
     }
 
-    setState(() {
+    /* setState(() {
       _isUploading = true;
-    });
+    }); */
+    CustomLoader.show(context);
 
     try {
       List<int> fileBytes;
@@ -73,9 +75,10 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       );
       
       if (mounted) {
-        setState(() {
+        /* setState(() {
           _isUploading = false;
-        });
+        }); */
+        CustomLoader.hide(context);
 
         if (response.statusCode == 200) {
            final body = jsonDecode(response.body);
@@ -97,7 +100,8 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isUploading = false);
+        CustomLoader.hide(context);
+        // setState(() => _isUploading = false);
         CustomToast.showError(context, "Error: $e");
       }
     }
@@ -314,7 +318,7 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
 
             // Upload Button
             ElevatedButton(
-              onPressed: _isUploading ? null : _uploadFile,
+              onPressed: _uploadFile,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade900,
                 foregroundColor: Colors.white,
@@ -322,13 +326,7 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 elevation: 2,
               ),
-              child: _isUploading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : Text(
+              child: Text(
                       "Upload Excel File",
                       style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
                     ),

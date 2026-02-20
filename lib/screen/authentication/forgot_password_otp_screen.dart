@@ -1,3 +1,4 @@
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pinput/pinput.dart';
@@ -131,7 +132,10 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
               child: ElevatedButton(
                 onPressed: () {
                    if (_pinController.text.length == 4) {
+                     CustomLoader.show(context);
                      ApiService.verifyOtp(phone: widget.phone, otp: _pinController.text).then((response) {
+                        if (!mounted) return;
+                        CustomLoader.hide(context);
                         if (response.statusCode == 200) {
                            Navigator.push(
                              context,
@@ -141,6 +145,7 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
                            CustomToast.showError(context, "Invalid OTP");
                         }
                      }).catchError((e) {
+                        if (mounted) CustomLoader.hide(context);
                         CustomToast.showError(context, "Error: $e");
                      });
                    } else {

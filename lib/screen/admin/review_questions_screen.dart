@@ -1,3 +1,4 @@
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +46,8 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
   }
 
   void _saveExam() async {
-    setState(() => _isSaving = true);
+    // setState(() => _isSaving = true);
+    CustomLoader.show(context);
     
     try {
       // Validate Basic Structure
@@ -76,7 +78,8 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
       );
 
       if (!mounted) return;
-      setState(() => _isSaving = false);
+      // setState(() => _isSaving = false);
+      CustomLoader.hide(context);
 
       if (response.statusCode == 201) {
         CustomToast.showSuccess(context, "Exam Created Successfully!");
@@ -87,7 +90,8 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isSaving = false);
+        // setState(() => _isSaving = false);
+        CustomLoader.hide(context);
         CustomToast.showError(context, "Error: $e");
       }
     }
@@ -247,9 +251,7 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
           )
         ],
       ),
-      body: _isSaving 
-          ? const Center(child: CircularProgressIndicator()) 
-          : ListView.builder(
+      body: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _questions.length,
               itemBuilder: (context, index) {

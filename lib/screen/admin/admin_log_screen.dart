@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/paper_set_detail_screen.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -142,13 +143,15 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildLogList(_studentLogs, isStudentLog: true),
-          _buildLogList(_paperSetLogs, isStudentLog: false),
-        ],
-      ),
+      body: _isLoading 
+          ? const Center(child: CustomLoader())
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildLogList(_studentLogs, isStudentLog: true),
+                _buildLogList(_paperSetLogs, isStudentLog: false),
+              ],
+            ),
     );
   }
 
