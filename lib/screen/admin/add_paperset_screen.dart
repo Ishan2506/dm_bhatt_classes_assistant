@@ -264,11 +264,11 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
   Widget build(BuildContext context) {
     // Removed DefaultTabController to use explicit _tabController
     return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: Text(
             "Manage Paper Set",
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           elevation: 0,
           bottom: TabBar(
@@ -359,7 +359,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                     TextFormField(
                       controller: _examNameController,
                       readOnly: false,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w600),
                       validator: (v) => v!.isEmpty ? "Required" : null,
                       decoration: InputDecoration(
                         labelText: "Exam Name (Auto-Suggested)",
@@ -368,7 +368,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                         hintText: "Subject_Date",
                         prefixIcon: Icon(Icons.edit_note, color: Colors.blue.shade900),
                          filled: true,
-                        fillColor: Colors.blue.shade50,
+                        fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -502,13 +502,13 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
         child: TextFormField(
           controller: controller,
           validator: (v) => v!.isEmpty ? "Required" : null,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+          style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             labelText: label,
              labelStyle: GoogleFonts.poppins(color: Colors.grey),
             prefixIcon: Icon(icon, color: Colors.blue.shade900),
             filled: true,
-            fillColor: Colors.grey.shade50,
+            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -532,7 +532,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -550,7 +550,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
             items: items.map((String item) {
               return DropdownMenuItem<String>(
                 value: item,
-                child: Text(item, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                child: Text(item, style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w500)),
               );
             }).toList(),
             onChanged: onChanged,

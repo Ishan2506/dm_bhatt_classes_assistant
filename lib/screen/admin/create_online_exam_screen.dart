@@ -238,7 +238,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           title: Text(
             "Create Online Exam",
@@ -341,9 +341,10 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _unitController,
+                        style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
                         decoration: InputDecoration(
                           labelText: "Unit / Chapter",
-                          labelStyle: GoogleFonts.poppins(),
+                          labelStyle: GoogleFonts.poppins(color: Colors.grey),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
@@ -510,11 +511,17 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: GoogleFonts.poppins(),
+        labelStyle: GoogleFonts.poppins(color: Colors.grey),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       value: value,
-      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins()))).toList(),
+      items: items.map((e) => DropdownMenuItem(
+        value: e, 
+        child: Text(
+          e, 
+          style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold)
+        )
+      )).toList(),
       onChanged: onChanged,
     );
   }

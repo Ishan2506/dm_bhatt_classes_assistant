@@ -36,11 +36,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
+          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onSurfaceVariant),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.transparent,
@@ -72,14 +73,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   Text(
                     "Hey $_selectedRole,",
-                    style: GoogleFonts.poppins(fontSize: 16, color: Colors.black54),
+                    style: GoogleFonts.poppins(fontSize: 16, color: colorScheme.onSurfaceVariant),
                   ),
                   Text(
                     "Welcome Back",
                     style: GoogleFonts.poppins(
                       fontSize: 24, 
                       fontWeight: FontWeight.bold, 
-                      color: Colors.black87
+                      color: colorScheme.onSurface
                     ),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.05),
@@ -261,6 +262,11 @@ class _LoginScreenState extends State<LoginScreen> {
         keyboardType: inputType,
         inputFormatters: inputFormatters,
         validator: validator,
+        style: GoogleFonts.poppins(
+          color: Colors.black,
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+        ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.poppins(color: Colors.grey),

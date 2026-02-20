@@ -139,17 +139,35 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
             children: [
               TextField(
                 controller: qCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w500),
                 decoration: const InputDecoration(labelText: "Question Text"),
                 maxLines: 3,
               ),
               const SizedBox(height: 10),
-              TextField(controller: optACtrl, decoration: const InputDecoration(labelText: "Option A")),
-              TextField(controller: optBCtrl, decoration: const InputDecoration(labelText: "Option B")),
-              TextField(controller: optCCtrl, decoration: const InputDecoration(labelText: "Option C")),
-              TextField(controller: optDCtrl, decoration: const InputDecoration(labelText: "Option D")),
+              TextField(
+                controller: optACtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option A"),
+              ),
+              TextField(
+                controller: optBCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option B"),
+              ),
+              TextField(
+                controller: optCCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option C"),
+              ),
+              TextField(
+                controller: optDCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option D"),
+              ),
               const SizedBox(height: 10),
               TextField(
                 controller: ansCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
                 decoration: const InputDecoration(labelText: "Correct Answer (A, B, C, D)"),
               ),
             ],
@@ -194,12 +212,37 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: qCtrl, decoration: const InputDecoration(labelText: "Question Text"), maxLines: 2),
-              TextField(controller: optACtrl, decoration: const InputDecoration(labelText: "Option A")),
-              TextField(controller: optBCtrl, decoration: const InputDecoration(labelText: "Option B")),
-              TextField(controller: optCCtrl, decoration: const InputDecoration(labelText: "Option C")),
-              TextField(controller: optDCtrl, decoration: const InputDecoration(labelText: "Option D")),
-              TextField(controller: ansCtrl, decoration: const InputDecoration(labelText: "Correct Answer (A, B, C, D)")),
+              TextField(
+                controller: qCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w500),
+                decoration: const InputDecoration(labelText: "Question Text"),
+                maxLines: 2,
+              ),
+              TextField(
+                controller: optACtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option A"),
+              ),
+              TextField(
+                controller: optBCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option B"),
+              ),
+              TextField(
+                controller: optCCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option C"),
+              ),
+              TextField(
+                controller: optDCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
+                decoration: const InputDecoration(labelText: "Option D"),
+              ),
+              TextField(
+                controller: ansCtrl,
+                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
+                decoration: const InputDecoration(labelText: "Correct Answer (A, B, C, D)"),
+              ),
             ],
           ),
         ),
@@ -235,7 +278,7 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text("Review Import (${_questions.length}/${widget.totalMarks})", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         actions: [

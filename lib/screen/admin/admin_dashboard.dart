@@ -16,14 +16,16 @@ class AdminDashboard extends StatelessWidget {
 
     final totalSales = subjectSales.fold(0, (sum, item) => sum + (item['sales'] as int));
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "Admin Dashboard",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black87),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
@@ -92,7 +94,7 @@ class AdminDashboard extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -101,7 +103,7 @@ class AdminDashboard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surfaceContainer,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -142,7 +144,7 @@ class AdminDashboard extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             item['subject'], 
-                            style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600),
+                            style: GoogleFonts.poppins(fontSize: 12, color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                       );
@@ -160,7 +162,7 @@ class AdminDashboard extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -170,9 +172,9 @@ class AdminDashboard extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surfaceContainer,
                   borderRadius: BorderRadius.circular(16),
-                   border: Border.all(color: Colors.grey.shade200),
+                   border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.2)),
                 ),
                 child: Row(
                   children: [
@@ -193,12 +195,12 @@ class AdminDashboard extends StatelessWidget {
                     ),
                     Text(
                       "₹${item['sales']}",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black87),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
                     ),
                     const SizedBox(width: 8),
                      Text(
                       "(${((item['percentage'] as double) * 100).toInt()}%)",
-                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+                      style: GoogleFonts.poppins(fontSize: 12, color: colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),

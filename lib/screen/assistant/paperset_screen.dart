@@ -101,11 +101,11 @@ class _PapersetScreenState extends State<PapersetScreen> {
         : _papers.where((p) => p["status"] == _selectedStatus).toList();
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "Paperset Management",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: Column(
@@ -215,7 +215,7 @@ class _PapersetScreenState extends State<PapersetScreen> {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.bold,
                           fontSize: 18, // Slightly larger
-                          color: theme.textTheme.bodyLarge?.color,
+                          color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -223,14 +223,14 @@ class _PapersetScreenState extends State<PapersetScreen> {
                         "${paper["date"]} • ${paper["batch"]}",
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: theme.textTheme.bodyMedium?.color,
+                          color: Colors.black87,
                         ),
                       ),
                       Text(
                         "${paper["stream"]} • ${paper["medium"]}",
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: theme.textTheme.bodyMedium?.color,
+                          color: Colors.black87,
                         ),
                       ),
                     ],

@@ -106,7 +106,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "Edit Profile",
@@ -205,7 +207,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
-          style: GoogleFonts.poppins(fontSize: 15),
+          style: GoogleFonts.poppins(color: Colors.black, fontSize: 15),
           decoration: InputDecoration(
             hintText: "Enter $label",
             prefixIcon: Icon(icon, size: 20),

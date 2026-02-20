@@ -125,18 +125,23 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "Activity Log",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        backgroundColor: Colors.blue.shade900,
+        foregroundColor: Colors.white,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.blue.shade900,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: Colors.blue.shade900,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500),
           tabs: const [
             Tab(text: "Student Log"),
             Tab(text: "Paper Set Log"),
@@ -178,7 +183,7 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -214,7 +219,7 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
                           children: [
                             Text(
                               (log['assistant'] ?? "").toString(),
-                              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
                             ),
                             Text(
                               (log['date'] ?? "").toString(),
@@ -225,7 +230,7 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
                         const SizedBox(height: 4),
                         RichText(
                           text: TextSpan(
-                            style: GoogleFonts.poppins(color: Colors.black87, fontSize: 14),
+                            style: GoogleFonts.poppins(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
                             children: [
                               TextSpan(
                                   text: "${log['action']} ",
@@ -233,7 +238,7 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
                               TextSpan(text: isStudentLog ? "student " : "paper set "),
                               TextSpan(
                                   text: (isStudentLog ? log['student'] : log['exam'])?.toString() ?? "",
-                                  style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                             ],
                           ),
                         ),

@@ -235,8 +235,9 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
           "Manage Assistant",
@@ -430,7 +431,7 @@ class _AddAssistantScreenState extends State<AddAssistantScreen> with SingleTick
       maxLines: maxLines,
       validator: validator,
       obscureText: isPassword && !isVisible,
-      style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+      style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.poppins(color: Colors.grey),

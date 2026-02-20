@@ -158,7 +158,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
         controller: controller,
         obscureText: !isVisible,
         validator: validator ?? (val) => val!.isEmpty ? "Required" : null,
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+        style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.poppins(color: Colors.grey),

@@ -129,6 +129,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
               children: [
                 TextField(
                   controller: qTextCtrl,
+                  style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w500),
                   decoration: const InputDecoration(labelText: "Question Text", border: OutlineInputBorder()),
                   maxLines: 3,
                 ),
@@ -143,6 +144,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                          Expanded(
                            child: TextField(
                              controller: optCtrls[i],
+                             style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.normal),
                              decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
                            ),
                          )
@@ -153,6 +155,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                  const SizedBox(height: 16),
                  TextField(
                   controller: ansCtrl,
+                  style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
                   decoration: const InputDecoration(labelText: "Correct Answer (A/B/C/D)", border: OutlineInputBorder()),
                 ),
               ],
@@ -189,7 +192,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: Text("Exam Preview", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -321,7 +324,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                ),
-               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+               style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w600),
             ),
           ),
        ],
