@@ -60,18 +60,18 @@ class AdminAddScreen extends StatelessWidget {
                 );
               },
             ),
-            _buildAddCard(
-              context,
-              "Add Paper Set",
-              Icons.assignment_add,
-              Colors.orange,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddPapersetScreen()),
-                );
-              },
-            ),
+            // _buildAddCard(
+            //   context,
+            //   "Add Paper Set",
+            //   Icons.assignment_add,
+            //   Colors.orange,
+            //   () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const AddPapersetScreen()),
+            //     );
+            //   },
+            // ),
              _buildAddCard(
               context,
               "Create Online Exam", // Renamed for clarity as per user context

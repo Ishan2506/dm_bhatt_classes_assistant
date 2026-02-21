@@ -85,9 +85,9 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
           _buildOptionTile(context, Icons.help_outline, "Help & Support", () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpSupportScreen()));
           }),
-          _buildOptionTile(context, Icons.history, "Activity Log", () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminLogScreen()));
-          }),
+          // _buildOptionTile(context, Icons.history, "Activity Log", () {
+          //   Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminLogScreen()));
+          // }),
           _buildOptionTile(context, Icons.file_upload_outlined, "Import Students", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminImportStudentsScreen()));
           }),

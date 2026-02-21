@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_product_history_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
@@ -28,7 +28,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
   late TextEditingController _discountController;
 
   PlatformFile? _selectedFile;
-  String? _fileType; // 'image' or 'pdf'
+  String? _fileType; // 'image', 'pdf', or 'other'
+  bool _isLoading = false;
 
   String? _selectedCategory;
   final List<String> _categories = ["Material", "Diagram", "Phantom material", "Books", "Stationery"];
@@ -64,28 +65,94 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
     super.dispose();
   }
 
-  Future<void> _pickFile() async {
+  Future<void> _pickFile({FileType type = FileType.any, List<String>? allowedExtensions}) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        type: type,
+        allowedExtensions: allowedExtensions,
       );
+
+      if (!mounted) return;
 
       if (result != null) {
         setState(() {
           _selectedFile = result.files.first;
           // Determine file type
           String extension = _selectedFile!.extension?.toLowerCase() ?? '';
-          if (['jpg', 'jpeg', 'png'].contains(extension)) {
+          if (['jpg', 'jpeg', 'png', 'webp', 'heic'].contains(extension)) {
             _fileType = 'image';
           } else if (extension == 'pdf') {
             _fileType = 'pdf';
+          } else {
+            _fileType = 'other';
           }
         });
       }
     } catch (e) {
-      CustomToast.showError(context, "Error: $e");
+      if (mounted) CustomToast.showError(context, "Error: $e");
     }
+  }
+
+  void _showFileSelectionModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Select File Type", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                   _buildFileTypeOption(
+                    icon: Icons.image,
+                    label: "Image",
+                    color: Colors.blue,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickFile(type: FileType.image);
+                    }
+                  ),
+                   _buildFileTypeOption(
+                    icon: Icons.picture_as_pdf,
+                    label: "PDF",
+                    color: Colors.red,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickFile(type: FileType.custom, allowedExtensions: ['pdf']);
+                    }
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _buildFileTypeOption({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 32, color: color),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
   }
 
   void _calculateDiscount() {
@@ -147,8 +214,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
             description: _descriptionController.text,
             category: _selectedCategory!,
             subject: _selectedSubject,
-            price: double.parse(_priceController.text),
-            originalPrice: double.parse(_originalPriceController.text),
+            price: double.tryParse(_priceController.text) ?? 0.0,
+            originalPrice: double.tryParse(_originalPriceController.text) ?? 0.0,
             discount: double.tryParse(_discountController.text) ?? 0.0,
             file: _selectedFile!,
           ).then((response) {
@@ -233,7 +300,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
             children: [
               // File Picker (Images and PDFs)
               GestureDetector(
-                onTap: _pickFile,
+                onTap: _showFileSelectionModal,
                 child: Container(
                   height: 200,
                   decoration: BoxDecoration(
@@ -266,23 +333,32 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Supported: JPG, PNG, PDF",
+                        "Supported: All Files",
                         style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 12)
                       ),
                     ],
-                  ) : (_selectedFile != null && _fileType == 'pdf')
+                  ) : (_selectedFile != null && _fileType != 'image')
                     ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.picture_as_pdf, size: 64, color: Colors.red.shade400),
+                        Icon(
+                          _fileType == 'pdf' ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                          size: 64, 
+                          color: _fileType == 'pdf' ? Colors.red.shade400 : Colors.blue.shade400
+                        ),
                         const SizedBox(height: 12),
-                        Text(
-                          _selectedFile!.name,
-                          style: GoogleFonts.poppins(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w600,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            _selectedFile!.name,
+                            style: GoogleFonts.poppins(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -385,14 +461,20 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                     elevation: 5,
                     shadowColor: Colors.blue.shade200,
                   ),
-                  child: Text(
-                    _isEditing ? "Update Product" : "Add Product",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading 
+                      ? const SizedBox(
+                          height: 24, 
+                          width: 24, 
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                        )
+                      : Text(
+                          _isEditing ? "Update Product" : "Add Product",
+                          style: GoogleFonts.poppins(
+                            fontSize: 18, 
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
