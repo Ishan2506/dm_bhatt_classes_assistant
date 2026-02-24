@@ -1,6 +1,12 @@
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 
 class CreateFiveMinTestScreen extends StatefulWidget {
   final Map<String, dynamic>? testToEdit;
@@ -36,24 +42,60 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
       // Mock questions or use passed data if structure matched
       _questions = List.generate(5, (index) => {
         "question": "Mock Question ${index + 1}",
+        "questionImage": null,
         "type": "MCQ", 
         "optionA": "Op A",
+        "optionAImage": null,
         "optionB": "Op B",
+        "optionBImage": null,
         "optionC": "Op C",
+        "optionCImage": null,
         "optionD": "Op D",
+        "optionDImage": null,
         "correctAnswer": "Option A",
       });
     } else {
       _questions = List.generate(5, (index) => {
         "question": "",
+        "questionImage": null,
         "type": "MCQ", 
         "optionA": "",
+        "optionAImage": null,
         "optionB": "",
+        "optionBImage": null,
         "optionC": "",
+        "optionCImage": null,
         "optionD": "",
+        "optionDImage": null,
         "correctAnswer": "",
       });
     }
+  }
+
+  Future<String?> _pickAndUploadImage() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: kIsWeb,
+      );
+
+      if (result != null) {
+        CustomLoader.show(context);
+        final response = await ApiService.uploadImage(file: result.files.single);
+        CustomLoader.hide(context);
+
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body);
+          return body['imageUrl'];
+        } else {
+          CustomToast.showError(context, "Upload failed: ${response.body}");
+        }
+      }
+    } catch (e) {
+      CustomLoader.hide(context);
+      CustomToast.showError(context, "Error uploading image: $e");
+    }
+    return null;
   }
 
   @override
@@ -72,13 +114,16 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
       
       // Basic validation for questions
       for (int i = 0; i < 5; i++) {
-        if (_questions[i]['question'].isEmpty) {
-           CustomToast.showError(context, "Please enter Question ${i + 1}");
+        bool qValid = _questions[i]['question'].isNotEmpty || _questions[i]['questionImage'] != null;
+        if (!qValid) {
+           CustomToast.showError(context, "Please enter text or image for Question ${i + 1}");
            return;
         }
         if (_questions[i]['type'] == 'MCQ') {
-           if (_questions[i]['optionA'].isEmpty || _questions[i]['optionB'].isEmpty) {
-              CustomToast.showError(context, "Please enter at least Option A and B for Question ${i + 1}");
+           bool optAValid = _questions[i]['optionA'].isNotEmpty || _questions[i]['optionAImage'] != null;
+           bool optBValid = _questions[i]['optionB'].isNotEmpty || _questions[i]['optionBImage'] != null;
+           if (!optAValid || !optBValid) {
+              CustomToast.showError(context, "Please enter text or image for at least Option A and B for Question ${i + 1}");
               return;
            }
         }
@@ -237,6 +282,12 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
             onChanged: (val) => _questions[index]['question'] = val,
             style: GoogleFonts.poppins(),
           ),
+          const SizedBox(height: 8),
+          _buildImageUploadButton(
+            label: "Question Image",
+            imageUrl: _questions[index]['questionImage'],
+            onUpload: (url) => setState(() => _questions[index]['questionImage'] = url),
+          ),
           const SizedBox(height: 12),
 
           if (_questions[index]['type'] == 'MCQ') ...[
@@ -288,21 +339,85 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
   Widget _buildOptionField(int index, String key, String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: TextFormField(
-        initialValue: _questions[index][key],
-        decoration: InputDecoration(
-          prefixIcon: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.grey)),
+      child: Column(
+        children: [
+          TextFormField(
+            initialValue: _questions[index][key],
+            decoration: InputDecoration(
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.grey)),
+              ),
+              hintText: "Option $label",
+              hintStyle: GoogleFonts.poppins(color: Colors.grey),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            onChanged: (val) => _questions[index][key] = val,
+            style: GoogleFonts.poppins(),
           ),
-          hintText: "Option $label",
-          hintStyle: GoogleFonts.poppins(color: Colors.grey),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        ),
-        onChanged: (val) => _questions[index][key] = val,
-        style: GoogleFonts.poppins(),
+          const SizedBox(height: 4),
+          _buildImageUploadButton(
+            label: "Option $label Image",
+            imageUrl: _questions[index]['${key}Image'],
+            onUpload: (url) => setState(() => _questions[index]['${key}Image'] = url),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildImageUploadButton({required String label, String? imageUrl, required Function(String?) onUpload}) {
+    return StatefulBuilder(
+      builder: (context, setInternalState) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 4.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
+              ),
+              if (imageUrl != null && imageUrl.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(imageUrl!, width: 30, height: 30, fit: BoxFit.cover),
+                  ),
+                ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final url = await _pickAndUploadImage();
+                  if (url != null) {
+                    setInternalState(() => imageUrl = url);
+                    onUpload(url);
+                  }
+                },
+                icon: const Icon(Icons.upload, size: 14),
+                label: Text(imageUrl != null ? "Change" : "Upload", style: const TextStyle(fontSize: 11)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  backgroundColor: Colors.blue.shade50,
+                  foregroundColor: Colors.blue.shade900,
+                  elevation: 0,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+              if (imageUrl != null)
+                IconButton(
+                  icon: const Icon(Icons.close, size: 14, color: Colors.red),
+                  onPressed: () {
+                    setInternalState(() => imageUrl = null);
+                    onUpload(null);
+                  },
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.only(left: 4),
+                )
+            ],
+          ),
+        );
+      }
     );
   }
 

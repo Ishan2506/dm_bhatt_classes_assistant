@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 class ApiService {
-  static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
-  // static const String baseUrl = "http://localhost:5000/api";
+  // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+  static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -413,6 +413,22 @@ class ApiService {
       'file',
       bytes,
       filename: filename,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> uploadImage({required PlatformFile file}) async {
+    final uri = Uri.parse("$baseUrl/media/upload-image");
+    final request = http.MultipartRequest('POST', uri);
+
+    final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+    final multipartFile = http.MultipartFile.fromBytes(
+      'image',
+      bytes,
+      filename: file.name,
     );
     request.files.add(multipartFile);
 
