@@ -55,6 +55,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
 
   bool _isLoading = false;
   final TextEditingController _unitController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
 
   // Exam History Data
   List<dynamic> _exams = [];
@@ -211,6 +212,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
            context, 
            MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
              parsedQuestions: questions,
+             title: _titleController.text,
              subject: _selectedSubject ?? "General",
              std: _selectedStandard ?? "",
              medium: _selectedMedium ?? "",
@@ -262,10 +264,10 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
               currentStep: _currentStep,
               onStepContinue: () {
                 if (_currentStep == 0) {
-                  if (_selectedStandard != null && _selectedSubject != null && _selectedMedium != null && _selectedMarks != null && _unitController.text.isNotEmpty) {
+                  if (_selectedStandard != null && _selectedSubject != null && _selectedMedium != null && _selectedMarks != null && _unitController.text.isNotEmpty && _titleController.text.isNotEmpty) {
                     setState(() => _currentStep++);
                   } else {
-                    CustomToast.showError(context, "Please select Standard, Subject, Medium, Marks and enter Unit");
+                    CustomToast.showError(context, "Please enter all details (Standard, Subject, Medium, Marks, Unit and Title)");
                   }
                 } else if (_currentStep == 1) {
                    if (_isManualEntry) {
@@ -274,6 +276,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                        context, 
                        MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
                          parsedQuestions: const [],
+                         title: _titleController.text,
                          subject: _selectedSubject ?? "General",
                          std: _selectedStandard ?? "",
                          medium: _selectedMedium ?? "",
@@ -338,6 +341,16 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                       _buildDropdown("Subject", _selectedSubject, _subjects, (val) => setState(() => _selectedSubject = val)),
                       const SizedBox(height: 16),
                       _buildDropdown("Marks", _selectedMarks, _marks, (val) => setState(() => _selectedMarks = val)),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _titleController,
+                        style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
+                        decoration: InputDecoration(
+                          labelText: "Exam Title",
+                          labelStyle: GoogleFonts.poppins(color: Colors.grey),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       TextField(
                         controller: _unitController,
@@ -470,7 +483,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                                 ),
                                 child: Icon(Icons.quiz_outlined, color: Colors.blue.shade900),
                               ),
-                              title: Text(exam['name'] ?? "Untitled", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                               title: Text(exam['title'] ?? exam['name'] ?? "Untitled", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                               subtitle: Text(
                                 "${exam['subject'] ?? 'General'} • $displayDate • ${exam['totalMarks']} Marks", 
                                 style: GoogleFonts.poppins(fontSize: 12)

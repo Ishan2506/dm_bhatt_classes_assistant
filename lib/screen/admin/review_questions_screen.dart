@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ReviewQuestionsScreen extends StatefulWidget {
   final List<dynamic> parsedQuestions;
+  final String title;
   final String subject;
   final String std;
   final String medium;
@@ -19,6 +20,7 @@ class ReviewQuestionsScreen extends StatefulWidget {
   const ReviewQuestionsScreen({
     super.key,
     required this.parsedQuestions,
+    required this.title,
     required this.subject,
     required this.std,
     required this.medium,
@@ -72,6 +74,7 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
       // Our _questions matches this roughly.
 
       final response = await ApiService.createExam(
+        title: widget.title,
         subject: widget.subject,
         std: widget.std,
         medium: widget.medium,

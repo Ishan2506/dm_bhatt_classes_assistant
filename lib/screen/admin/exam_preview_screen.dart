@@ -20,6 +20,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
   bool _isSaving = false;
 
   // Controllers for Header
+  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _stdController = TextEditingController();
   final TextEditingController _mediumController = TextEditingController();
@@ -36,6 +37,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
   
   @override 
   void dispose() {
+    _titleController.dispose();
     _subjectController.dispose();
     _stdController.dispose();
     _mediumController.dispose();
@@ -55,6 +57,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
           _isLoading = false;
           
           // Init Controllers
+          _titleController.text = data['title'] ?? data['name'] ?? "";
           _subjectController.text = data['subject'] ?? "";
           _stdController.text = data['std'] ?? "";
           _mediumController.text = data['medium'] ?? "";
@@ -82,6 +85,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
      try {
        final response = await ApiService.updateExam(
          id: widget.examId,
+         title: _titleController.text,
          subject: _subjectController.text,
          std: _stdController.text,
          medium: _mediumController.text,
@@ -227,6 +231,8 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                padding: const EdgeInsets.all(16.0),
                child: Column(
                  children: [
+                     _buildEditableRow(Icons.title, "Exam Title", _titleController),
+                     const SizedBox(height: 12),
                     _buildEditableRow(Icons.book, "Subject", _subjectController),
                     const SizedBox(height: 12),
                     _buildEditableRow(Icons.school, "Standard", _stdController),

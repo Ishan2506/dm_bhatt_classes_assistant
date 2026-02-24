@@ -454,6 +454,7 @@ class ApiService {
   }
 
   static Future<http.Response> createExam({
+    required String title,
     required String subject,
     required String std,
     required String medium,
@@ -466,6 +467,7 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        "title": title,
         "subject": subject,
         "std": std,
         "medium": medium,
@@ -476,8 +478,13 @@ class ApiService {
     );
   }
 
-  static Future<http.Response> getAllExams() async {
-    final uri = Uri.parse("$baseUrl/exam/all");
+  static Future<http.Response> getAllExams({String? std, String? medium, String? subject}) async {
+    final queryParams = <String, String>{};
+    if (std != null) queryParams['std'] = std;
+    if (medium != null) queryParams['medium'] = medium;
+    if (subject != null) queryParams['subject'] = subject;
+
+    final uri = Uri.parse("$baseUrl/exam/all").replace(queryParameters: queryParams);
     return await http.get(uri);
   }
 
@@ -488,6 +495,7 @@ class ApiService {
 
   static Future<http.Response> updateExam({
     required String id,
+    required String title,
     required String subject,
     required String std,
     required String medium,
@@ -500,6 +508,7 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        "title": title,
         "subject": subject,
         "std": std,
         "medium": medium,
