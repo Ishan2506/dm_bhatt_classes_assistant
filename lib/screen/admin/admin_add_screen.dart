@@ -5,7 +5,9 @@ import 'package:dm_bhatt_classes_new/screen/admin/create_online_exam_screen.dart
 import 'package:dm_bhatt_classes_new/screen/admin/admin_five_min_test_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/add_game_question_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/admin_add_material_screen.dart';
 import 'package:flutter/material.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 
@@ -105,6 +107,18 @@ class AdminAddScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ManageEventsScreen()),
+                );
+              },
+            ),
+             _buildAddCard(
+              context,
+              "Add Material",
+              Icons.auto_stories_outlined,
+              Colors.orange,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminAddMaterialScreen()),
                 );
               },
             ),

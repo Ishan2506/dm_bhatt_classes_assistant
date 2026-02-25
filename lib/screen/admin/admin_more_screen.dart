@@ -8,6 +8,7 @@ import 'package:dm_bhatt_classes_new/screen/assistant/help_support_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/my_profile_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/settings_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/admin_video_maker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -93,6 +94,13 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
           }),
           _buildOptionTile(context, Icons.event, "Manage Events", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const ManageEventsScreen()));
+          }),
+          _buildOptionTile(context, Icons.video_collection_outlined, "Video Maker (PDF)", () {
+             Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminVideoMakerScreen()));
+          }),
+          _buildOptionTile(context, Icons.hub_outlined, "Add Mind Map", () {
+             // Navigator.push(context, MaterialPageRoute(builder: (context) => const AddMindMapScreen()));
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Mind Map creation feature coming soon!")));
           }),
           const SizedBox(height: 24),
           _buildOptionTile(context, Icons.logout, "Logout", () {
