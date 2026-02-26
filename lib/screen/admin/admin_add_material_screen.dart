@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
@@ -50,7 +51,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -60,6 +61,37 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     _schoolTitleController.dispose();
     _imageTitleController.dispose();
     super.dispose();
+  }
+
+  List<dynamic> _materialsHistory = [];
+  bool _isHistoryLoading = false;
+
+  Future<void> _fetchHistory() async {
+    setState(() => _isHistoryLoading = true);
+    try {
+      final response = await ApiService.getAllMaterials();
+      if (response.statusCode == 200) {
+        setState(() => _materialsHistory = jsonDecode(response.body));
+      }
+    } catch (e) {
+      CustomToast.showError(context, "Error fetching history: $e");
+    } finally {
+      setState(() => _isHistoryLoading = false);
+    }
+  }
+
+  Future<void> _deleteMaterial(String id) async {
+    try {
+      final response = await ApiService.deleteMaterial(id);
+      if (response.statusCode == 200) {
+        CustomToast.showSuccess(context, "Deleted successfully");
+        _fetchHistory();
+      } else {
+        CustomToast.showError(context, "Failed to delete");
+      }
+    } catch (e) {
+      CustomToast.showError(context, "Error: $e");
+    }
   }
 
   Future<void> _pickFile(String type) async {
@@ -94,6 +126,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         if (response.statusCode == 201 || response.statusCode == 200) {
           CustomToast.showSuccess(context, "Board Paper added successfully");
           _resetForm();
+          _fetchHistory();
         } else {
           CustomToast.showError(context, "Failed: ${response.body}");
         }
@@ -120,6 +153,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         if (response.statusCode == 201 || response.statusCode == 200) {
           CustomToast.showSuccess(context, "School Paper added successfully");
           _resetForm();
+          _fetchHistory();
         } else {
           CustomToast.showError(context, "Failed: ${response.body}");
         }
@@ -147,6 +181,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         if (response.statusCode == 201 || response.statusCode == 200) {
           CustomToast.showSuccess(context, "Image Material added successfully");
           _resetForm();
+          _fetchHistory();
         } else {
           CustomToast.showError(context, "Failed: ${response.body}");
         }
@@ -199,10 +234,14 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
+          onTap: (index) {
+            if (index == 3) _fetchHistory();
+          },
           tabs: const [
             Tab(text: "Board"),
             Tab(text: "School"),
             Tab(text: "Images"),
+            Tab(text: "History"),
           ],
         ),
       ),
@@ -216,6 +255,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
                 _buildBoardForm(),
                 _buildSchoolForm(),
                 _buildImageForm(),
+                _buildHistoryView(),
               ],
             ),
           ),
@@ -348,6 +388,49 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: Text(label, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _buildHistoryView() {
+    if (_isHistoryLoading && _materialsHistory.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_materialsHistory.isEmpty) {
+      return Center(child: Text("No history found", style: GoogleFonts.poppins(color: Colors.grey)));
+    }
+    return RefreshIndicator(
+      onRefresh: _fetchHistory,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _materialsHistory.length,
+        itemBuilder: (context, index) {
+          final material = _materialsHistory[index];
+          IconData icon = Icons.description;
+          if (material['type'] == 'ImageMaterial') icon = Icons.image;
+          if (material['type'] == 'BoardPaper' || material['type'] == 'SchoolPaper') icon = Icons.picture_as_pdf;
+
+          return Card(
+            elevation: 2,
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue.shade100,
+                child: Icon(icon, color: Colors.blue.shade900),
+              ),
+              title: Text(material['title'] ?? 'No Title', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              subtitle: Text("${material['type']} • ${material['subject']}", style: GoogleFonts.poppins(fontSize: 12)),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                onPressed: () => _deleteMaterial(material['_id']),
+              ),
+              onTap: () {
+                // Future enhancement: Open PDF/Image
+              },
+            ),
+          );
+        },
       ),
     );
   }

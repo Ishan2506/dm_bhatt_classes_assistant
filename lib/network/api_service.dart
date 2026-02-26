@@ -820,4 +820,96 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/admin/dashboard-stats");
     return await http.get(uri);
   }
+
+  // --- Material APIs ---
+
+  static Future<http.Response> uploadBoardPaper({
+    required String title,
+    required String medium,
+    required String standard,
+    String? stream,
+    required String year,
+    required String subject,
+    required PlatformFile file,
+  }) async {
+    final uri = Uri.parse("$baseUrl/material/upload-board-paper");
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['title'] = title;
+    request.fields['medium'] = medium;
+    request.fields['standard'] = standard;
+    if (stream != null) request.fields['stream'] = stream;
+    request.fields['year'] = year;
+    request.fields['subject'] = subject;
+
+    final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: file.name,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> uploadSchoolPaper({
+    required String title,
+    required String subject,
+    required PlatformFile file,
+  }) async {
+    final uri = Uri.parse("$baseUrl/material/upload-school-paper");
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['title'] = title;
+    request.fields['subject'] = subject;
+
+    final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: file.name,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> uploadImageMaterial({
+    required String title,
+    required String subject,
+    required String unit,
+    required PlatformFile file,
+  }) async {
+    final uri = Uri.parse("$baseUrl/material/upload-image-material");
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['title'] = title;
+    request.fields['subject'] = subject;
+    request.fields['unit'] = unit;
+
+    final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: file.name,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> getAllMaterials({String? type}) async {
+    final queryParams = type != null ? "?type=$type" : "";
+    final uri = Uri.parse("$baseUrl/material/all$queryParams");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> deleteMaterial(String id) async {
+    final uri = Uri.parse("$baseUrl/material/delete/$id");
+    return await http.delete(uri);
+  }
 }
