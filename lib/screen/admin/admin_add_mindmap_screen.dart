@@ -19,7 +19,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
   String? _selectedStd;
   bool _isSaving = false;
 
-  final List<String> _stds = ["6th", "7th", "8th", "9th", "10th", "11th", "12th"];
+  final List<String> _stds = ["6", "7", "8", "9", "10", "11", "12"];
   final List<String> _subjects = ["Science", "Maths", "English", "Gujarati", "Social Science", "Sanskrit", "Hindi", "Other"];
 
   Map<String, dynamic> _mindMapData = {

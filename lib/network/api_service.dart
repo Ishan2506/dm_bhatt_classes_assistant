@@ -852,6 +852,36 @@ class ApiService {
     return await http.delete(uri);
   }
 
+  // --- One Liner Exam APIs ---
+
+  static Future<http.Response> createOneLinerExam(Map<String, dynamic> data) async {
+    final uri = Uri.parse("$baseUrl/onelinerexam/add");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+  }
+
+  static Future<http.Response> getAllOneLinerExams() async {
+    final uri = Uri.parse("$baseUrl/onelinerexam/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> deleteOneLinerExam(String id) async {
+    final uri = Uri.parse("$baseUrl/onelinerexam/$id");
+    return await http.delete(uri);
+  }
+
+  static Future<http.Response> updateOneLinerExam(String id, Map<String, dynamic> data) async {
+    final uri = Uri.parse("$baseUrl/onelinerexam/$id");
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+  }
+
   // --- Material APIs ---
 
   static Future<http.Response> uploadBoardPaper({
