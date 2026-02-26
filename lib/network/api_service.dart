@@ -821,6 +821,37 @@ class ApiService {
     return await http.get(uri);
   }
 
+  static Future<http.Response> getExamReports() async {
+    final uri = Uri.parse("$baseUrl/admin/exam-reports");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> getStudentReports() async {
+    final uri = Uri.parse("$baseUrl/admin/student-reports");
+    return await http.get(uri);
+  }
+
+  // --- Mind Map APIs ---
+
+  static Future<http.Response> createMindMap(Map<String, dynamic> data) async {
+    final uri = Uri.parse("$baseUrl/mindmap/add");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+  }
+
+  static Future<http.Response> getAllMindMaps() async {
+    final uri = Uri.parse("$baseUrl/mindmap/all");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> deleteMindMap(String id) async {
+    final uri = Uri.parse("$baseUrl/mindmap/$id");
+    return await http.delete(uri);
+  }
+
   // --- Material APIs ---
 
   static Future<http.Response> uploadBoardPaper({
@@ -857,6 +888,10 @@ class ApiService {
   static Future<http.Response> uploadSchoolPaper({
     required String title,
     required String subject,
+    required String medium,
+    required String standard,
+    required String year,
+    required String schoolName,
     required PlatformFile file,
   }) async {
     final uri = Uri.parse("$baseUrl/material/upload-school-paper");
@@ -864,6 +899,10 @@ class ApiService {
 
     request.fields['title'] = title;
     request.fields['subject'] = subject;
+    request.fields['medium'] = medium;
+    request.fields['standard'] = standard;
+    request.fields['year'] = year;
+    request.fields['schoolName'] = schoolName;
 
     final bytes = file.bytes ?? await File(file.path!).readAsBytes();
     final multipartFile = http.MultipartFile.fromBytes(
@@ -881,6 +920,10 @@ class ApiService {
     required String title,
     required String subject,
     required String unit,
+    required String medium,
+    required String standard,
+    required String year,
+    String? schoolName,
     required PlatformFile file,
   }) async {
     final uri = Uri.parse("$baseUrl/material/upload-image-material");
@@ -889,6 +932,10 @@ class ApiService {
     request.fields['title'] = title;
     request.fields['subject'] = subject;
     request.fields['unit'] = unit;
+    request.fields['medium'] = medium;
+    request.fields['standard'] = standard;
+    request.fields['year'] = year;
+    if (schoolName != null) request.fields['schoolName'] = schoolName;
 
     final bytes = file.bytes ?? await File(file.path!).readAsBytes();
     final multipartFile = http.MultipartFile.fromBytes(

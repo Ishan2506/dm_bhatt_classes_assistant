@@ -29,19 +29,27 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
 
   // School Paper Fields
   final TextEditingController _schoolTitleController = TextEditingController();
+  final TextEditingController _schoolNameController = TextEditingController();
   String? _selectedSubjectSi;
+  String? _selectedMediumSi;
+  String? _selectedStdSi;
+  String? _selectedYearSi;
   DateTime? _selectedDateSi;
   PlatformFile? _schoolPdfFile;
 
   // Image Material Fields
   final TextEditingController _imageTitleController = TextEditingController();
+  final TextEditingController _imageSchoolNameController = TextEditingController();
   String? _selectedSubjectIm;
+  String? _selectedMediumIm;
+  String? _selectedStdIm;
+  String? _selectedYearIm;
   String? _selectedUnitIm;
   PlatformFile? _imageFile;
 
   final List<String> _subjects = ["Mathematics", "Science", "English", "Social Science", "Gujarati", "Physics", "Chemistry", "Biology", "Accounts", "Statistics"];
   final List<String> _mediums = ["Gujarati", "English"];
-  final List<String> _stds = ["10", "12"];
+  final List<String> _stds = ["6", "7", "8", "9", "10", "11", "12"];
   final List<String> _streams = ["None", "Science", "General"];
   final List<String> _years = List.generate(10, (index) => (DateTime.now().year - index).toString());
   final List<String> _units = List.generate(20, (index) => (index + 1).toString());
@@ -59,7 +67,9 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     _tabController.dispose();
     _boardTitleController.dispose();
     _schoolTitleController.dispose();
+    _schoolNameController.dispose();
     _imageTitleController.dispose();
+    _imageSchoolNameController.dispose();
     super.dispose();
   }
 
@@ -147,6 +157,10 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         final response = await ApiService.uploadSchoolPaper(
           title: _schoolTitleController.text,
           subject: _selectedSubjectSi!,
+          medium: _selectedMediumSi!,
+          standard: _selectedStdSi!,
+          year: _selectedYearSi!,
+          schoolName: _schoolNameController.text,
           file: _schoolPdfFile!,
         );
 
@@ -175,6 +189,10 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           title: _imageTitleController.text,
           subject: _selectedSubjectIm!,
           unit: _selectedUnitIm!,
+          medium: _selectedMediumIm!,
+          standard: _selectedStdIm!,
+          year: _selectedYearIm!,
+          schoolName: _imageSchoolNameController.text.isNotEmpty ? _imageSchoolNameController.text : null,
           file: _imageFile!,
         );
 
@@ -199,7 +217,9 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     setState(() {
       _boardTitleController.clear();
       _schoolTitleController.clear();
+      _schoolNameController.clear();
       _imageTitleController.clear();
+      _imageSchoolNameController.clear();
       _boardPdfFile = null;
       _schoolPdfFile = null;
       _imageFile = null;
@@ -209,8 +229,14 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       _selectedYearBi = null;
       _selectedSubjectBi = null;
       _selectedSubjectSi = null;
+      _selectedMediumSi = null;
+      _selectedStdSi = null;
+      _selectedYearSi = null;
       _selectedDateSi = null;
       _selectedSubjectIm = null;
+      _selectedMediumIm = null;
+      _selectedStdIm = null;
+      _selectedYearIm = null;
       _selectedUnitIm = null;
     });
   }
@@ -299,6 +325,14 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         children: [
           _buildTextField(_schoolTitleController, "Paper Title", Icons.title),
           const SizedBox(height: 16),
+          _buildDropdown("Medium", Icons.language, _selectedMediumSi, _mediums, (val) => setState(() => _selectedMediumSi = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Standard", Icons.class_outlined, _selectedStdSi, _stds, (val) => setState(() => _selectedStdSi = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Year", Icons.calendar_today, _selectedYearSi, _years, (val) => setState(() => _selectedYearSi = val)),
+          const SizedBox(height: 16),
+          _buildTextField(_schoolNameController, "School Name", Icons.school),
+          const SizedBox(height: 16),
           _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectSi, _subjects, (val) => setState(() => _selectedSubjectSi = val)),
           const SizedBox(height: 24),
           _buildFilePicker("PDF File", _schoolPdfFile?.name, () => _pickFile('school')),
@@ -315,6 +349,10 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       child: Column(
         children: [
           _buildTextField(_imageTitleController, "Image Title", Icons.title),
+          const SizedBox(height: 16),
+          _buildDropdown("Medium", Icons.language, _selectedMediumIm, _mediums, (val) => setState(() => _selectedMediumIm = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Standard", Icons.class_outlined, _selectedStdIm, _stds, (val) => setState(() => _selectedStdIm = val)),
           const SizedBox(height: 16),
           _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectIm, _subjects, (val) => setState(() => _selectedSubjectIm = val)),
           const SizedBox(height: 16),

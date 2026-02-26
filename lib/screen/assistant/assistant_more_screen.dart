@@ -57,9 +57,6 @@ class AssistantMoreScreen extends StatelessWidget {
           _buildOptionTile(context, Icons.emoji_events_outlined, "Manage Top Rankers", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const TopRankersScreen()));
           }),
-          _buildOptionTile(context, Icons.event, "Manage Events", () {
-             Navigator.push(context, MaterialPageRoute(builder: (context) => const ManageEventsScreen()));
-          }),
           const SizedBox(height: 24),
           _buildOptionTile(context, Icons.logout, "Logout", () {
              _showLogoutDialog(context);
