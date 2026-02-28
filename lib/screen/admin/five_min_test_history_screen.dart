@@ -2,6 +2,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/create_five_min_test_screen.da
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class FiveMinTestHistoryScreen extends StatefulWidget {
   const FiveMinTestHistoryScreen({super.key});
@@ -12,12 +13,11 @@ class FiveMinTestHistoryScreen extends StatefulWidget {
 
 class _FiveMinTestHistoryScreenState extends State<FiveMinTestHistoryScreen> {
   // Filters
+  String? _selectedBoard;
   String? _selectedStandard;
   String? _selectedMedium;
   String? _selectedStream;
 
-  final List<String> _standards = ["6", "7", "8", "9", "10", "11", "12"];
-  final List<String> _mediums = ["English", "Gujarati"];
   final List<String> _streams = ["Science", "Commerce", "General"];
 
   // Mock Data
@@ -53,10 +53,11 @@ class _FiveMinTestHistoryScreenState extends State<FiveMinTestHistoryScreen> {
 
   List<Map<String, dynamic>> get _filteredTests {
     return _allTests.where((test) {
+      final matchBoard = _selectedBoard == null || test['board'] == _selectedBoard;
       final matchStd = _selectedStandard == null || test['std'] == _selectedStandard;
       final matchMedium = _selectedMedium == null || test['medium'] == _selectedMedium;
       final matchStream = _selectedStream == null || test['stream'] == _selectedStream;
-      return matchStd && matchMedium && matchStream;
+      return matchBoard && matchStd && matchMedium && matchStream;
     }).toList();
   }
 
@@ -182,16 +183,29 @@ class _FiveMinTestHistoryScreenState extends State<FiveMinTestHistoryScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildDropdown("Standard", _selectedStandard, _standards, (val) => setState(() => _selectedStandard = val)),
+                      child: _buildDropdown("Board", _selectedBoard, AcademicConstants.boards, (val) => setState(() {
+                        _selectedBoard = val;
+                        _selectedStandard = null;
+                      })),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _buildDropdown("Medium", _selectedMedium, _mediums, (val) => setState(() => _selectedMedium = val)),
+                      child: _buildDropdown("Standard", _selectedStandard, _selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? [], (val) => setState(() => _selectedStandard = val)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                _buildDropdown("Stream", _selectedStream, _streams, (val) => setState(() => _selectedStream = val)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDropdown("Medium", _selectedMedium, AcademicConstants.mediums, (val) => setState(() => _selectedMedium = val)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDropdown("Stream", _selectedStream, _streams, (val) => setState(() => _selectedStream = val)),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

@@ -117,6 +117,7 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       "Phone Number",
       "Password",
       "Parent's Mobile Number",
+      "Board",
       "Standard",
       "Medium",
       "Stream",

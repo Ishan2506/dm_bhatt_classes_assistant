@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class AdminAddMaterialScreen extends StatefulWidget {
   const AdminAddMaterialScreen({super.key});
@@ -19,6 +21,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
 
   // Board Paper Fields
   final TextEditingController _boardTitleController = TextEditingController();
+  String? _selectedBoardBi;
   String? _selectedMediumBi;
   String? _selectedStdBi;
   String? _selectedStreamBi;
@@ -29,6 +32,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   // School Paper Fields
   final TextEditingController _schoolTitleController = TextEditingController();
   final TextEditingController _schoolNameController = TextEditingController();
+  String? _selectedBoardSi;
   String? _selectedSubjectSi;
   String? _selectedMediumSi;
   String? _selectedStdSi;
@@ -39,6 +43,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   // Image Material Fields
   final TextEditingController _imageTitleController = TextEditingController();
   final TextEditingController _imageSchoolNameController = TextEditingController();
+  String? _selectedBoardIm;
   String? _selectedSubjectIm;
   String? _selectedMediumIm;
   String? _selectedStdIm;
@@ -46,9 +51,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   String? _selectedUnitIm;
   PlatformFile? _imageFile;
 
-  final List<String> _subjects = ["Mathematics", "Science", "English", "Social Science", "Gujarati", "Physics", "Chemistry", "Biology", "Accounts", "Statistics"];
-  final List<String> _mediums = ["Gujarati", "English"];
-  final List<String> _stds = ["6", "7", "8", "9", "10", "11", "12"];
+  final List<String> _streams = ["None", "Science", "General"];
   final List<String> _streams = ["None", "Science", "General"];
   final List<String> _years = List.generate(10, (index) => (DateTime.now().year - index).toString());
   final List<String> _units = List.generate(20, (index) => (index + 1).toString());
@@ -124,6 +127,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       try {
         final response = await ApiService.uploadBoardPaper(
           title: _boardTitleController.text,
+          board: _selectedBoardBi!,
           medium: _selectedMediumBi!,
           standard: _selectedStdBi!,
           stream: _selectedStreamBi,
@@ -155,6 +159,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       try {
         final response = await ApiService.uploadSchoolPaper(
           title: _schoolTitleController.text,
+          board: _selectedBoardSi!,
           subject: _selectedSubjectSi!,
           medium: _selectedMediumSi!,
           standard: _selectedStdSi!,
@@ -186,6 +191,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       try {
         final response = await ApiService.uploadImageMaterial(
           title: _imageTitleController.text,
+          board: _selectedBoardIm!,
           subject: _selectedSubjectIm!,
           unit: _selectedUnitIm!,
           medium: _selectedMediumIm!,
@@ -297,17 +303,26 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         children: [
           _buildTextField(_boardTitleController, "Paper Title", Icons.title),
           const SizedBox(height: 16),
-          _buildDropdown("Medium", Icons.language, _selectedMediumBi, _mediums, (val) => setState(() => _selectedMediumBi = val)),
+          _buildDropdown("Board", Icons.school, _selectedBoardBi, AcademicConstants.boards, (val) => setState(() {
+            _selectedBoardBi = val;
+            _selectedStdBi = null;
+            _selectedSubjectBi = null;
+          })),
           const SizedBox(height: 16),
-          _buildDropdown("Standard", Icons.class_outlined, _selectedStdBi, _stds, (val) => setState(() => _selectedStdBi = val)),
+          _buildDropdown("Standard", Icons.class_outlined, _selectedStdBi, _selectedBoardBi == null ? [] : AcademicConstants.standards[_selectedBoardBi!] ?? [], (val) => setState(() {
+             _selectedStdBi = val;
+             _selectedSubjectBi = null;
+          })),
           const SizedBox(height: 16),
-          if (_selectedStdBi == "12") ...[
+          if (_selectedStdBi == "12" || _selectedStdBi == "11") ...[
             _buildDropdown("Stream", Icons.school_outlined, _selectedStreamBi, _streams, (val) => setState(() => _selectedStreamBi = val)),
             const SizedBox(height: 16),
           ],
-          _buildDropdown("Year", Icons.calendar_today, _selectedYearBi, _years, (val) => setState(() => _selectedYearBi = val)),
+          _buildDropdown("Medium", Icons.language, _selectedMediumBi, AcademicConstants.mediums, (val) => setState(() => _selectedMediumBi = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectBi, _subjects, (val) => setState(() => _selectedSubjectBi = val)),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectBi, (_selectedBoardBi == null || _selectedStdBi == null) ? [] : AcademicConstants.subjects["$_selectedBoardBi-$_selectedStdBi"] ?? [], (val) => setState(() => _selectedSubjectBi = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Year", Icons.calendar_today, _selectedYearBi, _years, (val) => setState(() => _selectedYearBi = val)),
           const SizedBox(height: 24),
           _buildFilePicker("PDF File", _boardPdfFile?.name, () => _pickFile('board')),
           const SizedBox(height: 32),
@@ -324,15 +339,24 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         children: [
           _buildTextField(_schoolTitleController, "Paper Title", Icons.title),
           const SizedBox(height: 16),
-          _buildDropdown("Medium", Icons.language, _selectedMediumSi, _mediums, (val) => setState(() => _selectedMediumSi = val)),
+          _buildDropdown("Board", Icons.school, _selectedBoardSi, AcademicConstants.boards, (val) => setState(() {
+            _selectedBoardSi = val;
+            _selectedStdSi = null;
+            _selectedSubjectSi = null;
+          })),
           const SizedBox(height: 16),
-          _buildDropdown("Standard", Icons.class_outlined, _selectedStdSi, _stds, (val) => setState(() => _selectedStdSi = val)),
+          _buildDropdown("Standard", Icons.class_outlined, _selectedStdSi, _selectedBoardSi == null ? [] : AcademicConstants.standards[_selectedBoardSi!] ?? [], (val) => setState(() {
+             _selectedStdSi = val;
+             _selectedSubjectSi = null;
+          })),
+          const SizedBox(height: 16),
+          _buildDropdown("Medium", Icons.language, _selectedMediumSi, AcademicConstants.mediums, (val) => setState(() => _selectedMediumSi = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectSi, (_selectedBoardSi == null || _selectedStdSi == null) ? [] : AcademicConstants.subjects["$_selectedBoardSi-$_selectedStdSi"] ?? [], (val) => setState(() => _selectedSubjectSi = val)),
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearSi, _years, (val) => setState(() => _selectedYearSi = val)),
           const SizedBox(height: 16),
           _buildTextField(_schoolNameController, "School Name", Icons.school),
-          const SizedBox(height: 16),
-          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectSi, _subjects, (val) => setState(() => _selectedSubjectSi = val)),
           const SizedBox(height: 24),
           _buildFilePicker("PDF File", _schoolPdfFile?.name, () => _pickFile('school')),
           const SizedBox(height: 32),
@@ -349,11 +373,20 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         children: [
           _buildTextField(_imageTitleController, "Image Title", Icons.title),
           const SizedBox(height: 16),
-          _buildDropdown("Medium", Icons.language, _selectedMediumIm, _mediums, (val) => setState(() => _selectedMediumIm = val)),
+          _buildDropdown("Board", Icons.school, _selectedBoardIm, AcademicConstants.boards, (val) => setState(() {
+            _selectedBoardIm = val;
+            _selectedStdIm = null;
+            _selectedSubjectIm = null;
+          })),
           const SizedBox(height: 16),
-          _buildDropdown("Standard", Icons.class_outlined, _selectedStdIm, _stds, (val) => setState(() => _selectedStdIm = val)),
+          _buildDropdown("Standard", Icons.class_outlined, _selectedStdIm, _selectedBoardIm == null ? [] : AcademicConstants.standards[_selectedBoardIm!] ?? [], (val) => setState(() {
+             _selectedStdIm = val;
+             _selectedSubjectIm = null;
+          })),
           const SizedBox(height: 16),
-          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectIm, _subjects, (val) => setState(() => _selectedSubjectIm = val)),
+          _buildDropdown("Medium", Icons.language, _selectedMediumIm, AcademicConstants.mediums, (val) => setState(() => _selectedMediumIm = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectIm, (_selectedBoardIm == null || _selectedStdIm == null) ? [] : AcademicConstants.subjects["$_selectedBoardIm-$_selectedStdIm"] ?? [], (val) => setState(() => _selectedSubjectIm = val)),
           const SizedBox(height: 16),
           _buildDropdown("Unit", Icons.list_alt, _selectedUnitIm, _units, (val) => setState(() => _selectedUnitIm = val)),
           const SizedBox(height: 24),

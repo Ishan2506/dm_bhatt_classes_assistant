@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class AdminAddMindMapScreen extends StatefulWidget {
   const AdminAddMindMapScreen({super.key});
@@ -13,14 +14,12 @@ class AdminAddMindMapScreen extends StatefulWidget {
 }
 
 class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
+  String? _selectedBoard;
+  String? _selectedStd;
   String? _selectedSubject;
   final TextEditingController _unitController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
-  String? _selectedStd;
   bool _isSaving = false;
-
-  final List<String> _stds = ["6", "7", "8", "9", "10", "11", "12"];
-  final List<String> _subjects = ["Science", "Maths", "English", "Gujarati", "Social Science", "Sanskrit", "Hindi", "Other"];
 
   Map<String, dynamic> _mindMapData = {
     'name': 'Main Topic',
@@ -28,15 +27,16 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
   };
 
   Future<void> _saveMindMap() async {
-    if (_selectedSubject == null || _unitController.text.isEmpty || 
-        _titleController.text.isEmpty || _selectedStd == null) {
-      CustomToast.showError(context, "All fields (Standard, Subject, Unit, Title) are required");
+    if (_selectedBoard == null || _selectedStd == null || _selectedSubject == null || _unitController.text.isEmpty || 
+        _titleController.text.isEmpty) {
+      CustomToast.showError(context, "All fields (Board, Standard, Subject, Unit, Title) are required");
       return;
     }
 
     setState(() => _isSaving = true);
     try {
       final response = await ApiService.createMindMap({
+        'board': _selectedBoard,
         'subject': _selectedSubject,
         'unit': _unitController.text,
         'title': _titleController.text,
@@ -96,14 +96,32 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
         child: Column(
           children: [
             DropdownButtonFormField<String>(
+              value: _selectedBoard,
+              decoration: InputDecoration(
+                labelText: "Board",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.school),
+              ),
+              items: AcademicConstants.boards.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+              onChanged: (val) => setState(() {
+                _selectedBoard = val;
+                _selectedStd = null;
+                _selectedSubject = null;
+              }),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
               value: _selectedStd,
               decoration: InputDecoration(
                 labelText: "Standard",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.grade),
               ),
-              items: _stds.map((std) => DropdownMenuItem(value: std, child: Text(std))).toList(),
-              onChanged: (val) => setState(() => _selectedStd = val),
+              items: (_selectedBoard == null ? <String>[] : AcademicConstants.standards[_selectedBoard!] ?? <String>[]).map((std) => DropdownMenuItem(value: std, child: Text(std))).toList(),
+              onChanged: (val) => setState(() {
+                _selectedStd = val;
+                _selectedSubject = null;
+              }),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -113,7 +131,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.book),
               ),
-              items: _subjects.map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
+              items: (_selectedBoard == null || _selectedStd == null ? <String>[] : AcademicConstants.subjects["$_selectedBoard-$_selectedStd"] ?? <String>[]).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
               onChanged: (val) => setState(() => _selectedSubject = val),
             ),
             const SizedBox(height: 16),

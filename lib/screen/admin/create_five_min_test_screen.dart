@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class CreateFiveMinTestScreen extends StatefulWidget {
   final Map<String, dynamic>? testToEdit;
@@ -23,8 +24,12 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
   late TextEditingController _unitController;
   late TextEditingController _overviewController;
 
+  String? _selectedBoard;
+  String? _selectedStandard;
+  String? _selectedMedium;
+  String? _selectedStream;
   String? _selectedSubject;
-  final List<String> _subjects = ['Math', 'Science', 'English', 'Account', 'Statistics', 'Economics', 'BA'];
+  final List<String> _streams = ["Science", "Commerce", "General"];
 
   // Questions Data
   late List<Map<String, dynamic>> _questions;
@@ -38,6 +43,10 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
     _overviewController = TextEditingController(text: _isEditing ? "Mock Overview Content..." : "");
     
     if (_isEditing) {
+      _selectedBoard = widget.testToEdit?['board'];
+      _selectedStandard = widget.testToEdit?['std'];
+      _selectedMedium = widget.testToEdit?['medium'];
+      _selectedStream = widget.testToEdit?['stream'];
       _selectedSubject = widget.testToEdit?['subject'];
       // Mock questions or use passed data if structure matched
       _questions = List.generate(5, (index) => {
@@ -107,8 +116,8 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
 
   void _submitTest() {
     if (_formKey.currentState!.validate()) {
-      if (_selectedSubject == null) {
-        CustomToast.showError(context, "Please select a subject");
+      if (_selectedBoard == null || _selectedStandard == null || _selectedMedium == null || _selectedSubject == null) {
+        CustomToast.showError(context, "Please select board, standard, medium and subject");
         return;
       }
       
@@ -174,10 +183,59 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
               _buildHeader("Test Details"),
               const SizedBox(height: 16),
               
+              // Board Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedBoard,
+                items: AcademicConstants.boards.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (val) => setState(() {
+                  _selectedBoard = val;
+                  _selectedStandard = null;
+                  _selectedSubject = null;
+                }),
+                decoration: _inputDecoration("Board", Icons.school),
+                style: GoogleFonts.poppins(color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+
+              // Standard Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedStandard,
+                items: (_selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (val) => setState(() {
+                  _selectedStandard = val;
+                  _selectedSubject = null;
+                }),
+                decoration: _inputDecoration("Standard", Icons.class_outlined),
+                style: GoogleFonts.poppins(color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+
+              // Medium Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedMedium,
+                items: AcademicConstants.mediums.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (val) => setState(() => _selectedMedium = val),
+                decoration: _inputDecoration("Medium", Icons.language),
+                style: GoogleFonts.poppins(color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+              
+              // Stream Dropdown
+              if (_selectedStandard == "11" || _selectedStandard == "12" || _selectedStandard == "11 Science" || _selectedStandard == "12 Science" || _selectedStandard == "11 Commerce" || _selectedStandard == "12 Commerce") ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedStream,
+                  items: _streams.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  onChanged: (val) => setState(() => _selectedStream = val),
+                  decoration: _inputDecoration("Stream", Icons.science_outlined),
+                  style: GoogleFonts.poppins(color: Colors.black87),
+                ),
+                const SizedBox(height: 16),
+              ],
+
               // Subject Dropdown
               DropdownButtonFormField<String>(
                 value: _selectedSubject,
-                items: _subjects.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: (_selectedBoard == null || _selectedStandard == null ? [] : AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (val) => setState(() => _selectedSubject = val),
                 decoration: _inputDecoration("Subject", Icons.subject),
                 style: GoogleFonts.poppins(color: Colors.black87),
@@ -377,7 +435,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
               Expanded(
                 child: Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
               ),
-              if (imageUrl != null && imageUrl.isNotEmpty)
+              if (imageUrl != null && imageUrl!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: ClipRRect(

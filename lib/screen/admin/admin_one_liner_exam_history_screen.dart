@@ -72,10 +72,6 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("One Liner Exam History", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-        flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade900, Colors.indigo.shade700]))),
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _exams.isEmpty

@@ -5,6 +5,7 @@ import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class AddPapersetScreen extends StatefulWidget {
   const AddPapersetScreen({super.key});
@@ -27,12 +28,10 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
   bool _isEditing = false;
   int? _editingIndex;
 
+  String? _selectedBoard;
   String? _selectedStandard;
   String? _selectedStream = 'None'; // Default
 
-  final List<String> _subjects = ["Maths", "Science", "English", "Gujarati", "SS", "Computer"];
-  final List<String> _mediums = ["English", "Gujarati"];
-  final List<String> _standards = ["8", "9", "10", "11", "12"];
   final List<String> _streams = ["None", "Science", "General"];
 
   // Real Data
@@ -81,8 +80,8 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
 
   Future<void> _createOrUpdatePaperSet() async {
     if (_formKey.currentState!.validate()) {
-       if (_selectedStandard == null) {
-         CustomToast.showError(context, "Please select Standard");
+       if (_selectedBoard == null || _selectedStandard == null) {
+         CustomToast.showError(context, "Please select Board and Standard");
          return;
        }
        
@@ -98,6 +97,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
             final response = await ApiService.editPaperSet(
               id: _editingId!,
               examName: _examNameController.text,
+              board: _selectedBoard,
               date: _selectedDate!.toIso8601String(),
               subject: _selectedSubject,
               medium: _selectedMedium,
@@ -119,6 +119,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
             // Create
             final response = await ApiService.createPaperSet(
               examName: _examNameController.text,
+              board: _selectedBoard!,
               date: _selectedDate!.toIso8601String(),
               subject: _selectedSubject!,
               medium: _selectedMedium!,
@@ -150,6 +151,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
       _editingId = item['_id'];
       
       _examNameController.text = item['examName'] ?? "";
+      _selectedBoard = item['board'];
       _selectedSubject = item['subject']; // Ensure item value matches dropdown list exactly
       _selectedMedium = item['medium'];
       _selectedStandard = item['standard'] ?? item['std']; // Backend might return 'std' or 'standard'
@@ -166,9 +168,10 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
     });
 
     // Check if dropdown values exist in lists, if not default to null or handle
-    if (!_subjects.contains(_selectedSubject)) _selectedSubject = null;
-    if (!_mediums.contains(_selectedMedium)) _selectedMedium = null;
-    if (!_standards.contains(_selectedStandard)) _selectedStandard = null;
+    if (!AcademicConstants.boards.contains(_selectedBoard)) _selectedBoard = null;
+    if (!AcademicConstants.mediums.contains(_selectedMedium)) _selectedMedium = null;
+    if (_selectedBoard != null && !AcademicConstants.standards[_selectedBoard!]!.contains(_selectedStandard)) _selectedStandard = null;
+    if (!AcademicConstants.subjects.containsKey("$_selectedBoard-$_selectedStandard") || !AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"]!.contains(_selectedSubject)) _selectedSubject = null;
     if (!_streams.contains(_selectedStream)) _selectedStream = "None";
 
     _tabController.animateTo(0);
@@ -252,6 +255,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
       _editingId = null;
       _examNameController.clear();
       _dateController.clear();
+      _selectedBoard = null;
       _selectedSubject = null;
       _selectedMedium = null;
       _selectedStandard = null;
@@ -304,12 +308,45 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                     ),
                     const SizedBox(height: 16),
 
+                    // Board Dropdown (NEW)
+                    _buildDropdown(
+                      label: "Board",
+                      icon: Icons.school,
+                      value: _selectedBoard,
+                      items: AcademicConstants.boards,
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedBoard = val;
+                          _selectedStandard = null;
+                          _selectedSubject = null;
+                        });
+                        _updateExamName();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Standard Dropdown (NEW)
+                    _buildDropdown(
+                      label: "Standard",
+                      icon: Icons.class_outlined,
+                      value: _selectedStandard,
+                      items: _selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? [],
+                      onChanged: (val) {
+                        setState(() {
+                           _selectedStandard = val;
+                           _selectedSubject = null;
+                        });
+                        _updateExamName();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     // Subject Dropdown
                     _buildDropdown(
                       label: "Subject",
                       icon: Icons.book_outlined,
                       value: _selectedSubject,
-                      items: _subjects,
+                      items: (_selectedBoard == null || _selectedStandard == null) ? [] : AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"] ?? [],
                       onChanged: (val) {
                         setState(() {
                           _selectedSubject = val;
@@ -324,21 +361,9 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                       label: "Medium",
                       icon: Icons.language,
                       value: _selectedMedium,
-                      items: _mediums,
+                      items: AcademicConstants.mediums,
                       onChanged: (val) {
                         setState(() => _selectedMedium = val);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Standard Dropdown (NEW)
-                    _buildDropdown(
-                      label: "Standard",
-                      icon: Icons.class_outlined,
-                      value: _selectedStandard,
-                      items: _standards,
-                      onChanged: (val) {
-                        setState(() => _selectedStandard = val);
                       },
                     ),
                     const SizedBox(height: 16),

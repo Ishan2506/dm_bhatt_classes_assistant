@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class AddStudentScreen extends StatefulWidget {
   const AddStudentScreen({super.key});
@@ -33,6 +34,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   int? _editingIndex; // To track which item is being edited (mock)
 
   // Selection States
+  String? _selectedBoard;
   String? _selectedStandard;
   String? _selectedMedium;
   String? _selectedStream;
@@ -42,8 +44,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   final ImagePicker _picker = ImagePicker();
 
   // Data Lists
-  final List<String> _standards = ["6", "7", "8", "9", "10", "11", "12"];
-  final List<String> _mediums = ["English", "Gujarati"];
   final List<String> _streams = ["Science", "Commerce", "General"];
   
   final Map<String, List<String>> _stateCityMap = {
@@ -144,6 +144,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                 phone: _phoneController.text,
                 password: _passwordController.text, // Optional in edit
                 parentPhone: _parentPhoneController.text,
+                board: _selectedBoard,
                 standard: _selectedStandard,
                 medium: _selectedMedium,
                 stream: _selectedStream,
@@ -173,6 +174,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                 phone: _phoneController.text,
                 password: _passwordController.text,
                 parentPhone: _parentPhoneController.text,
+                board: _selectedBoard ?? "",
                 standard: _selectedStandard ?? "",
                 medium: _selectedMedium ?? "",
                 stream: _selectedStream,
@@ -214,8 +216,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
        _parentPhoneController.text = item['parentPhone'] ?? "";
        
        // Handle dropdowns safely
-       _selectedStandard = item['std'] != null && _standards.contains(item['std']) ? item['std'] : null;
-       _selectedMedium = item['medium'] != null && _mediums.contains(item['medium']) ? item['medium'] : null;
+       _selectedBoard = item['board'] != null && AcademicConstants.boards.contains(item['board']) ? item['board'] : null;
+       _selectedStandard = item['std'] != null && _selectedBoard != null && AcademicConstants.standards[_selectedBoard!] != null && AcademicConstants.standards[_selectedBoard!]!.contains(item['std']) ? item['std'] : null;
+       _selectedMedium = item['medium'] != null && AcademicConstants.mediums.contains(item['medium']) ? item['medium'] : null;
        _selectedStream = item['stream'] != null && _streams.contains(item['stream']) ? item['stream'] : null;
        
        _cityController.text = item['city'] ?? "";
@@ -322,6 +325,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
     _cityController.clear();
     setState(() {
       _imageFile = null;
+      _selectedBoard = null;
       _selectedStandard = null;
       _selectedMedium = null;
       _selectedStream = null;
@@ -448,10 +452,22 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                     const SizedBox(height: 16),
 
                     _buildDropdown(
+                      hint: "Board",
+                      icon: Icons.school,
+                      value: _selectedBoard,
+                      items: AcademicConstants.boards,
+                      onChanged: (val) => setState(() {
+                         _selectedBoard = val;
+                         _selectedStandard = null; // reset standard on board change
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildDropdown(
                       hint: "Standard",
                       icon: Icons.school_outlined,
                       value: _selectedStandard,
-                      items: _standards,
+                      items: _selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? [],
                       onChanged: (val) => setState(() => _selectedStandard = val),
                     ),
                     const SizedBox(height: 16),
@@ -460,7 +476,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                       hint: "Medium",
                       icon: Icons.language,
                       value: _selectedMedium,
-                      items: _mediums,
+                      items: AcademicConstants.mediums,
                       onChanged: (val) => setState(() => _selectedMedium = val),
                     ),
                      const SizedBox(height: 16),

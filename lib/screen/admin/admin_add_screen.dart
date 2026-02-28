@@ -6,6 +6,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/admin_five_min_test_screen.dar
 import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/add_game_question_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_material_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/admin_add_one_liner_exam_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -98,18 +99,18 @@ class AdminAddScreen extends StatelessWidget {
                 );
               },
             ),
-             _buildAddCard(
-              context,
-              "Manage Events",
-              Icons.event,
-              Colors.teal,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ManageEventsScreen()),
-                );
-              },
-            ),
+            //  _buildAddCard(
+            //   context,
+            //   "Manage Events",
+            //   Icons.event,
+            //   Colors.teal,
+            //   () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => const ManageEventsScreen()),
+            //     );
+            //   },
+            // ),
              _buildAddCard(
               context,
               "Add Material",
@@ -131,6 +132,18 @@ class AdminAddScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AddGameQuestionScreen()),
+                );
+              },
+            ),
+             _buildAddCard(
+              context,
+              "Add One Liner Exam",
+              Icons.edit_note_outlined,
+              Colors.pink,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminAddOneLinerExamScreen()),
                 );
               },
             ),

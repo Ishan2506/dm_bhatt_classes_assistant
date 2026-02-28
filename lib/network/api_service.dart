@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 class ApiService {
-  // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
-  static const String baseUrl = "http://localhost:5000/api";
+   static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+  //static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -115,6 +115,7 @@ class ApiService {
     required String phone,
     required String password,
     required String parentPhone,
+    required String board,
     required String standard,
     required String medium,
     String? stream,
@@ -131,6 +132,7 @@ class ApiService {
     request.fields['phone'] = phone;
     request.fields['password'] = password;
     request.fields['parentPhone'] = parentPhone;
+    request.fields['board'] = board;
     request.fields['standard'] = standard;
     request.fields['medium'] = medium;
     if (stream != null) request.fields['stream'] = stream;
@@ -159,6 +161,7 @@ class ApiService {
     String? phone,
     String? password,
     String? parentPhone,
+    String? board,
     String? standard,
     String? medium,
     String? stream,
@@ -175,6 +178,7 @@ class ApiService {
     if (phone != null) request.fields['phone'] = phone;
     if (password != null && password.isNotEmpty) request.fields['password'] = password;
     if (parentPhone != null) request.fields['parentPhone'] = parentPhone;
+    if (board != null) request.fields['board'] = board;
     if (standard != null) request.fields['standard'] = standard;
     if (medium != null) request.fields['medium'] = medium;
     if (stream != null) request.fields['stream'] = stream;
@@ -233,6 +237,7 @@ class ApiService {
   static Future<http.Response> createPaperSet({
     required String examName,
     required String date,
+    required String board,
     required String subject,
     required String medium,
     required String standard,
@@ -245,6 +250,7 @@ class ApiService {
       body: jsonEncode({
         'examName': examName,
         'date': date,
+        'board': board,
         'subject': subject,
         'medium': medium,
         'standard': standard,
@@ -279,6 +285,7 @@ class ApiService {
     required String id,
     String? examName,
     String? date,
+    String? board,
     String? subject,
     String? medium,
     String? standard,
@@ -289,6 +296,7 @@ class ApiService {
     final body = {
       if (examName != null) 'examName': examName,
       if (date != null) 'date': date,
+      if (board != null) 'board': board,
       if (subject != null) 'subject': subject,
       if (medium != null) 'medium': medium,
       if (standard != null) 'std': standard, // Backend expects 'std' or 'standard'? Controller checks 'std'.
@@ -527,6 +535,7 @@ class ApiService {
   // --- 5 Min Test APIs ---
 
   static Future<http.Response> createFiveMinTest({
+    required String board,
     required String std,
     required String medium,
     String? stream,
@@ -540,6 +549,7 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        "board": board,
         "std": std,
         "medium": medium,
         "stream": stream ?? "-",
@@ -558,6 +568,7 @@ class ApiService {
 
   static Future<http.Response> updateFiveMinTest({
     required String id,
+    required String board,
     required String std,
     required String medium,
     String? stream,
@@ -571,6 +582,7 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        "board": board,
         "std": std,
         "medium": medium,
         "stream": stream ?? "-",
@@ -886,6 +898,7 @@ class ApiService {
 
   static Future<http.Response> uploadBoardPaper({
     required String title,
+    required String board,
     required String medium,
     required String standard,
     String? stream,
@@ -896,6 +909,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/material/upload-board-paper");
     final request = http.MultipartRequest('POST', uri);
 
+    request.fields['board'] = board;
     request.fields['title'] = title;
     request.fields['medium'] = medium;
     request.fields['standard'] = standard;
@@ -917,6 +931,7 @@ class ApiService {
 
   static Future<http.Response> uploadSchoolPaper({
     required String title,
+    required String board,
     required String subject,
     required String medium,
     required String standard,
@@ -927,6 +942,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/material/upload-school-paper");
     final request = http.MultipartRequest('POST', uri);
 
+    request.fields['board'] = board;
     request.fields['title'] = title;
     request.fields['subject'] = subject;
     request.fields['medium'] = medium;
@@ -948,6 +964,7 @@ class ApiService {
 
   static Future<http.Response> uploadImageMaterial({
     required String title,
+    required String board,
     required String subject,
     required String unit,
     required String medium,
@@ -959,6 +976,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/material/upload-image-material");
     final request = http.MultipartRequest('POST', uri);
 
+    request.fields['board'] = board;
     request.fields['title'] = title;
     request.fields['subject'] = subject;
     request.fields['unit'] = unit;

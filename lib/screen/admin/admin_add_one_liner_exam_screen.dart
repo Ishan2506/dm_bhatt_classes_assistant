@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
-
+import 'package:dm_bhatt_classes_new/screen/admin/admin_one_liner_exam_history_screen.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 class AdminAddOneLinerExamScreen extends StatefulWidget {
   final Map<String, dynamic>? examData;
   const AdminAddOneLinerExamScreen({super.key, this.examData});
@@ -15,15 +16,12 @@ class AdminAddOneLinerExamScreen extends StatefulWidget {
 class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _unitController = TextEditingController();
+  String? _selectedBoard;
   String? _selectedStd;
   String? _selectedSubject;
   String? _selectedMedium;
   String? _id;
   bool _isSaving = false;
-
-  final List<String> _stds = ["6", "7", "8", "9", "10", "11", "12"];
-  final List<String> _subjects = ["Science", "Maths", "English", "Gujarati", "Social Science", "Sanskrit", "Hindi", "Other"];
-  final List<String> _mediums = ["Gujarati", "English"];
 
   List<Map<String, String>> _questions = [
     {"questionText": "", "correctAnswer": ""}
@@ -40,6 +38,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
       if (_selectedStd != null && _selectedStd!.endsWith("th")) {
         _selectedStd = _selectedStd!.replaceAll("th", "");
       }
+      _selectedBoard = widget.examData!['board'];
       _selectedSubject = widget.examData!['subject'];
       _selectedMedium = widget.examData!['medium'];
       if (_selectedMedium == "Gujarat") _selectedMedium = "Gujarati";
@@ -55,7 +54,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
   }
 
   Future<void> _saveExam() async {
-    if (_selectedStd == null || _selectedSubject == null || _selectedMedium == null || 
+    if (_selectedBoard == null || _selectedStd == null || _selectedSubject == null || _selectedMedium == null || 
         _unitController.text.isEmpty || _titleController.text.isEmpty) {
       CustomToast.showError(context, "Please fill all header fields");
       return;
@@ -69,6 +68,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
     setState(() => _isSaving = true);
     try {
       final data = {
+        'board': _selectedBoard,
         'std': _selectedStd,
         'medium': _selectedMedium,
         'subject': _selectedSubject,
@@ -96,45 +96,82 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_id != null ? "Edit One Liner Exam" : "Add One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-        flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade900, Colors.indigo.shade700]))),
-        actions: [
-          if (_isSaving)
-            const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
-          else
-            IconButton(icon: const Icon(Icons.check, color: Colors.white), onPressed: _saveExam),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildHeaderFields(),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Questions & Answers", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo.shade900)),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.green),
-                  onPressed: () => setState(() => _questions.add({"question": "", "answer": ""})),
-                ),
-              ],
-            ),
-            const Divider(),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _questions.length,
-              itemBuilder: (context, index) {
-                return _buildQuestionCard(index);
-              },
-            ),
-            const SizedBox(height: 100),
+    if (_id != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text("Edit One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade900, Colors.indigo.shade700]))),
+          actions: [
+            if (_isSaving)
+              const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
+            else
+              IconButton(icon: const Icon(Icons.check, color: Colors.white), onPressed: _saveExam),
           ],
         ),
+        body: _buildForm(),
+      );
+    }
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+          flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade900, Colors.indigo.shade700]))),
+          actions: [
+            if (_isSaving)
+              const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
+            else
+              IconButton(icon: const Icon(Icons.check, color: Colors.white), onPressed: _saveExam),
+          ],
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(text: "Add Exam"),
+              Tab(text: "History"),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildForm(),
+            const AdminOneLinerExamHistoryScreen(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildHeaderFields(),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Questions & Answers", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo.shade900)),
+              IconButton(
+                icon: const Icon(Icons.add_circle, color: Colors.green),
+                onPressed: () => setState(() => _questions.add({"questionText": "", "correctAnswer": ""})),
+              ),
+            ],
+          ),
+          const Divider(),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _questions.length,
+            itemBuilder: (context, index) {
+              return _buildQuestionCard(index);
+            },
+          ),
+          const SizedBox(height: 100),
+        ],
       ),
     );
   }
@@ -147,14 +184,28 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            DropdownButtonFormField<String>(
+              value: _selectedBoard,
+              decoration: InputDecoration(labelText: "Board", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              items: AcademicConstants.boards.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+              onChanged: (val) => setState(() {
+                _selectedBoard = val;
+                _selectedStd = null;
+                _selectedSubject = null;
+              }),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedStd,
                     decoration: InputDecoration(labelText: "Standard", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                    items: _stds.map((std) => DropdownMenuItem(value: std, child: Text(std))).toList(),
-                    onChanged: (val) => setState(() => _selectedStd = val),
+                    items: (_selectedBoard == null ? <String>[] : AcademicConstants.standards[_selectedBoard!] ?? <String>[]).map((std) => DropdownMenuItem(value: std, child: Text(std))).toList(),
+                    onChanged: (val) => setState(() {
+                      _selectedStd = val;
+                      _selectedSubject = null;
+                    }),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -162,7 +213,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
                   child: DropdownButtonFormField<String>(
                     value: _selectedMedium,
                     decoration: InputDecoration(labelText: "Medium", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                    items: _mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    items: AcademicConstants.mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
                     onChanged: (val) => setState(() => _selectedMedium = val),
                   ),
                 ),
@@ -172,7 +223,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
             DropdownButtonFormField<String>(
               value: _selectedSubject,
               decoration: InputDecoration(labelText: "Subject", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-              items: _subjects.map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
+              items: (_selectedBoard == null || _selectedStd == null ? <String>[] : AcademicConstants.subjects["$_selectedBoard-$_selectedStd"] ?? <String>[]).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
               onChanged: (val) => setState(() => _selectedSubject = val),
             ),
             const SizedBox(height: 16),

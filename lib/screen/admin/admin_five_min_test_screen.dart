@@ -4,6 +4,7 @@ import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class AdminFiveMinTestScreen extends StatefulWidget {
   const AdminFiveMinTestScreen({super.key});
@@ -21,6 +22,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   final TextEditingController _overviewController = TextEditingController();
   
   String? _selectedCreateSubject;
+  String? _selectedCreateBoard;
   String? _selectedCreateStd;
   String? _selectedCreateMedium;
   String? _selectedCreateStream;
@@ -33,6 +35,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   List<Map<String, dynamic>> _questions = [];
 
   // --- History Filters & Data ---
+  String? _selectedFilterBoard;
   String? _selectedFilterStandard;
   String? _selectedFilterMedium;
   String? _selectedFilterStream;
@@ -87,6 +90,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
       _isEditing = false;
       _editingId = null;
       _selectedCreateSubject = null;
+      _selectedCreateBoard = null;
       _selectedCreateStd = null;
       _selectedCreateMedium = null;
       _selectedCreateStream = null;
@@ -109,6 +113,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
       _isEditing = true;
       _editingId = test['_id']; // MongoDB ID
       _selectedCreateSubject = test['subject'];
+      _selectedCreateBoard = test['board'];
       _selectedCreateStd = test['std'];
       _selectedCreateMedium = test['medium'];
       _selectedCreateStream = (test['stream'] == "" || test['stream'] == "-") ? null : test['stream'];
@@ -147,8 +152,8 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
 
   Future<void> _submitTest() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedCreateStd == null || _selectedCreateMedium == null) {
-        CustomToast.showError(context, "Please select Standard and Medium");
+      if (_selectedCreateBoard == null || _selectedCreateStd == null || _selectedCreateMedium == null) {
+        CustomToast.showError(context, "Please select Board, Standard and Medium");
         return;
       }
       if (_selectedCreateSubject == null) {
@@ -181,6 +186,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
         if (_isEditing) {
            final response = await ApiService.updateFiveMinTest(
              id: _editingId!,
+             board: _selectedCreateBoard!,
              std: _selectedCreateStd!,
              medium: _selectedCreateMedium!,
              stream: _selectedCreateStream,
@@ -202,6 +208,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
            }
         } else {
            final response = await ApiService.createFiveMinTest(
+             board: _selectedCreateBoard!,
              std: _selectedCreateStd!,
              medium: _selectedCreateMedium!,
              stream: _selectedCreateStream,
@@ -392,18 +399,40 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedCreateStd,
-                    items: _standards.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                    onChanged: (val) => setState(() => _selectedCreateStd = val),
-                    decoration: _inputDecoration("Standard", Icons.class_),
+                    value: _selectedCreateBoard,
+                    items: AcademicConstants.boards.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    onChanged: (val) => setState(() {
+                      _selectedCreateBoard = val;
+                      _selectedCreateStd = null;
+                      _selectedCreateSubject = null;
+                    }),
+                    decoration: _inputDecoration("Board", Icons.school),
                     style: GoogleFonts.poppins(color: Colors.black87),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
+                    value: _selectedCreateStd,
+                    items: (_selectedCreateBoard == null ? [] : AcademicConstants.standards[_selectedCreateBoard!] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    onChanged: (val) => setState(() {
+                      _selectedCreateStd = val;
+                      _selectedCreateSubject = null;
+                    }),
+                    decoration: _inputDecoration("Standard", Icons.class_),
+                    style: GoogleFonts.poppins(color: Colors.black87),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
                     value: _selectedCreateMedium,
-                    items: _mediums.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    items: AcademicConstants.mediums.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                     onChanged: (val) => setState(() => _selectedCreateMedium = val),
                     decoration: _inputDecoration("Medium", Icons.language),
                     style: GoogleFonts.poppins(color: Colors.black87),
@@ -426,7 +455,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
             
             DropdownButtonFormField<String>(
               value: _selectedCreateSubject,
-              items: _subjects.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              items: (_selectedCreateBoard == null || _selectedCreateStd == null ? [] : AcademicConstants.subjects["$_selectedCreateBoard-$_selectedCreateStd"] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (val) => setState(() => _selectedCreateSubject = val),
               decoration: _inputDecoration("Subject", Icons.subject),
               style: GoogleFonts.poppins(color: Colors.black87),
@@ -487,10 +516,11 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   // --- Tab 2: History List ---
   Widget _buildHistoryTab() {
     final filtered = _allTests.where((test) {
+      final matchBoard = _selectedFilterBoard == null || test['board'] == _selectedFilterBoard;
       final matchStd = _selectedFilterStandard == null || test['std'] == _selectedFilterStandard;
       final matchMedium = _selectedFilterMedium == null || test['medium'] == _selectedFilterMedium;
       final matchStream = _selectedFilterStream == null || test['stream'] == _selectedFilterStream;
-      return matchStd && matchMedium && matchStream;
+      return matchBoard && matchStd && matchMedium && matchStream;
     }).toList();
 
     return Column(
@@ -507,16 +537,29 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
               Row(
                 children: [
                   Expanded(
-                    child: _buildDropdown("Standard", _selectedFilterStandard, _standards, (val) => setState(() => _selectedFilterStandard = val)),
+                    child: _buildDropdown("Board", _selectedFilterBoard, AcademicConstants.boards, (val) => setState(() {
+                      _selectedFilterBoard = val;
+                      _selectedFilterStandard = null;
+                    })),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildDropdown("Medium", _selectedFilterMedium, _mediums, (val) => setState(() => _selectedFilterMedium = val)),
+                    child: _buildDropdown("Standard", _selectedFilterStandard, _selectedFilterBoard == null ? [] : AcademicConstants.standards[_selectedFilterBoard!] ?? [], (val) => setState(() => _selectedFilterStandard = val)),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              _buildDropdown("Stream", _selectedFilterStream, _streams, (val) => setState(() => _selectedFilterStream = val)),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdown("Medium", _selectedFilterMedium, AcademicConstants.mediums, (val) => setState(() => _selectedFilterMedium = val)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDropdown("Stream", _selectedFilterStream, _streams, (val) => setState(() => _selectedFilterStream = val)),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

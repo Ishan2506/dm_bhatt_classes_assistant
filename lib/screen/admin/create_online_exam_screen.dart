@@ -9,6 +9,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/exam_preview_screen.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 // Mock Model for YouthEducation Data
 class Chapter {
@@ -34,17 +35,10 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   int _currentStep = 0;
 
   // Selection Data
+  String? _selectedBoard;
   String? _selectedStandard;
   String? _selectedSubject;
   String? _selectedMedium;
-  // String? _selectedUnit; // Removed in favor of PDF
-
-  // Mock Data
-  final List<String> _standards = ["9", "10", "11", "12"];
-  final List<String> _subjects = ["Maths", "Science", "English"];
-  final List<String> _mediums = ["English", "Gujarati"];
-  final List<String> _marks = ["20", "30", "40", "50"];
-  
   String? _selectedMarks;
   
   // List<Chapter> _chapters = []; // Not used in PDF flow
@@ -264,10 +258,10 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
               currentStep: _currentStep,
               onStepContinue: () {
                 if (_currentStep == 0) {
-                  if (_selectedStandard != null && _selectedSubject != null && _selectedMedium != null && _selectedMarks != null && _unitController.text.isNotEmpty && _titleController.text.isNotEmpty) {
+                  if (_selectedBoard != null && _selectedStandard != null && _selectedSubject != null && _selectedMedium != null && _selectedMarks != null && _unitController.text.isNotEmpty && _titleController.text.isNotEmpty) {
                     setState(() => _currentStep++);
                   } else {
-                    CustomToast.showError(context, "Please enter all details (Standard, Subject, Medium, Marks, Unit and Title)");
+                    CustomToast.showError(context, "Please enter all details (Board, Standard, Subject, Medium, Marks, Unit and Title)");
                   }
                 } else if (_currentStep == 1) {
                    if (_isManualEntry) {
@@ -334,13 +328,26 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                   title: Text("Basic Details", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                   content: Column(
                     children: [
-                      _buildDropdown("Standard", _selectedStandard, _standards, (val) => setState(() => _selectedStandard = val)),
+                      _buildDropdown("Board", _selectedBoard, AcademicConstants.boards, (val) {
+                        setState(() {
+                          _selectedBoard = val;
+                          _selectedStandard = null;
+                          _selectedSubject = null;
+                        });
+                      }),
                       const SizedBox(height: 16),
-                      _buildDropdown("Medium", _selectedMedium, _mediums, (val) => setState(() => _selectedMedium = val)),
+                      _buildDropdown("Standard", _selectedStandard, _selectedBoard == null ? [] : (AcademicConstants.standards[_selectedBoard!] ?? []), (val) {
+                        setState(() {
+                          _selectedStandard = val;
+                          _selectedSubject = null;
+                        });
+                      }),
                       const SizedBox(height: 16),
-                      _buildDropdown("Subject", _selectedSubject, _subjects, (val) => setState(() => _selectedSubject = val)),
+                      _buildDropdown("Subject", _selectedSubject, (_selectedBoard == null || _selectedStandard == null) ? [] : (AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"] ?? []), (val) => setState(() => _selectedSubject = val)),
                       const SizedBox(height: 16),
-                      _buildDropdown("Marks", _selectedMarks, _marks, (val) => setState(() => _selectedMarks = val)),
+                      _buildDropdown("Medium", _selectedMedium, AcademicConstants.mediums, (val) => setState(() => _selectedMedium = val)),
+                      const SizedBox(height: 16),
+                      _buildDropdown("Marks", _selectedMarks, AcademicConstants.marks, (val) => setState(() => _selectedMarks = val)),
                       const SizedBox(height: 16),
                       TextField(
                         controller: _titleController,

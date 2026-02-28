@@ -10,8 +10,6 @@ import 'package:dm_bhatt_classes_new/screen/assistant/settings_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_reports_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_mindmap_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/admin/admin_add_one_liner_exam_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/admin/admin_one_liner_exam_history_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_video_maker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -104,12 +102,6 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
           }),
           _buildOptionTile(context, Icons.hub_outlined, "Add Mind Map", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminAddMindMapScreen()));
-          }),
-          _buildOptionTile(context, Icons.edit_note_outlined, "Add One Liner Exam", () {
-             Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminAddOneLinerExamScreen()));
-          }),
-          _buildOptionTile(context, Icons.history_edu_outlined, "One Liner Exam History", () {
-             Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminOneLinerExamHistoryScreen()));
           }),
           const SizedBox(height: 24),
           _buildOptionTile(context, Icons.logout, "Logout", () {
