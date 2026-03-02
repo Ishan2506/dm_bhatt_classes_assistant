@@ -12,8 +12,10 @@ class ReviewQuestionsScreen extends StatefulWidget {
   final List<dynamic> parsedQuestions;
   final String title;
   final String subject;
+  final String board;
   final String std;
   final String medium;
+  final String? stream;
   final String unit;
   final String totalMarks; // or int
 
@@ -22,8 +24,10 @@ class ReviewQuestionsScreen extends StatefulWidget {
     required this.parsedQuestions,
     required this.title,
     required this.subject,
+    required this.board,
     required this.std,
     required this.medium,
+    this.stream,
     required this.unit,
     required this.totalMarks,
   });
@@ -76,8 +80,10 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
       final response = await ApiService.createExam(
         title: widget.title,
         subject: widget.subject,
+        board: widget.board,
         std: widget.std,
         medium: widget.medium,
+        stream: widget.stream,
         unit: widget.unit,
         totalMarks: int.tryParse(widget.totalMarks) ?? 0,
         questions: List<Map<String, dynamic>>.from(_questions),

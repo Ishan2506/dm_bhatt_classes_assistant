@@ -2,15 +2,14 @@ import 'package:dm_bhatt_classes_new/screen/admin/admin_ai_assistant.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_log_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/import_students_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/admin/import_students_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/help_support_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/my_profile_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/assistant/settings_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_reports_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/admin/admin_add_mindmap_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_video_maker_screen.dart';
+import 'package:dm_bhatt_classes_new/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -47,7 +46,7 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          "More Options",
+          AppLocalizations.of(context)!.moreOptions,
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         flexibleSpace: Container(
@@ -99,9 +98,6 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
           }),
           _buildOptionTile(context, Icons.analytics_outlined, "Reports & Analytics", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminReportsScreen()));
-          }),
-          _buildOptionTile(context, Icons.hub_outlined, "Add Mind Map", () {
-             Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminAddMindMapScreen()));
           }),
           const SizedBox(height: 24),
           _buildOptionTile(context, Icons.logout, "Logout", () {

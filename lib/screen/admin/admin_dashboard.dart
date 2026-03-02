@@ -3,6 +3,7 @@ import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
+import 'package:dm_bhatt_classes_new/screen/admin/admin_standard_details_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -363,47 +364,63 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
                 final item = stats[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: item['color'],
-                          shape: BoxShape.circle,
+                return InkWell(
+                  onTap: labelKey == "standard" ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdminStandardDetailsScreen(
+                          standard: item[labelKey].toString(),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          labelKey == "standard" ? "Standard ${item[labelKey]}" : item[labelKey],
-                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    );
+                  } : null,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      Text(
-                        "₹${item['sales']}",
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "(${((item['percentage'] as double) * 100).toStringAsFixed(1)}%)",
-                        style: GoogleFonts.poppins(fontSize: 12, color: colorScheme.onSurfaceVariant),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: item['color'],
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            labelKey == "standard" ? "Standard ${item[labelKey]}" : item[labelKey],
+                            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Text(
+                          "₹${item['sales']}",
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "(${((item['percentage'] as double) * 100).toStringAsFixed(1)}%)",
+                          style: GoogleFonts.poppins(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                        ),
+                        if (labelKey == "standard") ...[
+                          const SizedBox(width: 8),
+                          Icon(Icons.arrow_forward_ios, size: 14, color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
+                        ],
+                      ],
+                    ),
                   ),
                 );
               },

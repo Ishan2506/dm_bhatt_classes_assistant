@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 class ApiService {
-   static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
-  //static const String baseUrl = "http://localhost:5000/api";
+  //  static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+   static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -464,8 +464,10 @@ class ApiService {
   static Future<http.Response> createExam({
     required String title,
     required String subject,
+    required String board,
     required String std,
     required String medium,
+    String? stream,
     required String unit,
     required int totalMarks,
     required List<Map<String, dynamic>> questions,
@@ -486,10 +488,12 @@ class ApiService {
     );
   }
 
-  static Future<http.Response> getAllExams({String? std, String? medium, String? subject}) async {
+  static Future<http.Response> getAllExams({String? board, String? std, String? medium, String? stream, String? subject}) async {
     final queryParams = <String, String>{};
+    if (board != null) queryParams['board'] = board;
     if (std != null) queryParams['std'] = std;
     if (medium != null) queryParams['medium'] = medium;
+    if (stream != null) queryParams['stream'] = stream;
     if (subject != null) queryParams['subject'] = subject;
 
     final uri = Uri.parse("$baseUrl/exam/all").replace(queryParameters: queryParams);
@@ -505,8 +509,10 @@ class ApiService {
     required String id,
     required String title,
     required String subject,
+    required String board,
     required String std,
     required String medium,
+    String? stream,
     required String unit,
     required int totalMarks,
     required List<dynamic> questions,
@@ -854,6 +860,15 @@ class ApiService {
     );
   }
 
+  static Future<http.Response> updateMindMap(String id, Map<String, dynamic> data) async {
+    final uri = Uri.parse("$baseUrl/mindmap/$id");
+    return await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
+    );
+  }
+
   static Future<http.Response> getAllMindMaps() async {
     final uri = Uri.parse("$baseUrl/mindmap/all");
     return await http.get(uri);
@@ -935,6 +950,7 @@ class ApiService {
     required String subject,
     required String medium,
     required String standard,
+    String? stream,
     required String year,
     required String schoolName,
     required PlatformFile file,
@@ -947,6 +963,7 @@ class ApiService {
     request.fields['subject'] = subject;
     request.fields['medium'] = medium;
     request.fields['standard'] = standard;
+    if (stream != null) request.fields['stream'] = stream;
     request.fields['year'] = year;
     request.fields['schoolName'] = schoolName;
 
@@ -969,6 +986,7 @@ class ApiService {
     required String unit,
     required String medium,
     required String standard,
+    String? stream,
     required String year,
     String? schoolName,
     required PlatformFile file,
@@ -982,6 +1000,7 @@ class ApiService {
     request.fields['unit'] = unit;
     request.fields['medium'] = medium;
     request.fields['standard'] = standard;
+    if (stream != null) request.fields['stream'] = stream;
     request.fields['year'] = year;
     if (schoolName != null) request.fields['schoolName'] = schoolName;
 
@@ -997,6 +1016,46 @@ class ApiService {
     return await http.Response.fromStream(streamResponse);
   }
 
+  static Future<http.Response> updateMaterial({
+    required String id,
+    required String title,
+    required String board,
+    required String subject,
+    required String medium,
+    required String standard,
+    String? stream,
+    required String year,
+    String? schoolName,
+    String? unit,
+    PlatformFile? file,
+  }) async {
+    final uri = Uri.parse("$baseUrl/material/update/$id");
+    final request = http.MultipartRequest('PUT', uri);
+
+    request.fields['board'] = board;
+    request.fields['title'] = title;
+    request.fields['subject'] = subject;
+    request.fields['medium'] = medium;
+    request.fields['standard'] = standard;
+    if (stream != null) request.fields['stream'] = stream;
+    request.fields['year'] = year;
+    if (schoolName != null) request.fields['schoolName'] = schoolName;
+    if (unit != null) request.fields['unit'] = unit;
+
+    if (file != null) {
+      final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+      final multipartFile = http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: file.name,
+      );
+      request.files.add(multipartFile);
+    }
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
   static Future<http.Response> getAllMaterials({String? type}) async {
     final queryParams = type != null ? "?type=$type" : "";
     final uri = Uri.parse("$baseUrl/material/all$queryParams");
@@ -1006,5 +1065,9 @@ class ApiService {
   static Future<http.Response> deleteMaterial(String id) async {
     final uri = Uri.parse("$baseUrl/material/delete/$id");
     return await http.delete(uri);
+  }
+  static Future<http.Response> getStandardDetailedStats(String standard) async {
+    final uri = Uri.parse("$baseUrl/admin/dashboard/standard-stats/$standard");
+    return await http.get(uri);
   }
 }

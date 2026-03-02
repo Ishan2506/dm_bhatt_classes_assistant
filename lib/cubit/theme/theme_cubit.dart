@@ -10,23 +10,39 @@ class ThemeCubit extends Cubit<ThemeState> {
     loadTheme();
   }
 
-  static const String _themeKey = 'theme_mode';
+  static const String _themeModeKey = 'theme_mode';
+  static const String _localeKey = 'locale';
+  static const String _styleKey = 'selected_style';
 
   Future<void> loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    final modeIndex = prefs.getInt(_themeKey);
-    if (modeIndex != null) {
-      emit(state.copyWith(themeMode: ThemeMode.values[modeIndex]));
-    }
+    
+    final modeIndex = prefs.getInt(_themeModeKey);
+    final localeCode = prefs.getString(_localeKey);
+    final styleIndex = prefs.getInt(_styleKey);
+
+    emit(state.copyWith(
+      themeMode: modeIndex != null ? ThemeMode.values[modeIndex] : state.themeMode,
+      locale: localeCode != null ? Locale(localeCode) : state.locale,
+      selectedStyle: styleIndex != null ? AppThemeStyle.values[styleIndex] : state.selectedStyle,
+    ));
   }
 
   Future<void> changeTheme(ThemeMode mode) async {
     emit(state.copyWith(themeMode: mode));
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeKey, mode.index);
+    await prefs.setInt(_themeModeKey, mode.index);
   }
 
-  void changeLocale(Locale locale) {
+  Future<void> changeLocale(Locale locale) async {
     emit(state.copyWith(locale: locale));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localeKey, locale.languageCode);
+  }
+
+  Future<void> changeStyle(AppThemeStyle style) async {
+    emit(state.copyWith(selectedStyle: style));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_styleKey, style.index);
   }
 }
