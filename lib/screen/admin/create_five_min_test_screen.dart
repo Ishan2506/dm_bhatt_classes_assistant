@@ -829,7 +829,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
               DropdownButton<String>(
                 value: _questions[index]['type'],
                 underline: Container(),
-                items: ["MCQ", "True/False"].map((t) => DropdownMenuItem<String>(value: t, child: Text(t, style: GoogleFonts.poppins(fontSize: 14)))).toList(),
+                items: ["MCQ", "True/False", "Fill in the Blanks"].map((t) => DropdownMenuItem<String>(value: t, child: Text(t, style: GoogleFonts.poppins(fontSize: 13)))).toList(),
                 onChanged: (val) {
                   setState(() {
                     _questions[index]['type'] = val;
@@ -862,14 +862,14 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
              _buildOptionField(index, 'optionD', 'D'),
              const SizedBox(height: 12),
              DropdownButtonFormField<String>(
-                value: _questions[index]['correctAnswer'].isEmpty ? null : _questions[index]['correctAnswer'],
+                value: _questions[index]['correctAnswer'].startsWith('Option ') ? _questions[index]['correctAnswer'] : null,
                 decoration: _inputDecoration("Correct Option", Icons.check_circle_outline),
                 items: ['Option A', 'Option B', 'Option C', 'Option D']
                     .map((o) => DropdownMenuItem<String>(value: o, child: Text(o)))
                     .toList(),
                 onChanged: (val) => setState(() => _questions[index]['correctAnswer'] = val),
              ),
-          ] else ...[
+          ] else if (_questions[index]['type'] == 'True/False') ...[
              // True/False Options
              const SizedBox(height: 8),
              Text("Correct Answer:", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
@@ -895,6 +895,15 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                  ),
                ],
              )
+          ] else ...[
+            // Fill in the Blanks
+             const SizedBox(height: 8),
+             TextFormField(
+                controller: TextEditingController(text: _questions[index]['correctAnswer'])..selection = TextSelection.fromPosition(TextPosition(offset: _questions[index]['correctAnswer'].length)),
+                decoration: _inputDecoration("Correct Answer", Icons.done_all),
+                onChanged: (val) => _questions[index]['correctAnswer'] = val,
+                style: GoogleFonts.poppins(),
+             ),
           ]
         ],
       ),
