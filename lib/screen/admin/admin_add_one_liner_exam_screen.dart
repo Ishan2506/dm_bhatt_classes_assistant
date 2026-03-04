@@ -18,8 +18,9 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
   final TextEditingController _unitController = TextEditingController();
   String? _selectedBoard;
   String? _selectedStd;
-  String? _selectedSubject;
   String? _selectedMedium;
+  String? _selectedStream;
+  String? _selectedSubject;
   String? _id;
   bool _isSaving = false;
 
@@ -41,6 +42,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
       _selectedBoard = widget.examData!['board'];
       _selectedSubject = widget.examData!['subject'];
       _selectedMedium = widget.examData!['medium'];
+      _selectedStream = widget.examData!['stream'];
       if (_selectedMedium == "Gujarat") _selectedMedium = "Gujarati";
       
       final List<dynamic> qList = widget.examData!['questions'] ?? [];
@@ -60,6 +62,11 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
       return;
     }
 
+    if ((_selectedStd == "11" || _selectedStd == "12") && _selectedStream == null) {
+      CustomToast.showError(context, "Please select a Stream");
+      return;
+    }
+
     if (_questions.any((q) => q['questionText']!.isEmpty || q['correctAnswer']!.isEmpty)) {
       CustomToast.showError(context, "Please fill all questions and answers");
       return;
@@ -71,6 +78,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
         'board': _selectedBoard,
         'std': _selectedStd,
         'medium': _selectedMedium,
+        'stream': _selectedStream ?? "-",
         'subject': _selectedSubject,
         'unit': _unitController.text,
         'title': _titleController.text,
@@ -220,6 +228,15 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
               ],
             ),
             const SizedBox(height: 16),
+            if (_selectedStd == "11" || _selectedStd == "12") ...[
+              DropdownButtonFormField<String>(
+                value: _selectedStream,
+                decoration: InputDecoration(labelText: "Stream", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                items: ["Science", "Commerce", "General"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                onChanged: (val) => setState(() => _selectedStream = val),
+              ),
+              const SizedBox(height: 16),
+            ],
             DropdownButtonFormField<String>(
               value: _selectedSubject,
               decoration: InputDecoration(labelText: "Subject", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),

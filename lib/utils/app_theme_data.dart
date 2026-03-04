@@ -178,14 +178,23 @@ class MaterialTheme {
     canvasColor: colorScheme.surface,
     inputDecorationTheme: CustomInputDecorationTheme.getTheme(colorScheme),
     appBarTheme: AppBarTheme(
-      backgroundColor: Colors.blue.shade900,
-      foregroundColor: Colors.white,
-      centerTitle: false, // As per image alignment seems standard
-      iconTheme: const IconThemeData(color: Colors.white),
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+      centerTitle: true,
+      elevation: 0,
+      iconTheme: IconThemeData(color: colorScheme.onPrimary),
       titleTextStyle: GoogleFonts.poppins(
         fontSize: 20, 
         fontWeight: FontWeight.bold, 
-        color: Colors.white
+        color: colorScheme.onPrimary,
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        textStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
   );

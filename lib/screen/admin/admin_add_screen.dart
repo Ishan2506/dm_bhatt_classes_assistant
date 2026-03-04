@@ -7,6 +7,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/add_game_question_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_material_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_one_liner_exam_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/admin_add_mindmap_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -144,6 +145,18 @@ class AdminAddScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AdminAddOneLinerExamScreen()),
+                );
+              },
+            ),
+             _buildAddCard(
+              context,
+              "Add Mind Map",
+              Icons.hub_outlined,
+              Colors.cyan,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminAddMindMapScreen()),
                 );
               },
             ),

@@ -4,13 +4,11 @@ class AcademicConstants {
   static const Map<String, List<String>> standards = {
     "GSEB": [
       "6", "7", "8", "9", "10",
-      "11 Science", "11 Commerce",
-      "12 Science", "12 Commerce"
+      "11", "12"
     ],
     "CBSE": [
       "6", "7", "8", "9", "10",
-      "11 Science", "11 Commerce",
-      "12 Science", "12 Commerce"
+      "11", "12"
     ]
   };
 
@@ -21,10 +19,10 @@ class AcademicConstants {
     "GSEB-9": ["Maths", "Science", "English", "Gujarati", "Hindi", "Social Science", "Computer"],
     "GSEB-10": ["Maths", "Science", "English", "Gujarati", "Hindi", "Social Science", "Computer"],
 
-    "GSEB-11 Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
-    "GSEB-12 Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
+    "GSEB-11-Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
+    "GSEB-12-Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
 
-    "GSEB-11 Commerce": [
+    "GSEB-11-Commerce": [
       "Accountancy",
       "Business Studies",
       "Economics",
@@ -33,7 +31,7 @@ class AcademicConstants {
       "Organization of Commerce",
       "Secretarial Practice"
     ],
-    "GSEB-12 Commerce": [
+    "GSEB-12-Commerce": [
       "Accountancy",
       "Business Studies",
       "Economics",
@@ -49,10 +47,10 @@ class AcademicConstants {
     "CBSE-9": ["Maths", "Science", "English", "Hindi", "Social Science", "Computer"],
     "CBSE-10": ["Maths", "Science", "English", "Hindi", "Social Science", "Computer"],
 
-    "CBSE-11 Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
-    "CBSE-12 Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
+    "CBSE-11-Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
+    "CBSE-12-Science": ["Physics", "Chemistry", "Biology", "Mathematics", "English", "Computer Science"],
 
-    "CBSE-11 Commerce": [
+    "CBSE-11-Commerce": [
       "Accountancy",
       "Business Studies",
       "Economics",
@@ -60,7 +58,7 @@ class AcademicConstants {
       "English",
       "Informatics Practices"
     ],
-    "CBSE-12 Commerce": [
+    "CBSE-12-Commerce": [
       "Accountancy",
       "Business Studies",
       "Economics",

@@ -1,4 +1,4 @@
-package com.example.dm_bhatt_classes_new
+package com.bondbyte.admin
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -19,6 +19,9 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
 
+  String _examBoard = 'GSEB';
+  String _examStream = '-';
+
   // Controllers for Header
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _subjectController = TextEditingController();
@@ -64,6 +67,9 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
           _unitController.text = data['unit'] ?? "";
           _marksController.text = (data['totalMarks'] ?? 0).toString();
           
+          _examBoard = data['board'] ?? 'GSEB';
+          _examStream = data['stream'] ?? '-';
+          
           _questions = data['questions'] ?? [];
         });
       } else {
@@ -89,6 +95,8 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
          subject: _subjectController.text,
          std: _stdController.text,
          medium: _mediumController.text,
+         board: _examBoard,
+         stream: _examStream,
          unit: _unitController.text,
          totalMarks: int.tryParse(_marksController.text) ?? 0,
          questions: _questions
