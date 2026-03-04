@@ -17,7 +17,8 @@ class CreateFiveMinTestScreen extends StatefulWidget {
   State<CreateFiveMinTestScreen> createState() => _CreateFiveMinTestScreenState();
 }
 
-class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
+class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
@@ -39,52 +40,174 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
   late List<Map<String, dynamic>> _questions;
   int _currentStep = 0;
   bool _isManualEntry = false;
+  String? _editingId;
+
+  // History Filters & Data
+  String? _selectedFilterBoard;
+  String? _selectedFilterStandard;
+  String? _selectedFilterMedium;
+  String? _selectedFilterStream;
+  List<dynamic> _allTests = [];
 
   bool get _isEditing => widget.testToEdit != null;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _unitController = TextEditingController(text: widget.testToEdit?['unit'] ?? "");
-    _overviewController = TextEditingController(text: _isEditing ? "Mock Overview Content..." : "");
+    _overviewController = TextEditingController(text: widget.testToEdit?['overview'] ?? "");
     
     if (_isEditing) {
+      _editingId = widget.testToEdit?['_id'];
       _selectedBoard = widget.testToEdit?['board'];
       _selectedStandard = widget.testToEdit?['std'];
       _selectedMedium = widget.testToEdit?['medium'];
-      _selectedStream = widget.testToEdit?['stream'];
+      _selectedStream = (widget.testToEdit?['stream'] == "" || widget.testToEdit?['stream'] == "-") ? null : widget.testToEdit?['stream'];
       _selectedSubject = widget.testToEdit?['subject'];
-      // Mock questions or use passed data if structure matched
-      _questions = List.generate(5, (index) => {
-        "question": "Mock Question ${index + 1}",
-        "questionImage": null,
-        "type": "MCQ", 
-        "optionA": "Op A",
-        "optionAImage": null,
-        "optionB": "Op B",
-        "optionBImage": null,
-        "optionC": "Op C",
-        "optionCImage": null,
-        "optionD": "Op D",
-        "optionDImage": null,
-        "correctAnswer": "Option A",
-      });
+      
+      if (widget.testToEdit?['questions'] != null) {
+        _questions = List<Map<String, dynamic>>.from(
+          (widget.testToEdit!['questions'] as List).map((q) => {
+            "question": q['question'] ?? "",
+            "questionImage": q['questionImage'],
+            "type": q['type'] ?? "MCQ",
+            "optionA": q['optionA'] ?? "",
+            "optionAImage": q['optionAImage'],
+            "optionB": q['optionB'] ?? "",
+            "optionBImage": q['optionBImage'],
+            "optionC": q['optionC'] ?? "",
+            "optionCImage": q['optionCImage'],
+            "optionD": q['optionD'] ?? "",
+            "optionDImage": q['optionDImage'],
+            "correctAnswer": q['correctAnswer'] ?? "",
+          })
+        );
+      } else {
+        _questions = List.generate(5, (index) => {
+          "question": "", "questionImage": null, "type": "MCQ", "optionA": "", "optionAImage": null, "optionB": "", "optionBImage": null, "optionC": "", "optionCImage": null, "optionD": "", "optionDImage": null, "correctAnswer": "",
+        });
+      }
     } else {
       _questions = List.generate(5, (index) => {
-        "question": "",
-        "questionImage": null,
-        "type": "MCQ", 
-        "optionA": "",
-        "optionAImage": null,
-        "optionB": "",
-        "optionBImage": null,
-        "optionC": "",
-        "optionCImage": null,
-        "optionD": "",
-        "optionDImage": null,
-        "correctAnswer": "",
+        "question": "", "questionImage": null, "type": "MCQ", "optionA": "", "optionAImage": null, "optionB": "", "optionBImage": null, "optionC": "", "optionCImage": null, "optionD": "", "optionDImage": null, "correctAnswer": "",
       });
     }
+    _fetchTests();
+  }
+
+  Future<void> _fetchTests() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.getAllFiveMinTests();
+      if (response.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            _allTests = jsonDecode(response.body);
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      debugPrint("Error fetching tests: $e");
+    }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _editingId = null;
+      _selectedBoard = null;
+      _selectedStandard = null;
+      _selectedMedium = null;
+      _selectedStream = null;
+      _selectedSubject = null;
+      _unitController.clear();
+      _overviewController.clear();
+      _pickedPdf = null;
+      _questions = List.generate(5, (index) => {
+        "question": "", "questionImage": null, "type": "MCQ", "optionA": "", "optionAImage": null, "optionB": "", "optionBImage": null, "optionC": "", "optionCImage": null, "optionD": "", "optionDImage": null, "correctAnswer": "",
+      });
+      _currentStep = 0;
+      _isManualEntry = false;
+    });
+  }
+
+  void _editTest(Map<String, dynamic> test) {
+    setState(() {
+      _editingId = test['_id'];
+      _selectedBoard = test['board'];
+      _selectedStandard = test['std'];
+      _selectedMedium = test['medium'];
+      _selectedStream = (test['stream'] == "" || test['stream'] == "-") ? null : test['stream'];
+      _selectedSubject = test['subject'];
+      _unitController.text = test['unit'] ?? "";
+      _overviewController.text = test['overview'] ?? "";
+      
+      if (test['questions'] != null) {
+        _questions = List<Map<String, dynamic>>.from(
+          (test['questions'] as List).map((q) => {
+            "question": q['question'] ?? "",
+            "questionImage": q['questionImage'],
+            "type": q['type'] ?? "MCQ",
+            "optionA": q['optionA'] ?? "",
+            "optionAImage": q['optionAImage'],
+            "optionB": q['optionB'] ?? "",
+            "optionBImage": q['optionBImage'],
+            "optionC": q['optionC'] ?? "",
+            "optionCImage": q['optionCImage'],
+            "optionD": q['optionD'] ?? "",
+            "optionDImage": q['optionDImage'],
+            "correctAnswer": q['correctAnswer'] ?? "",
+          })
+        );
+      } else {
+        _questions = List.generate(5, (index) => {
+          "question": "", "questionImage": null, "type": "MCQ", "optionA": "", "optionAImage": null, "optionB": "", "optionBImage": null, "optionC": "", "optionCImage": null, "optionD": "", "optionDImage": null, "correctAnswer": "",
+        });
+      }
+      _isManualEntry = true;
+      _currentStep = 0;
+    });
+    _tabController.animateTo(0);
+  }
+
+  Future<void> _deleteTest(String id) async {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Delete Test"),
+        content: const Text("Are you sure you want to delete this test?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              CustomLoader.show(context);
+              try {
+                final response = await ApiService.deleteFiveMinTest(id);
+                CustomLoader.hide(context);
+                if (response.statusCode == 200) {
+                  CustomToast.showSuccess(context, "Test Deleted Successfully");
+                  _fetchTests();
+                } else {
+                  CustomToast.showError(context, "Failed to delete");
+                }
+              } catch (e) {
+                CustomLoader.hide(context);
+                CustomToast.showError(context, "Error: $e");
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
   }
 
   Future<String?> _pickAndUploadImage() async {
@@ -216,6 +339,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _unitController.dispose();
     _overviewController.dispose();
     super.dispose();
@@ -242,9 +366,9 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
 
       CustomLoader.show(context);
       try {
-        final response = _isEditing 
+        final response = (_isEditing || _editingId != null) 
           ? await ApiService.updateFiveMinTest(
-              id: widget.testToEdit!['_id'],
+              id: _editingId ?? widget.testToEdit!['_id'],
               board: _selectedBoard!,
               std: _selectedStandard!,
               medium: _selectedMedium!,
@@ -268,8 +392,14 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
         CustomLoader.hide(context);
 
         if (response.statusCode == 201 || response.statusCode == 200) {
-          CustomToast.showSuccess(context, _isEditing ? "Test Updated Successfully!" : "5 Min Test Created Successfully!");
-          Navigator.pop(context);
+          CustomToast.showSuccess(context, (_isEditing || _editingId != null) ? "Test Updated Successfully!" : "5 Min Test Created Successfully!");
+          _fetchTests();
+          if (_editingId != null) {
+            _resetForm();
+            _tabController.animateTo(1); // Go back to history
+          } else {
+            Navigator.pop(context);
+          }
         } else {
           CustomToast.showError(context, "Operation failed: ${response.body}");
         }
@@ -302,20 +432,24 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
           ),
           iconTheme: const IconThemeData(color: Colors.white),
           elevation: 0,
-          bottom: const TabBar(
+          bottom: TabBar(
+            controller: _tabController,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
-            tabs: [
+            tabs: const [
               Tab(text: "Create New"),
               Tab(text: "History"),
             ],
           ),
         ),
         body: TabBarView(
+          controller: _tabController,
           children: [
             // Tab 1: Create New (Stepper)
-            Form(
+            _isLoading && _allTests.isEmpty 
+            ? const Center(child: CircularProgressIndicator())
+            : Form(
               key: _formKey,
               child: Stepper(
                 type: StepperType.vertical,
@@ -537,21 +671,133 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
               ),
             ),
 
-            // Tab 2: History (Placeholder for now)
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            _buildHistoryTab(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryTab() {
+    final filtered = _allTests.where((test) {
+      final matchBoard = _selectedFilterBoard == null || test['board'] == _selectedFilterBoard;
+      final matchStd = _selectedFilterStandard == null || test['std'] == _selectedFilterStandard;
+      final matchMedium = _selectedFilterMedium == null || test['medium'] == _selectedFilterMedium;
+      final matchStream = _selectedFilterStream == null || test['stream'] == _selectedFilterStream;
+      return matchBoard && matchStd && matchMedium && matchStream;
+    }).toList();
+
+    return Column(
+      children: [
+        // Filters
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: Colors.white,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
                 children: [
-                  Icon(Icons.history, size: 64, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Test history will be displayed here.",
-                    style: GoogleFonts.poppins(color: Colors.grey),
+                  Expanded(
+                    child: _buildFilterDropdown("Board", _selectedFilterBoard, AcademicConstants.boards, (val) => setState(() {
+                      _selectedFilterBoard = val;
+                      _selectedFilterStandard = null;
+                    })),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildFilterDropdown("Std", _selectedFilterStandard, _selectedFilterBoard == null ? <String>[] : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], (val) => setState(() => _selectedFilterStandard = val)),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildFilterDropdown("Medium", _selectedFilterMedium, AcademicConstants.mediums, (val) => setState(() => _selectedFilterMedium = val)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildFilterDropdown("Stream", _selectedFilterStream, _streams, (val) => setState(() => _selectedFilterStream = val)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        
+        // List
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(child: Text(_isLoading ? "Loading..." : "No tests found", style: GoogleFonts.poppins(color: Colors.grey)))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final test = filtered[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                      color: Colors.grey.shade50,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.timer_outlined, color: Colors.blue.shade900),
+                        ),
+                        title: Text(
+                          "${test['subject']} - ${test['unit']}",
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            "Std: ${test['std']} | ${test['medium']} ${test['stream'] != null && test['stream'] != "" ? "| ${test['stream']}" : ""}",
+                            style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 13),
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _editTest(test),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteTest(test['_id']),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          hint: Text(hint, style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey)),
+          value: value,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))).toList(),
+          onChanged: onChanged,
         ),
       ),
     );
