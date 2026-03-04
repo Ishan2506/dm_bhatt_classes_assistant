@@ -56,8 +56,10 @@ class AdminAIService {
 You are an expert school question paper generator.
 
 TASK:
-1. First, generate a brief OVERVIEW/SUMMARY (2-3 sentences) of the provided content.
-2. Then, generate MAXIMUM 20 questions based ONLY on the content.
+1. First, write the word "OVERVIEW:" followed by a newline.
+2. Then, write a brief summary (2-3 sentences) of the provided content.
+3. Then, write the question type header: "$questionType".
+4. Then, generate MAXIMUM 20 questions based ONLY on the content.
 
 Do NOT exceed 20 questions.
 Generate questions ONLY from the provided content below.
@@ -69,27 +71,31 @@ LANGUAGE: Keep original document language (Gujarati/English).
 STRICT RULES:
 1. Plain text only.
 2. No markdown.
-3. No headings (except the word OVERVIEW: at the start).
-4. Start numbering from 01.
-5. Maximum 20 questions.
+3. No headings (except the word OVERVIEW: and the question type header).
+4. Do NOT repeat "Fill in the blank:" or "True/False" at the start of every question. Just start with the number and the question text.
+5. Start numbering from 01.
+6. Maximum 20 questions.
 
 FORMAT:
 
-OVERVIEW: [Your summary here]
+OVERVIEW:
+[Your summary here]
+
+$questionType
 
 ${isTrueFalse ? """
-01. Question text
+01. [Question text]
 A. True
 B. False
 Ans. (A or B)
 
-02. Question text
+02. [Question text]
 ...
 """ : isFillBlanks ? """
-01. Fill in the blank: __________.
+01. [The question text with a blank: __________]
 Ans. Correct Answer
 
-02. Fill in the blank: __________.
+02. [The question text with a blank: __________]
 Ans. Correct Answer
 """ : """
 01. Question text

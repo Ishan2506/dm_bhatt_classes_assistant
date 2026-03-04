@@ -47,12 +47,14 @@ class PdfGeneratorService {
           build: (context) {
             final lines = content.split('\n');
             List<pw.Widget> widgets = [];
+            bool inOverview = false;
 
             for (var line in lines) {
               final trimmedLine = line.trim();
               if (trimmedLine.isEmpty) continue;
 
-              if (trimmedLine.startsWith('OVERVIEW:')) {
+              if (trimmedLine.toUpperCase() == 'OVERVIEW:') {
+                inOverview = true;
                 // Add "Overview" Header
                 widgets.add(
                   pw.Container(
@@ -71,10 +73,14 @@ class PdfGeneratorService {
                     ),
                   ),
                 );
-                // Add Overview Text (without the "OVERVIEW:" prefix if possible, or just the whole line)
+                continue;
+              }
+
+              if (inOverview) {
+                // The first non-empty line after OVERVIEW: is the summary
                 widgets.add(
                   pw.Paragraph(
-                    text: trimmedLine.replaceFirst('OVERVIEW:', '').trim(),
+                    text: trimmedLine,
                     style: pw.TextStyle(
                       font: ttf,
                       fontSize: 11,
@@ -84,13 +90,24 @@ class PdfGeneratorService {
                     margin: const pw.EdgeInsets.only(bottom: 12),
                   ),
                 );
+                inOverview = false;
+                continue;
+              }
 
-                // Add "Questions" Header
+              // Check if it's a section header (like "Fill in the Blanks" or "True / False")
+              final isHeader = trimmedLine.toLowerCase().contains("fill in") || 
+                               trimmedLine.toLowerCase().contains("true / false") ||
+                               trimmedLine.toLowerCase().contains("multiple choice");
+
+              // But only if it's NOT a question (e.g., doesn't start with 01., 1., etc.)
+              final isQuestion = RegExp(r'^\d+[\.\)]').hasMatch(trimmedLine);
+
+              if (isHeader && !isQuestion) {
                 widgets.add(
                   pw.Container(
-                    margin: const pw.EdgeInsets.only(bottom: 8, top: 8),
+                    margin: const pw.EdgeInsets.only(bottom: 8, top: 12),
                     child: pw.Text(
-                      "Questions & Answers",
+                      trimmedLine,
                       style: pw.TextStyle(
                         font: ttf,
                         fontSize: 14,
