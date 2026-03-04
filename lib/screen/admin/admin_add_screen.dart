@@ -3,6 +3,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/add_assistant_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/add_paperset_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/create_online_exam_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_five_min_test_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/create_five_min_test_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/add_game_question_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_material_screen.dart';
@@ -88,18 +89,18 @@ class AdminAddScreen extends StatelessWidget {
                 );
               },
             ),
-            _buildAddCard(
-              context,
-              "Add 5 Min Test",
-              Icons.timer_outlined,
-              Colors.indigo,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AdminFiveMinTestScreen()),
-                );
-              },
-            ),
+             _buildAddCard(
+               context,
+               "Add 5 Min Test",
+               Icons.timer_outlined,
+               Colors.indigo,
+               () {
+                 Navigator.push(
+                   context,
+                   MaterialPageRoute(builder: (context) => const CreateFiveMinTestScreen()),
+                 );
+               },
+             ),
             //  _buildAddCard(
             //   context,
             //   "Manage Events",

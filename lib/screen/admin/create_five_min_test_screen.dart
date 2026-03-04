@@ -31,8 +31,14 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
   String? _selectedSubject;
   final List<String> _streams = ["Science", "Commerce", "General"];
 
+  // PDF Upload
+  PlatformFile? _pickedPdf;
+  bool _isLoading = false;
+
   // Questions Data
   late List<Map<String, dynamic>> _questions;
+  int _currentStep = 0;
+  bool _isManualEntry = false;
 
   bool get _isEditing => widget.testToEdit != null;
 
@@ -107,6 +113,107 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
     return null;
   }
 
+  Future<void> _pickPdf() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: kIsWeb,
+      );
+
+      if (result != null) {
+        setState(() {
+          _pickedPdf = result.files.single;
+        });
+        _uploadAndProcessPdf();
+      }
+    } catch (e) {
+      CustomToast.showError(context, "Error picking PDF: $e");
+    }
+  }
+
+  Future<void> _uploadAndProcessPdf() async {
+    if (_pickedPdf == null) return;
+
+    CustomLoader.show(context);
+    try {
+      List<int> fileBytes;
+      if (kIsWeb) {
+        fileBytes = _pickedPdf!.bytes!;
+      } else {
+        fileBytes = await File(_pickedPdf!.path!).readAsBytes();
+      }
+
+      final response = await ApiService.uploadFiveMinTestPdf(
+        bytes: fileBytes,
+        filename: _pickedPdf!.name,
+      );
+
+      CustomLoader.hide(context);
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final overview = body['overview'] as String? ?? "";
+        final questions = body['questions'] as List? ?? [];
+
+        if (mounted) {
+          setState(() {
+            if (overview.isNotEmpty) {
+              _overviewController.text = overview;
+            }
+
+            if (questions.isNotEmpty) {
+              final List<Map<String, dynamic>> parsedQuestions = [];
+              for (var i = 0; i < 5 && i < questions.length; i++) {
+                final q = questions[i];
+                parsedQuestions.add({
+                  "question": q['questionText'] ?? "",
+                  "questionImage": null,
+                  "type": q['type'] ?? "MCQ", 
+                  "optionA": q['options'] != null && (q['options'] as List).isNotEmpty ? q['options'][0]['text'] : "",
+                  "optionAImage": null,
+                  "optionB": q['options'] != null && (q['options'] as List).length > 1 ? q['options'][1]['text'] : "",
+                  "optionBImage": null,
+                  "optionC": q['options'] != null && (q['options'] as List).length > 2 ? q['options'][2]['text'] : "",
+                  "optionCImage": null,
+                  "optionD": q['options'] != null && (q['options'] as List).length > 3 ? q['options'][3]['text'] : "",
+                  "optionDImage": null,
+                  "correctAnswer": q['correctAnswer'] ?? "",
+                });
+              }
+              
+              while(parsedQuestions.length < 5) {
+                parsedQuestions.add({
+                  "question": "",
+                  "questionImage": null,
+                  "type": "MCQ", 
+                  "optionA": "",
+                  "optionAImage": null,
+                  "optionB": "",
+                  "optionBImage": null,
+                  "optionC": "",
+                  "optionCImage": null,
+                  "optionD": "",
+                  "optionDImage": null,
+                  "correctAnswer": "",
+                });
+              }
+              _questions = parsedQuestions;
+            }
+            _isManualEntry = true; // Switch to manual to show the result
+            _currentStep = 1; // Ensure we are on the question step
+          });
+          CustomToast.showSuccess(context, "PDF processed successfully. Review data below.");
+        }
+      } else {
+        CustomToast.showError(context, "PDF processing failed: ${response.body}");
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      CustomToast.showError(context, "Error processing PDF: $e");
+    }
+  }
+
   @override
   void dispose() {
     _unitController.dispose();
@@ -114,27 +221,18 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
     super.dispose();
   }
 
-  void _submitTest() {
+  Future<void> _submitTest() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedBoard == null || _selectedStandard == null || _selectedMedium == null || _selectedSubject == null) {
         CustomToast.showError(context, "Please select board, standard, medium and subject");
         return;
       }
       
-      // Basic validation for questions
       for (int i = 0; i < 5; i++) {
         bool qValid = _questions[i]['question'].isNotEmpty || _questions[i]['questionImage'] != null;
         if (!qValid) {
            CustomToast.showError(context, "Please enter text or image for Question ${i + 1}");
            return;
-        }
-        if (_questions[i]['type'] == 'MCQ') {
-           bool optAValid = _questions[i]['optionA'].isNotEmpty || _questions[i]['optionAImage'] != null;
-           bool optBValid = _questions[i]['optionB'].isNotEmpty || _questions[i]['optionBImage'] != null;
-           if (!optAValid || !optBValid) {
-              CustomToast.showError(context, "Please enter text or image for at least Option A and B for Question ${i + 1}");
-              return;
-           }
         }
         if (_questions[i]['correctAnswer'].isEmpty) {
            CustomToast.showError(context, "Please select correct answer for Question ${i + 1}");
@@ -142,155 +240,318 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
         }
       }
 
-      // Mock Save
-      if (_isEditing) {
-        CustomToast.showSuccess(context, "Test Updated Successfully!");
-      } else {
-        CustomToast.showSuccess(context, "5 Min Test Created Successfully!");
+      CustomLoader.show(context);
+      try {
+        final response = _isEditing 
+          ? await ApiService.updateFiveMinTest(
+              id: widget.testToEdit!['_id'],
+              board: _selectedBoard!,
+              std: _selectedStandard!,
+              medium: _selectedMedium!,
+              stream: _selectedStream,
+              subject: _selectedSubject!,
+              unit: _unitController.text,
+              overview: _overviewController.text,
+              questions: _questions,
+            )
+          : await ApiService.createFiveMinTest(
+              board: _selectedBoard!,
+              std: _selectedStandard!,
+              medium: _selectedMedium!,
+              stream: _selectedStream,
+              subject: _selectedSubject!,
+              unit: _unitController.text,
+              overview: _overviewController.text,
+              questions: _questions,
+            );
+
+        CustomLoader.hide(context);
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          CustomToast.showSuccess(context, _isEditing ? "Test Updated Successfully!" : "5 Min Test Created Successfully!");
+          Navigator.pop(context);
+        } else {
+          CustomToast.showError(context, "Operation failed: ${response.body}");
+        }
+      } catch (e) {
+        CustomLoader.hide(context);
+        CustomToast.showError(context, "Error: $e");
       }
-      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? "Edit 5 Min Test" : "Create 5 Min Test",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade900, Colors.blue.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: Text(
+            _isEditing ? "Edit 5 Min Test" : "Manage 5 Min Test",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade900, Colors.blue.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader("Test Details"),
-              const SizedBox(height: 16),
-              
-              // Board Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedBoard,
-                items: AcademicConstants.boards.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (val) => setState(() {
-                  _selectedBoard = val;
-                  _selectedStandard = null;
-                  _selectedSubject = null;
-                }),
-                decoration: _inputDecoration("Board", Icons.school),
-                style: GoogleFonts.poppins(color: Colors.black87),
-              ),
-              const SizedBox(height: 16),
-
-              // Standard Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedStandard,
-                items: (_selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (val) => setState(() {
-                  _selectedStandard = val;
-                  _selectedSubject = null;
-                }),
-                decoration: _inputDecoration("Standard", Icons.class_outlined),
-                style: GoogleFonts.poppins(color: Colors.black87),
-              ),
-              const SizedBox(height: 16),
-
-              // Medium Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedMedium,
-                items: AcademicConstants.mediums.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (val) => setState(() => _selectedMedium = val),
-                decoration: _inputDecoration("Medium", Icons.language),
-                style: GoogleFonts.poppins(color: Colors.black87),
-              ),
-              const SizedBox(height: 16),
-              
-              // Stream Dropdown
-              if (_selectedStandard == "11" || _selectedStandard == "12" || _selectedStandard == "11 Science" || _selectedStandard == "12 Science" || _selectedStandard == "11 Commerce" || _selectedStandard == "12 Commerce") ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedStream,
-                  items: _streams.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                  onChanged: (val) => setState(() => _selectedStream = val),
-                  decoration: _inputDecoration("Stream", Icons.science_outlined),
-                  style: GoogleFonts.poppins(color: Colors.black87),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Subject Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedSubject,
-                items: (_selectedBoard == null || _selectedStandard == null ? [] : AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (val) => setState(() => _selectedSubject = val),
-                decoration: _inputDecoration("Subject", Icons.subject),
-                style: GoogleFonts.poppins(color: Colors.black87),
-              ),
-              const SizedBox(height: 16),
-
-              // Unit Name
-              TextFormField(
-                controller: _unitController,
-                decoration: _inputDecoration("Unit / Chapter Name", Icons.book),
-                validator: (v) => v!.isEmpty ? "Required" : null,
-                style: GoogleFonts.poppins(),
-              ),
-              const SizedBox(height: 16),
-
-              // Overview
-              TextFormField(
-                controller: _overviewController,
-                decoration: _inputDecoration("Chapter Overview / Study Material", Icons.article).copyWith(
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 8,
-                validator: (v) => v!.isEmpty ? "Required" : null,
-                style: GoogleFonts.poppins(),
-              ),
-              const SizedBox(height: 32),
-
-              _buildHeader("Questions (5)"),
-              const SizedBox(height: 16),
-
-              ...List.generate(5, (index) => _buildQuestionBlock(index)),
-
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _submitTest,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade900,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 5,
-                  ),
-                  child: Text(
-                    _isEditing ? "Update Test" : "Create Test",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+          iconTheme: const IconThemeData(color: Colors.white),
+          elevation: 0,
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(text: "Create New"),
+              Tab(text: "History"),
             ],
           ),
+        ),
+        body: TabBarView(
+          children: [
+            // Tab 1: Create New (Stepper)
+            Form(
+              key: _formKey,
+              child: Stepper(
+                type: StepperType.vertical,
+                currentStep: _currentStep,
+                onStepContinue: () {
+                  if (_currentStep == 0) {
+                    if (_selectedBoard != null && _selectedStandard != null && _selectedMedium != null && _selectedSubject != null && _unitController.text.isNotEmpty) {
+                       if ((_selectedStandard == "11" || _selectedStandard == "12") && _selectedStream == null) {
+                          CustomToast.showError(context, "Please select a Stream");
+                          return;
+                      }
+                      setState(() => _currentStep++);
+                    } else {
+                      CustomToast.showError(context, "Please enter all basic details");
+                    }
+                  } else if (_currentStep == 1) {
+                     if (_isManualEntry) {
+                        _submitTest();
+                     } else {
+                        if (_pickedPdf != null) {
+                          _uploadAndProcessPdf();
+                        } else {
+                          CustomToast.showError(context, "Please upload a PDF first");
+                        }
+                     }
+                  }
+                },
+                onStepCancel: () {
+                  if (_currentStep > 0) {
+                    setState(() => _currentStep--);
+                  }
+                },
+                controlsBuilder: (context, details) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 20.0),
+                    child: Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: details.onStepContinue,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade900,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            minimumSize: const Size(120, 45),
+                          ),
+                          child: _isLoading 
+                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                             : Text(
+                                 _currentStep == 1 
+                                   ? (_isManualEntry ? (_isEditing ? "Update Test" : "Create Test") : "Process PDF") 
+                                   : "Continue", 
+                                 style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)
+                               ),
+                        ),
+                        const SizedBox(width: 12),
+                        if (_currentStep > 0)
+                          TextButton(
+                            onPressed: details.onStepCancel,
+                            child: Text("Back", style: GoogleFonts.poppins(color: Colors.grey)),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+                steps: [
+                  Step(
+                    title: Text("Basic Details", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    isActive: _currentStep >= 0,
+                    content: Column(
+                      children: [
+                         // Board Dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedBoard,
+                          items: AcademicConstants.boards.map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (val) => setState(() {
+                            _selectedBoard = val;
+                            _selectedStandard = null;
+                            _selectedSubject = null;
+                          }),
+                          decoration: _inputDecoration("Board", Icons.school),
+                          style: GoogleFonts.poppins(color: Colors.black87),
+                        ),
+                        const SizedBox(height: 16),
+      
+                        // Standard Dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedStandard,
+                          items: (_selectedBoard == null ? <String>[] : AcademicConstants.standards[_selectedBoard!] ?? <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (val) => setState(() {
+                            _selectedStandard = val;
+                            _selectedSubject = null;
+                          }),
+                          decoration: _inputDecoration("Standard", Icons.class_outlined),
+                          style: GoogleFonts.poppins(color: Colors.black87),
+                        ),
+                        const SizedBox(height: 16),
+      
+                        // Medium Dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedMedium,
+                          items: AcademicConstants.mediums.map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (val) => setState(() => _selectedMedium = val),
+                          decoration: _inputDecoration("Medium", Icons.language),
+                          style: GoogleFonts.poppins(color: Colors.black87),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Stream Dropdown
+                        if (_selectedStandard != null && (_selectedStandard!.startsWith("11") || _selectedStandard!.startsWith("12"))) ...[
+                          DropdownButtonFormField<String>(
+                            value: _selectedStream,
+                            items: _streams.map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                            onChanged: (val) => setState(() => _selectedStream = val),
+                            decoration: _inputDecoration("Stream", Icons.science_outlined),
+                            style: GoogleFonts.poppins(color: Colors.black87),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+      
+                        // Subject Dropdown
+                        DropdownButtonFormField<String>(
+                          value: _selectedSubject,
+                          items: (_selectedBoard == null || _selectedStandard == null ? <String>[] : AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"] ?? <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          onChanged: (val) => setState(() => _selectedSubject = val),
+                          decoration: _inputDecoration("Subject", Icons.subject),
+                          style: GoogleFonts.poppins(color: Colors.black87),
+                        ),
+                        const SizedBox(height: 16),
+      
+                        // Unit Name
+                        TextFormField(
+                          controller: _unitController,
+                          decoration: _inputDecoration("Unit / Chapter Name", Icons.book),
+                          validator: (v) => v!.isEmpty ? "Required" : null,
+                          style: GoogleFonts.poppins(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Step(
+                    title: Text("Questions Mode", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    isActive: _currentStep >= 1,
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                         // Toggle
+                         Row(
+                           children: [
+                             Expanded(
+                               child: RadioListTile<bool>(
+                                 title: Text("Upload PDF", style: GoogleFonts.poppins(fontSize: 14)),
+                                 value: false, 
+                                 groupValue: _isManualEntry, 
+                                 contentPadding: EdgeInsets.zero,
+                                 onChanged: (val) => setState(() => _isManualEntry = val!),
+                               ),
+                             ),
+                             Expanded(
+                               child: RadioListTile<bool>(
+                                 title: Text("Manual Entry", style: GoogleFonts.poppins(fontSize: 14)),
+                                 value: true, 
+                                 groupValue: _isManualEntry, 
+                                 contentPadding: EdgeInsets.zero,
+                                 onChanged: (val) => setState(() => _isManualEntry = val!),
+                               ),
+                             ),
+                           ],
+                         ),
+                         
+                         const SizedBox(height: 16),
+      
+                         if (!_isManualEntry) ...[
+                           Container(
+                             width: double.infinity,
+                             padding: const EdgeInsets.all(24),
+                             decoration: BoxDecoration(
+                               border: Border.all(color: Colors.grey.shade300),
+                               borderRadius: BorderRadius.circular(12),
+                               color: Colors.grey.shade50,
+                             ),
+                             child: Column(
+                               children: [
+                                 Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.blue.shade300),
+                                 const SizedBox(height: 16),
+                                 ElevatedButton(
+                                   onPressed: _pickPdf,
+                                   child: Text(_pickedPdf != null ? "Change PDF" : "Select PDF"),
+                                 ),
+                                 if (_pickedPdf != null) ...[
+                                   const SizedBox(height: 12),
+                                   Text("Selected: ${_pickedPdf!.name}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                                 ]
+                               ],
+                             ),
+                           ),
+                           const SizedBox(height: 12),
+                           const Text("The PDF should contain an 'Overview' section and 'True/False' questions.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                         ] else ...[
+                            // Manual Entry Content
+                            TextFormField(
+                              controller: _overviewController,
+                              decoration: _inputDecoration("Chapter Overview / Study Material", Icons.article).copyWith(
+                                alignLabelWithHint: true,
+                              ),
+                              maxLines: 6,
+                              validator: (v) => v!.isEmpty ? "Required" : null,
+                              style: GoogleFonts.poppins(),
+                            ),
+                            const SizedBox(height: 24),
+      
+                            _buildHeader("Questions (5)"),
+                            const SizedBox(height: 16),
+      
+                            ...List.generate(5, (index) => _buildQuestionBlock(index)),
+                         ]
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Tab 2: History (Placeholder for now)
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Test history will be displayed here.",
+                    style: GoogleFonts.poppins(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -322,7 +583,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
               DropdownButton<String>(
                 value: _questions[index]['type'],
                 underline: Container(),
-                items: ["MCQ", "True/False"].map((t) => DropdownMenuItem(value: t, child: Text(t, style: GoogleFonts.poppins(fontSize: 14)))).toList(),
+                items: ["MCQ", "True/False"].map((t) => DropdownMenuItem<String>(value: t, child: Text(t, style: GoogleFonts.poppins(fontSize: 14)))).toList(),
                 onChanged: (val) {
                   setState(() {
                     _questions[index]['type'] = val;
@@ -335,7 +596,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
           const SizedBox(height: 12),
           
           TextFormField(
-            initialValue: _questions[index]['question'],
+            controller: TextEditingController(text: _questions[index]['question'])..selection = TextSelection.fromPosition(TextPosition(offset: _questions[index]['question'].length)),
             decoration: _inputDecoration("Enter Question", Icons.help_outline),
             onChanged: (val) => _questions[index]['question'] = val,
             style: GoogleFonts.poppins(),
@@ -358,12 +619,12 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
                 value: _questions[index]['correctAnswer'].isEmpty ? null : _questions[index]['correctAnswer'],
                 decoration: _inputDecoration("Correct Option", Icons.check_circle_outline),
                 items: ['Option A', 'Option B', 'Option C', 'Option D']
-                    .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+                    .map((o) => DropdownMenuItem<String>(value: o, child: Text(o)))
                     .toList(),
                 onChanged: (val) => setState(() => _questions[index]['correctAnswer'] = val),
              ),
           ] else ...[
-             // True/False Options (Fixed)
+             // True/False Options
              const SizedBox(height: 8),
              Text("Correct Answer:", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
              Row(
@@ -371,7 +632,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
                  Expanded(
                    child: RadioListTile<String>(
                      title: Text("True", style: GoogleFonts.poppins()),
-                     value: "True",
+                     value: "Option A", // A corresponds to True in the PDF format
                      groupValue: _questions[index]['correctAnswer'],
                      activeColor: Colors.blue.shade900,
                      onChanged: (val) => setState(() => _questions[index]['correctAnswer'] = val),
@@ -380,7 +641,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
                  Expanded(
                    child: RadioListTile<String>(
                      title: Text("False", style: GoogleFonts.poppins()),
-                     value: "False",
+                     value: "Option B", // B corresponds to False
                      groupValue: _questions[index]['correctAnswer'],
                      activeColor: Colors.blue.shade900,
                      onChanged: (val) => setState(() => _questions[index]['correctAnswer'] = val),
@@ -395,12 +656,13 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> {
   }
 
   Widget _buildOptionField(int index, String key, String label) {
+    String currentText = _questions[index][key] ?? "";
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Column(
         children: [
           TextFormField(
-            initialValue: _questions[index][key],
+            controller: TextEditingController(text: currentText)..selection = TextSelection.fromPosition(TextPosition(offset: currentText.length)),
             decoration: InputDecoration(
               prefixIcon: Padding(
                 padding: const EdgeInsets.all(12),
