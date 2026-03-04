@@ -82,10 +82,10 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
 
   Future<void> _pickFile() async {
     try {
-      // if (!await _canUseToday()) {
-      //   _addBot("🚫 Daily limit reached (3 times/day)");
-      //   return;
-      // }
+      if (!await _canUseToday()) {
+        _addBot("🚫 Daily limit reached (3 times/day)");
+        return;
+      }
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,

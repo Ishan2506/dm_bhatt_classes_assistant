@@ -45,17 +45,76 @@ class PdfGeneratorService {
           margin: const pw.EdgeInsets.all(24),
           pageFormat: PdfPageFormat.a4,
           build: (context) {
-            // Split content by \n to allow the layout engine to break between lines/paragraphs
             final lines = content.split('\n');
-            return lines.map((line) => pw.Paragraph(
-              text: line,
-              style: pw.TextStyle(
-                font: ttf,
-                fontSize: 11,
-                lineSpacing: 2,
-              ),
-              margin: const pw.EdgeInsets.only(bottom: 4),
-            )).toList();
+            List<pw.Widget> widgets = [];
+
+            for (var line in lines) {
+              final trimmedLine = line.trim();
+              if (trimmedLine.isEmpty) continue;
+
+              if (trimmedLine.startsWith('OVERVIEW:')) {
+                // Add "Overview" Header
+                widgets.add(
+                  pw.Container(
+                    margin: const pw.EdgeInsets.only(bottom: 8, top: 8),
+                    padding: const pw.EdgeInsets.only(bottom: 4),
+                    decoration: const pw.BoxDecoration(
+                      border: pw.Border(bottom: pw.BorderSide(width: 1, color: PdfColors.black)),
+                    ),
+                    child: pw.Text(
+                      "Overview",
+                      style: pw.TextStyle(
+                        font: ttf,
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                );
+                // Add Overview Text (without the "OVERVIEW:" prefix if possible, or just the whole line)
+                widgets.add(
+                  pw.Paragraph(
+                    text: trimmedLine.replaceFirst('OVERVIEW:', '').trim(),
+                    style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 11,
+                      lineSpacing: 2,
+                      fontStyle: pw.FontStyle.italic,
+                    ),
+                    margin: const pw.EdgeInsets.only(bottom: 12),
+                  ),
+                );
+
+                // Add "Questions" Header
+                widgets.add(
+                  pw.Container(
+                    margin: const pw.EdgeInsets.only(bottom: 8, top: 8),
+                    child: pw.Text(
+                      "Questions & Answers",
+                      style: pw.TextStyle(
+                        font: ttf,
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                // Regular Question/Answer lines
+                widgets.add(
+                  pw.Paragraph(
+                    text: trimmedLine,
+                    style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 11,
+                      lineSpacing: 2,
+                    ),
+                    margin: const pw.EdgeInsets.only(bottom: 4),
+                  ),
+                );
+              }
+            }
+            return widgets;
           },
         ),
       );

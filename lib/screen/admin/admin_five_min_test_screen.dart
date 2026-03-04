@@ -414,7 +414,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedCreateStd,
-                    items: (_selectedCreateBoard == null ? [] : AcademicConstants.standards[_selectedCreateBoard!] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    items: (_selectedCreateBoard == null ? <String>[] : AcademicConstants.standards[_selectedCreateBoard!] ?? <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
                     onChanged: (val) => setState(() {
                       _selectedCreateStd = val;
                       _selectedCreateSubject = null;
@@ -432,7 +432,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedCreateMedium,
-                    items: AcademicConstants.mediums.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    items: AcademicConstants.mediums.map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
                     onChanged: (val) => setState(() => _selectedCreateMedium = val),
                     decoration: _inputDecoration("Medium", Icons.language),
                     style: GoogleFonts.poppins(color: Colors.black87),
@@ -442,10 +442,10 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
             ),
             const SizedBox(height: 16),
             
-            if (_selectedCreateStd == "11" || _selectedCreateStd == "12") ...[
+            if (_selectedCreateStd != null && (_selectedCreateStd!.startsWith("11") || _selectedCreateStd!.startsWith("12"))) ...[
               DropdownButtonFormField<String>(
                 value: _selectedCreateStream,
-                items: _streams.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: _streams.map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
                 onChanged: (val) => setState(() => _selectedCreateStream = val),
                  decoration: _inputDecoration("Stream", Icons.category),
                 style: GoogleFonts.poppins(color: Colors.black87),
@@ -455,7 +455,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
             
             DropdownButtonFormField<String>(
               value: _selectedCreateSubject,
-              items: (_selectedCreateBoard == null || _selectedCreateStd == null ? [] : AcademicConstants.subjects["$_selectedCreateBoard-$_selectedCreateStd"] ?? []).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              items: (_selectedCreateBoard == null || _selectedCreateStd == null ? <String>[] : AcademicConstants.subjects["$_selectedCreateBoard-$_selectedCreateStd"] ?? <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
               onChanged: (val) => setState(() => _selectedCreateSubject = val),
               decoration: _inputDecoration("Subject", Icons.subject),
               style: GoogleFonts.poppins(color: Colors.black87),
@@ -544,7 +544,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildDropdown("Standard", _selectedFilterStandard, _selectedFilterBoard == null ? [] : AcademicConstants.standards[_selectedFilterBoard!] ?? [], (val) => setState(() => _selectedFilterStandard = val)),
+                    child: _buildDropdown("Standard", _selectedFilterStandard, _selectedFilterBoard == null ? <String>[] : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], (val) => setState(() => _selectedFilterStandard = val)),
                   ),
                 ],
               ),

@@ -52,7 +52,6 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   PlatformFile? _imageFile;
 
   final List<String> _streams = ["None", "Science", "General"];
-  final List<String> _streams = ["None", "Science", "General"];
   final List<String> _years = List.generate(10, (index) => (DateTime.now().year - index).toString());
   final List<String> _units = List.generate(20, (index) => (index + 1).toString());
 
