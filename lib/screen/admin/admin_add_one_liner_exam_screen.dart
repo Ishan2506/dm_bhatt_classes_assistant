@@ -21,6 +21,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
   String? _selectedMedium;
   String? _selectedStream;
   String? _selectedSubject;
+  String? _selectedMarks;
   String? _id;
   bool _isSaving = false;
 
@@ -41,6 +42,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
       }
       _selectedBoard = widget.examData!['board'];
       _selectedSubject = widget.examData!['subject'];
+      _selectedMarks = widget.examData!['totalMarks']?.toString();
       _selectedMedium = widget.examData!['medium'];
       _selectedStream = widget.examData!['stream'];
       if (_selectedMedium == "Gujarat") _selectedMedium = "Gujarati";
@@ -57,7 +59,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
 
   Future<void> _saveExam() async {
     if (_selectedBoard == null || _selectedStd == null || _selectedSubject == null || _selectedMedium == null || 
-        _unitController.text.isEmpty || _titleController.text.isEmpty) {
+        _selectedMarks == null || _unitController.text.isEmpty || _titleController.text.isEmpty) {
       CustomToast.showError(context, "Please fill all header fields");
       return;
     }
@@ -72,6 +74,12 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
       return;
     }
 
+    final int expectedMarks = int.tryParse(_selectedMarks ?? "0") ?? 0;
+    if (_questions.length != expectedMarks) {
+      CustomToast.showError(context, "Please add exactly $expectedMarks questions (Current: ${_questions.length})");
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final data = {
@@ -82,6 +90,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
         'subject': _selectedSubject,
         'unit': _unitController.text,
         'title': _titleController.text,
+        'totalMarks': int.tryParse(_selectedMarks!) ?? 20,
         'questions': _questions,
       };
 
@@ -242,6 +251,13 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
               decoration: InputDecoration(labelText: "Subject", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
               items: (_selectedBoard == null || _selectedStd == null ? <String>[] : AcademicConstants.subjects["$_selectedBoard-$_selectedStd"] ?? <String>[]).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
               onChanged: (val) => setState(() => _selectedSubject = val),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedMarks,
+              decoration: InputDecoration(labelText: "Marks", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              items: AcademicConstants.oneLinerMarks.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+              onChanged: (val) => setState(() => _selectedMarks = val),
             ),
             const SizedBox(height: 16),
             TextField(

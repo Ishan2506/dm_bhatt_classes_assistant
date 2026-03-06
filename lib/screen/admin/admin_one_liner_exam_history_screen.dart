@@ -94,7 +94,7 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
                             const SizedBox(height: 4),
                             Text("${exam['std']} Standard | ${exam['medium']} Medium", style: const TextStyle(color: Colors.grey)),
                             Text("${exam['subject']} | Unit: ${exam['unit']}", style: const TextStyle(color: Colors.grey)),
-                            Text("Questions: ${(exam['questions'] as List).length}", style: const TextStyle(fontWeight: FontWeight.w500)),
+                            Text("Questions: ${(exam['questions'] as List).length} | Marks: ${exam['totalMarks'] ?? 20}", style: const TextStyle(fontWeight: FontWeight.w500)),
                           ],
                         ),
                         trailing: Row(

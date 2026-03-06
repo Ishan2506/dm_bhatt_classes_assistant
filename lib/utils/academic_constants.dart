@@ -70,4 +70,5 @@ class AcademicConstants {
 
   static const List<String> mediums = ["English", "Gujarati"];
   static const List<String> marks = ["20", "30", "40"];
+  static const List<String> oneLinerMarks = ["5","10","20", "30", "40"];
 }
