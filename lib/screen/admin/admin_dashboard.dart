@@ -102,6 +102,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_isLoading) {
+      return Scaffold(
         backgroundColor: colorScheme.surface,
         body: const Center(child: CustomLoader()),
       );
