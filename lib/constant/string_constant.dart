@@ -1,6 +1,5 @@
 const lblStudent = 'Student';
 const lblAdmin = 'Admin';
-const lblAssistant = 'Assistant';
 const lblGuest = 'Guest';
 const lblEmail = 'Email';
 const lblTestEmail = 'test@gmail.com';
@@ -29,9 +28,7 @@ const lblSelectMedium = "Select Medium";
 const lblSchool = "School";
 const lblEnterSchoolName = "Enter school name";
 const lblCapturePhotoWithBackground = "Capture Photo with Background";
-const lblAadharCardNumber = "Aadhar Card Number";
-const hintAadharCardNumber = "XXXX-XXXX-XXXX";
-const lblUploadAadharCard = "Upload Aadhar Card";
+
 const lblAddress = "Address";
 const hintAddress = "Street, City, State, Pin Code";
 const lblAlreadyHaveAnAccount = "Already have an account?";

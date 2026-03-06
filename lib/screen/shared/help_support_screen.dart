@@ -24,7 +24,7 @@ class HelpSupportScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "How to use DM Bhatt Assistant App?",
+              "How to use DM Bhatt Admin App?",
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,

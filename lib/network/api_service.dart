@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 class ApiService {
-    static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
-   //static const String baseUrl = "http://localhost:5000/api";
+    // static const String baseUrl = "https://dmbhatt-api.onrender.com/api";
+   static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -201,38 +201,7 @@ class ApiService {
     return await http.delete(uri);
   }
 
-  static Future<http.Response> getAllAssistants() async {
-    final uri = Uri.parse("$baseUrl/admin/all-assistants");
-    return await http.get(uri);
-  }
 
-  static Future<http.Response> editAssistant({
-    required String id,
-    String? name,
-    String? phone,
-    String? password,
-    String? address,
-    String? aadharNumber,
-  }) async {
-    final uri = Uri.parse("$baseUrl/admin/edit-assistant/$id");
-    final body = {
-      if (name != null) 'name': name,
-      if (phone != null) 'phone': phone,
-      if (password != null && password.isNotEmpty) 'password': password,
-      if (address != null) 'address': address,
-      if (aadharNumber != null) 'aadharNumber': aadharNumber,
-    };
-    return await http.put(
-      uri,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(body),
-    );
-  }
-
-  static Future<http.Response> deleteAssistant(String id) async {
-    final uri = Uri.parse("$baseUrl/admin/delete-assistant/$id");
-    return await http.delete(uri);
-  }
 
   static Future<http.Response> createPaperSet({
     required String examName,
@@ -264,7 +233,7 @@ class ApiService {
     return await http.get(uri);
   }
 
-  static Future<http.Response> updatePaperSetStatus(String id, String status, {String performedBy = 'Assistant'}) async {
+  static Future<http.Response> updatePaperSetStatus(String id, String status, {String performedBy = 'Admin'}) async {
     final uri = Uri.parse("$baseUrl/paperset/update-status/$id");
     return await http.put(
       uri,
@@ -314,30 +283,7 @@ class ApiService {
     return await http.delete(uri);
   }
 
-  static Future<http.Response> addAssistant({
-    required String name,
-    required String phone,
-    required String password,
-    required String aadharNumber,
-    required String address,
-  }) async {
-    final uri = Uri.parse("$baseUrl/admin/add-assistant");
-    
-    final response = await http.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'name': name,
-        'phone': phone,
-        'password': password,
-        'aadharNumber': aadharNumber,
-        'address': address,
-      }),
-    );
-    return response;
-  }
+
   static Future<http.Response> forgetPassword({
     required String phone,
   }) async {

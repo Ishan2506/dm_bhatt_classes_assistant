@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
-import 'package:dm_bhatt_classes_new/screen/assistant/edit_profile_screen.dart';
+
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
@@ -86,53 +86,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       Map<String, dynamic>? apiProfile;
 
       // Assistant profile from API list endpoint
-      if (savedRole == "Assistant") {
-        final response = await ApiService.getAllAssistants();
-        if (response.statusCode == 200) {
-          final decoded = jsonDecode(response.body);
-          List<dynamic> assistantList = [];
-          if (decoded is List) {
-            assistantList = decoded;
-          } else if (decoded is Map<String, dynamic>) {
-            final rawList = decoded['assistants'] ?? decoded['data'] ?? decoded['items'] ?? decoded['result'];
-            if (rawList is List) assistantList = rawList;
-          }
+      // Admin profile usually comes from savedUserData
+      // If role was Assistant (legacy), we ignore the list fetch as that API is removed
 
-          if (assistantList.isNotEmpty) {
-            final normalizedSavedPhone = _normalizePhone(effectivePhone);
-            final matchById = jwtId.isNotEmpty
-                ? assistantList.firstWhere(
-                    (item) {
-                      if (item is! Map) return false;
-                      final map = Map<String, dynamic>.from(item);
-                      return _readStringFromMap(map, ['_id', 'id']) == jwtId;
-                    },
-                    orElse: () => null,
-                  )
-                : null;
-
-            dynamic match = matchById;
-            if (match == null && normalizedSavedPhone.isNotEmpty) {
-              match = assistantList.firstWhere(
-                (item) {
-                  if (item is! Map) return false;
-                  final map = Map<String, dynamic>.from(item);
-                  final rawPhone = _readStringFromMap(map, ['phone', 'mobile', 'phoneNum']);
-                  final normalizedApiPhone = _normalizePhone(rawPhone);
-                  if (normalizedApiPhone.isEmpty) return false;
-                  return normalizedApiPhone.endsWith(normalizedSavedPhone) ||
-                      normalizedApiPhone == normalizedSavedPhone;
-                },
-                orElse: () => null,
-              );
-            }
-
-            if (match is Map) {
-              apiProfile = Map<String, dynamic>.from(match);
-            }
-          }
-        }
-      }
 
       final profile = apiProfile ?? savedUserData ?? jwtPayload ?? <String, dynamic>{};
 
@@ -160,6 +116,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   void _navigateToEditProfile() async {
+    /*
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -177,6 +134,8 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     if (result != null && result is Map) {
       _loadProfileFromApi();
     }
+    */
+    CustomToast.showInfo(context, "Edit Profile feature is currently being updated.");
   }
 
   @override

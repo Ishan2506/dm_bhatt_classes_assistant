@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 
 import 'package:dm_bhatt_classes_new/screen/admin/admin_home_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/assistant/assistant_home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/app_sizes.dart';
@@ -66,10 +65,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       Widget targetScreen;
       if (role == "Admin") {
         targetScreen = const AdminHomeScreen();
-      } else if (role == "Assistant") {
-        targetScreen = const AssistantHomeScreen();
       } else {
-        // Assistant app does not support student role — redirect to welcome
+        // App does not support other roles except Admin now
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const WelcomeScreen()),

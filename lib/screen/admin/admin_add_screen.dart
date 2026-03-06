@@ -1,5 +1,4 @@
 import 'package:dm_bhatt_classes_new/screen/admin/add_student_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/admin/add_assistant_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/add_paperset_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/create_online_exam_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_five_min_test_screen.dart';
@@ -53,18 +52,7 @@ class AdminAddScreen extends StatelessWidget {
                 );
               },
             ),
-            _buildAddCard(
-              context,
-              "Add Assistant",
-              Icons.group_add_outlined,
-              Colors.purple,
-              () {
-                 Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddAssistantScreen()),
-                );
-              },
-            ),
+
             // _buildAddCard(
             //   context,
             //   "Add Paper Set",
