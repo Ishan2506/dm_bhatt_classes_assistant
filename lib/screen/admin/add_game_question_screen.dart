@@ -35,7 +35,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
     'Odd One Out',
     'Fact or Fiction',
     'Sentence Builder',
-    'Grammar Guradian', // Typo in backend enum check
+    'Grammar Guardian',
     'Word Bridge',
     'Emoji Decoder'
   ];
@@ -95,8 +95,15 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
   void _editQuestion(dynamic q) {
     setState(() {
       _editingQuestionId = q['_id'];
-      _selectedGameType = q['gameType']; // Should match anyway
+      _selectedGameType = q['gameType'];
+      if (!_gameTypes.contains(_selectedGameType)) {
+        _selectedGameType = null;
+      }
+
       _difficulty = q['difficulty'] ?? 'Medium';
+      if (!['Easy', 'Medium', 'Hard'].contains(_difficulty)) {
+        _difficulty = 'Medium';
+      }
       
       _questionController.text = q['questionText'] ?? "";
       _correctAnswerController.text = q['correctAnswer'] ?? "";
@@ -506,14 +513,20 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: _correctAnswerController.text.isNotEmpty ? _correctAnswerController.text : null,
+          value: (_correctAnswerController.text == "true" || _correctAnswerController.text == "Fact") 
+              ? "Fact" 
+              : (_correctAnswerController.text == "false" || _correctAnswerController.text == "Fiction") 
+                  ? "Fiction" 
+                  : null,
           decoration: const InputDecoration(labelText: "Correct Answer", border: OutlineInputBorder()),
           items: const [
-            DropdownMenuItem(value: "true", child: Text("True")),
-            DropdownMenuItem(value: "false", child: Text("False")),
+            DropdownMenuItem(value: "Fact", child: Text("Fact")),
+            DropdownMenuItem(value: "Fiction", child: Text("Fiction")),
           ],
           onChanged: (val) {
-             _correctAnswerController.text = val!;
+             setState(() {
+               _correctAnswerController.text = val!;
+             });
           },
           validator: (v) => v == null ? "Required" : null,
         ),
