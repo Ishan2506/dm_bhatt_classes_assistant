@@ -1,3 +1,4 @@
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_app_bar.dart';
 import 'dart:io';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_product_history_screen.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AdminExploreScreen extends StatefulWidget {
   final Map<String, dynamic>? productToEdit;
-  const AdminExploreScreen({super.key, this.productToEdit});
+  final bool isTab;
+  const AdminExploreScreen({super.key, this.productToEdit, this.isTab = false});
 
   @override
   State<AdminExploreScreen> createState() => _AdminExploreScreenState();
@@ -251,42 +253,19 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? "Edit Product" : "Add Product",
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold, 
-            color: Colors.white
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade900, Colors.blue.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+      appBar: widget.isTab && !_isEditing ? null : CustomAppBar(
+        title: _isEditing ? "Edit Product" : "Add Product",
         automaticallyImplyLeading: _isEditing,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
         actions: [
           if (!_isEditing)
-             TextButton(
+             IconButton(
+              icon: const Icon(Icons.history, color: Colors.white),
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AdminProductHistoryScreen()),
                 );
               },
-              child: Text(
-                "History", 
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold, 
-                  color: Colors.white,
-                )
-              ),
             ),
           const SizedBox(width: 8),
         ],

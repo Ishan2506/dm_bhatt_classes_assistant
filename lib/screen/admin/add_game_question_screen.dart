@@ -1,3 +1,4 @@
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_app_bar.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
@@ -167,10 +168,8 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Game Questions", style: GoogleFonts.poppins(color: Colors.white)),
-        backgroundColor: Colors.deepPurple,
-        iconTheme: const IconThemeData(color: Colors.white),
+      appBar: CustomAppBar(
+        title: "Game Questions",
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,

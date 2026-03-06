@@ -102,38 +102,13 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_isLoading) {
-      return Scaffold(
         backgroundColor: colorScheme.surface,
-        appBar: AppBar(
-          title: Text("Admin Dashboard", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-          backgroundColor: colorScheme.surface,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-        ),
         body: const Center(child: CustomLoader()),
       );
     }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          "Admin Dashboard",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-        ),
-        backgroundColor: colorScheme.surface,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: colorScheme.primary),
-            onPressed: () {
-              setState(() => _isLoading = true);
-              _fetchStats();
-            },
-          )
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: _fetchStats,
         child: SingleChildScrollView(

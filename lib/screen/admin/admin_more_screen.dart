@@ -43,23 +43,6 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context)!.moreOptions,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade900, Colors.blue.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

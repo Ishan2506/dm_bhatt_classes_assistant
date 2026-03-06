@@ -22,15 +22,6 @@ class AdminAddScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          "Quick Add",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-        ),
-        backgroundColor: colorScheme.surface,
-        automaticallyImplyLeading: false,
-        elevation: 0,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: GridView.count(
