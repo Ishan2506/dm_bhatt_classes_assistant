@@ -134,10 +134,15 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
     });
   }
 
-  Map<String, List<Map<String, dynamic>>> _groupProductsByCategory() {
-    Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var product in _products) {
-      String category = product['category'];
+  bool _isPdf(String? url) {
+    if (url == null || url.isEmpty) return false;
+    return url.toLowerCase().split('?').first.endsWith('.pdf');
+  }
+
+  Map<String, List<dynamic>> _groupProductsByCategory() {
+    final Map<String, List<dynamic>> grouped = {};
+    for (final product in _products) {
+      final category = product['category'] as String? ?? "Uncategorized";
       if (!grouped.containsKey(category)) {
         grouped[category] = [];
       }
@@ -180,56 +185,63 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
                   ),
                 ),
               ),
-              ...categoryProducts.map((product) => Card(
-                elevation: 0,
-                color: Colors.grey.shade50,
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey.shade200),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                      image: product['image'] != null && product['image'].isNotEmpty 
-                        ? DecorationImage(
-                            image: NetworkImage(product['image']),
-                            fit: BoxFit.cover,
-                          ) 
-                        : null,
+              ...categoryProducts.map((product) {
+                final imageUrl = product['image'] as String?;
+                final isPdf = _isPdf(imageUrl);
+
+                return Card(
+                  elevation: 0,
+                  color: Colors.grey.shade50,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(12),
+                    leading: Container(
+                      width: 50,
+                      height: 50,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: imageUrl == null || imageUrl.isEmpty
+                          ? const Icon(Icons.image, color: Colors.grey)
+                          : isPdf
+                              ? const Icon(Icons.picture_as_pdf, color: Colors.red)
+                              : Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.broken_image, color: Colors.grey),
+                                ),
                     ),
-                    child: product['image'] == null || product['image'].isEmpty 
-                      ? const Icon(Icons.image, color: Colors.grey) 
-                      : null,
+                    title: Text(
+                      product['name'],
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      "₹${product['price']}",
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.green),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _editProduct(product),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteProduct(product['_id']),
+                        ),
+                      ],
+                    ),
                   ),
-                  title: Text(
-                    product['name'],
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    "₹${product['price']}",
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.green),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _editProduct(product),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteProduct(product['_id']),
-                      ),
-                    ],
-                  ),
-                ),
-              )),
+                );
+              }),
               const SizedBox(height: 16),
             ],
           );

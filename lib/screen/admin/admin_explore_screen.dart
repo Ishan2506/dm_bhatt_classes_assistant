@@ -172,6 +172,11 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
     }
   }
 
+  bool _isPdf(String? url) {
+    if (url == null || url.isEmpty) return false;
+    return url.toLowerCase().split('?').first.endsWith('.pdf');
+  }
+
   void _handleSave() {
     if (_formKey.currentState!.validate()) {
       if (!_isEditing && _selectedFile == null) {
@@ -282,71 +287,102 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                 onTap: _showFileSelectionModal,
                 child: Container(
                   height: 200,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                    image: (_selectedFile != null && _fileType == 'image')
-                      ? DecorationImage(
-                          image: kIsWeb 
-                            ? NetworkImage(_selectedFile!.path!) as ImageProvider
-                            : FileImage(File(_selectedFile!.path!)),
-                          fit: BoxFit.cover,
-                        )
-                      : (widget.productToEdit != null && widget.productToEdit!['image'] != null)
-                        ? DecorationImage(
-                            image: NetworkImage(widget.productToEdit!['image']),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
                   ),
-                  child: (_selectedFile == null && (widget.productToEdit == null || widget.productToEdit!['image'] == null)) 
-                    ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.upload_file_outlined, size: 48, color: Colors.grey.shade400),
-                      const SizedBox(height: 8),
-                      Text(
-                        _isEditing ? "Tap to Change File" : "Upload Product Image or PDF", 
-                        style: GoogleFonts.poppins(color: Colors.grey.shade600)
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Supported: All Files",
-                        style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 12)
-                      ),
-                    ],
-                  ) : (_selectedFile != null && _fileType != 'image')
-                    ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _fileType == 'pdf' ? Icons.picture_as_pdf : Icons.insert_drive_file,
-                          size: 64, 
-                          color: _fileType == 'pdf' ? Colors.red.shade400 : Colors.blue.shade400
-                        ),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            _selectedFile!.name,
-                            style: GoogleFonts.poppins(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
+                  child: Builder(
+                    builder: (context) {
+                      final existingImageUrl = widget.productToEdit?['image'] as String?;
+                      
+                      // 1. New Selection
+                      if (_selectedFile != null) {
+                        if (_fileType == 'image') {
+                          return kIsWeb 
+                            ? Image.network(_selectedFile!.path!, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image))
+                            : Image.file(File(_selectedFile!.path!), fit: BoxFit.cover);
+                        } else {
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _fileType == 'pdf' ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                                size: 64, 
+                                color: _fileType == 'pdf' ? Colors.red.shade400 : Colors.blue.shade400
+                              ),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Text(
+                                  _selectedFile!.name,
+                                  style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.w600),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "${(_selectedFile!.size / 1024).toStringAsFixed(2)} KB",
+                                style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 12),
+                              ),
+                            ],
+                          );
+                        }
+                      }
+                      
+                      // 2. Existing Content (Edit Mode)
+                      if (existingImageUrl != null && existingImageUrl.isNotEmpty) {
+                        if (_isPdf(existingImageUrl)) {
+                          return const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.picture_as_pdf, size: 64, color: Colors.red),
+                                SizedBox(height: 8),
+                                Text("Existing PDF Document", style: TextStyle(color: Colors.grey)),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          );
+                        } else {
+                          return Image.network(
+                            existingImageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) => const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                                  SizedBox(height: 8),
+                                  Text("Failed to load image", style: TextStyle(color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                      }
+
+                      // 3. Fallback / Empty
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.upload_file_outlined, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text(
+                            _isEditing ? "Tap to Change File" : "Upload Product Image or PDF", 
+                            style: GoogleFonts.poppins(color: Colors.grey.shade600)
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "${(_selectedFile!.size / 1024).toStringAsFixed(2)} KB",
-                          style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 12),
-                        ),
-                      ],
-                    )
-                    : null,
+                          const SizedBox(height: 4),
+                          Text(
+                            "Supported: All Files",
+                            style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 12)
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
