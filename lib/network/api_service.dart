@@ -487,6 +487,7 @@ class ApiService {
   // --- 5 Min Test APIs ---
 
   static Future<http.Response> createFiveMinTest({
+    required String title,
     required String board,
     required String std,
     required String medium,
@@ -501,6 +502,7 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        "title": title,
         "board": board,
         "std": std,
         "medium": medium,
@@ -520,6 +522,7 @@ class ApiService {
 
   static Future<http.Response> updateFiveMinTest({
     required String id,
+    required String title,
     required String board,
     required String std,
     required String medium,
@@ -534,6 +537,7 @@ class ApiService {
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
+        "title": title,
         "board": board,
         "std": std,
         "medium": medium,

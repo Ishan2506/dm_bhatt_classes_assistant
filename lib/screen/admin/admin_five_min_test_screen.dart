@@ -18,6 +18,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   final _formKey = GlobalKey<FormState>();
 
   // --- Form Controllers & State ---
+  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _unitController = TextEditingController();
   final TextEditingController _overviewController = TextEditingController();
   
@@ -55,9 +56,9 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
     _fetchTests();
   }
 
-  @override
   void dispose() {
     _tabController.dispose();
+    _titleController.dispose();
     _unitController.dispose();
     _overviewController.dispose();
     super.dispose();
@@ -94,6 +95,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
       _selectedCreateStd = null;
       _selectedCreateMedium = null;
       _selectedCreateStream = null;
+      _titleController.clear();
       _unitController.clear();
       _overviewController.clear();
       _questions = List.generate(5, (index) => {
@@ -117,6 +119,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
       _selectedCreateStd = test['std'];
       _selectedCreateMedium = test['medium'];
       _selectedCreateStream = (test['stream'] == "" || test['stream'] == "-") ? null : test['stream'];
+      _titleController.text = test['title'] ?? "";
       _unitController.text = test['unit'] ?? "";
       _overviewController.text = test['overview'] ?? "";
       
@@ -186,6 +189,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
         if (_isEditing) {
            final response = await ApiService.updateFiveMinTest(
              id: _editingId!,
+             title: _titleController.text,
              board: _selectedCreateBoard!,
              std: _selectedCreateStd!,
              medium: _selectedCreateMedium!,
@@ -208,6 +212,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
            }
         } else {
            final response = await ApiService.createFiveMinTest(
+             title: _titleController.text,
              board: _selectedCreateBoard!,
              std: _selectedCreateStd!,
              medium: _selectedCreateMedium!,
@@ -443,6 +448,14 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
               onChanged: (val) => setState(() => _selectedCreateSubject = val),
               decoration: _inputDecoration("Subject", Icons.subject),
               style: GoogleFonts.poppins(color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            
+            TextFormField(
+              controller: _titleController,
+              decoration: _inputDecoration("Test Title", Icons.title),
+              validator: (v) => v!.isEmpty ? "Required" : null,
+              style: GoogleFonts.poppins(),
             ),
             const SizedBox(height: 16),
 

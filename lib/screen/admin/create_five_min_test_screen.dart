@@ -22,6 +22,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
+  late TextEditingController _titleController;
   late TextEditingController _unitController;
   late TextEditingController _overviewController;
 
@@ -55,6 +56,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _titleController = TextEditingController(text: widget.testToEdit?['title'] ?? "");
     _unitController = TextEditingController(text: widget.testToEdit?['unit'] ?? "");
     _overviewController = TextEditingController(text: widget.testToEdit?['overview'] ?? "");
     
@@ -125,6 +127,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
       _selectedMedium = null;
       _selectedStream = null;
       _selectedSubject = null;
+      _titleController.clear();
       _unitController.clear();
       _overviewController.clear();
       _pickedPdf = null;
@@ -144,6 +147,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
       _selectedMedium = test['medium'];
       _selectedStream = (test['stream'] == "" || test['stream'] == "-") ? null : test['stream'];
       _selectedSubject = test['subject'];
+      _titleController.text = test['title'] ?? "";
       _unitController.text = test['unit'] ?? "";
       _overviewController.text = test['overview'] ?? "";
       
@@ -346,6 +350,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
   @override
   void dispose() {
     _tabController.dispose();
+    _titleController.dispose();
     _unitController.dispose();
     _overviewController.dispose();
     super.dispose();
@@ -375,6 +380,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
         final response = (_isEditing || _editingId != null) 
           ? await ApiService.updateFiveMinTest(
               id: _editingId ?? widget.testToEdit!['_id'],
+              title: _titleController.text,
               board: _selectedBoard!,
               std: _selectedStandard!,
               medium: _selectedMedium!,
@@ -385,6 +391,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
               questions: _questions,
             )
           : await ApiService.createFiveMinTest(
+              title: _titleController.text,
               board: _selectedBoard!,
               std: _selectedStandard!,
               medium: _selectedMedium!,
@@ -449,7 +456,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                 currentStep: _currentStep,
                 onStepContinue: () {
                   if (_currentStep == 0) {
-                    if (_selectedBoard != null && _selectedStandard != null && _selectedMedium != null && _selectedSubject != null && _unitController.text.isNotEmpty) {
+                    if (_selectedBoard != null && _selectedStandard != null && _selectedMedium != null && _selectedSubject != null && _unitController.text.isNotEmpty && _titleController.text.isNotEmpty) {
                        if ((_selectedStandard == "11" || _selectedStandard == "12") && _selectedStream == null) {
                           CustomToast.showError(context, "Please select a Stream");
                           return;
@@ -571,6 +578,15 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                         ),
                         const SizedBox(height: 16),
       
+                        // Title Name
+                        TextFormField(
+                          controller: _titleController,
+                          decoration: _inputDecoration("Test Title", Icons.title),
+                          validator: (v) => v!.isEmpty ? "Required" : null,
+                          style: GoogleFonts.poppins(),
+                        ),
+                        const SizedBox(height: 16),
+
                         // Unit Name
                         TextFormField(
                           controller: _unitController,
