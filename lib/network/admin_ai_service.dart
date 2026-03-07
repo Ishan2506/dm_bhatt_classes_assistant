@@ -87,16 +87,16 @@ ${isTrueFalse ? """
 01. [Question text]
 A. True
 B. False
-Ans. (A or B)
+Ans. True (or False)
 
 02. [Question text]
 ...
 """ : isFillBlanks ? """
 01. [The question text with a blank: __________]
-Ans. Correct Answer
+Ans. [Correct Answer]
 
 02. [The question text with a blank: __________]
-Ans. Correct Answer
+Ans. [Correct Answer]
 """ : """
 01. Question text
 A. Option A
@@ -104,9 +104,6 @@ B. Option B
 C. Option C
 D. Option D
 Ans. (Correct Letter)
-
-02. Question text
-...
 """}
 
 DOCUMENT CONTENT:

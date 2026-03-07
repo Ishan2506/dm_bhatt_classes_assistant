@@ -289,6 +289,12 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
               final List<Map<String, dynamic>> parsedQuestions = [];
               for (var i = 0; i < 5 && i < questions.length; i++) {
                 final q = questions[i];
+                String ans = q['correctAnswer'] ?? "";
+                if (q['type'] == 'True/False') {
+                  if (ans == 'A' || ans == 'Option A') ans = 'True';
+                  else if (ans == 'B' || ans == 'Option B') ans = 'False';
+                }
+                
                 parsedQuestions.add({
                   "question": q['questionText'] ?? "",
                   "questionImage": null,
@@ -301,7 +307,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                   "optionCImage": null,
                   "optionD": q['options'] != null && (q['options'] as List).length > 3 ? q['options'][3]['text'] : "",
                   "optionDImage": null,
-                  "correctAnswer": q['correctAnswer'] ?? "",
+                  "correctAnswer": ans,
                 });
               }
               
@@ -849,7 +855,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
              _buildOptionField(index, 'optionD', 'D'),
              const SizedBox(height: 12),
              DropdownButtonFormField<String>(
-                value: _questions[index]['correctAnswer'].startsWith('Option ') ? _questions[index]['correctAnswer'] : null,
+                value: (_questions[index]['correctAnswer'].startsWith('Option ') || ['Option A', 'Option B', 'Option C', 'Option D'].contains(_questions[index]['correctAnswer'])) ? _questions[index]['correctAnswer'] : null,
                 decoration: _inputDecoration("Correct Option", Icons.check_circle_outline),
                 items: ['Option A', 'Option B', 'Option C', 'Option D']
                     .map((o) => DropdownMenuItem<String>(value: o, child: Text(o)))
@@ -865,7 +871,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                  Expanded(
                    child: RadioListTile<String>(
                      title: Text("True", style: GoogleFonts.poppins()),
-                     value: "Option A", // A corresponds to True in the PDF format
+                     value: "True", // A corresponds to True in the PDF format
                      groupValue: _questions[index]['correctAnswer'],
                      activeColor: Colors.blue.shade900,
                      onChanged: (val) => setState(() => _questions[index]['correctAnswer'] = val),
@@ -874,7 +880,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                  Expanded(
                    child: RadioListTile<String>(
                      title: Text("False", style: GoogleFonts.poppins()),
-                     value: "Option B", // B corresponds to False
+                     value: "False", // B corresponds to False
                      groupValue: _questions[index]['correctAnswer'],
                      activeColor: Colors.blue.shade900,
                      onChanged: (val) => setState(() => _questions[index]['correctAnswer'] = val),
