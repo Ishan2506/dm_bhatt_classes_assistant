@@ -272,13 +272,11 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
         appBar: AppBar(
           title: Text(
             "Manage Paper Set",
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
           ),
           elevation: 0,
           bottom: TabBar(
              controller: _tabController,
-             labelColor: Colors.blue,
-             unselectedLabelColor: Colors.grey,
              tabs: const [
                Tab(text: "Create New"),
                Tab(text: "History"),

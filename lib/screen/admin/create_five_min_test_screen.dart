@@ -419,24 +419,11 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
         appBar: AppBar(
           title: Text(
             _isEditing ? "Edit 5 Min Test" : "Manage 5 Min Test",
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
           ),
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade900, Colors.blue.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
           elevation: 0,
           bottom: TabBar(
             controller: _tabController,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
             tabs: const [
               Tab(text: "Create New"),
               Tab(text: "History"),

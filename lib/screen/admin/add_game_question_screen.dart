@@ -172,9 +172,6 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
         title: "Game Questions",
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
           tabs: const [
             Tab(text: "Create New"),
             Tab(text: "History"),

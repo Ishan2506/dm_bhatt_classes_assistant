@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onSurfaceVariant),
+          icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.transparent,

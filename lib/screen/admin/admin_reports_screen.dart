@@ -109,15 +109,14 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> with SingleTick
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Reports & Analytics", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-        flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.blue.shade900, Colors.blue.shade700]))),
+        title: Text("Reports & Analytics", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.download, color: Colors.white),
+            icon: const Icon(Icons.download),
             onPressed: _allResults.isEmpty ? null : _exportToExcel,
             tooltip: "Export to Excel",
           ),
-          IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _fetchData),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchData),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -125,10 +124,6 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> with SingleTick
             Tab(text: "All Submissions", icon: Icon(Icons.list_alt)),
             Tab(text: "Student Wise", icon: Icon(Icons.person_search)),
           ],
-          labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
         ),
       ),
       body: _isLoading

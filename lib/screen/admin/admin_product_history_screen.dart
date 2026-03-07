@@ -155,19 +155,9 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
       appBar: AppBar(
         title: Text(
           "Product History",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade900, Colors.blue.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),

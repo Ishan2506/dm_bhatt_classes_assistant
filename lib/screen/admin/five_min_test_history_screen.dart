@@ -149,18 +149,8 @@ class _FiveMinTestHistoryScreenState extends State<FiveMinTestHistoryScreen> {
       appBar: AppBar(
         title: Text(
           "5 Min Test History",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade900, Colors.blue.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(

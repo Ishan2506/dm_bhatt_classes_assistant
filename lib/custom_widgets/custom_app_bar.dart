@@ -23,15 +23,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
     return AppBar(
       title: title != null
           ? Text(
               title!, 
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold, 
-                color: Colors.white,
                 fontSize: 20,
               ),
             )
@@ -40,21 +37,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: leading,
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading ?? true,
-      backgroundColor: Colors.transparent,
       elevation: 0,
-      iconTheme: const IconThemeData(color: Colors.white),
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              colorScheme.primary,
-              colorScheme.primary.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-      ),
       bottom: bottom,
     );
   }

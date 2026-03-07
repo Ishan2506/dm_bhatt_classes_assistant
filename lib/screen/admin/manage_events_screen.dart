@@ -72,22 +72,9 @@ class _ManageEventsScreenState extends State<ManageEventsScreen> {
       appBar: AppBar(
         title: Text(
           "Manage Events",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-         flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade900, Colors.blue.shade700],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _eventsFuture,

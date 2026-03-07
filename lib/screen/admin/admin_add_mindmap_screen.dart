@@ -185,12 +185,8 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
-          title: Text("Add Mind Map", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-          flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade900, Colors.indigo.shade700]))),
+          title: Text("Add Mind Map", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           bottom: TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
             tabs: [
               Tab(text: _editingMindMapId != null ? 'Edit Mind Map' : 'Create New'),
               const Tab(text: 'Mind Map History'),
@@ -200,7 +196,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
             if (_isSaving)
               const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
             else
-              IconButton(icon: const Icon(Icons.check, color: Colors.white), onPressed: _saveMindMap),
+              IconButton(icon: const Icon(Icons.check), onPressed: _saveMindMap),
           ],
         ),
         body: TabBarView(

@@ -116,13 +116,12 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
     if (_id != null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text("Edit One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-          flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade900, Colors.indigo.shade700]))),
+          title: Text("Edit One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           actions: [
             if (_isSaving)
               const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
             else
-              IconButton(icon: const Icon(Icons.check, color: Colors.white), onPressed: _saveExam),
+              IconButton(icon: const Icon(Icons.check), onPressed: _saveExam),
           ],
         ),
         body: _buildForm(),
@@ -133,18 +132,14 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text("One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
-          flexibleSpace: Container(decoration: BoxDecoration(gradient: LinearGradient(colors: [Colors.indigo.shade900, Colors.indigo.shade700]))),
+          title: Text("One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           actions: [
             if (_isSaving)
               const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
             else
-              IconButton(icon: const Icon(Icons.check, color: Colors.white), onPressed: _saveExam),
+              IconButton(icon: const Icon(Icons.check), onPressed: _saveExam),
           ],
           bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
             tabs: [
               Tab(text: "Add Exam"),
               Tab(text: "History"),
