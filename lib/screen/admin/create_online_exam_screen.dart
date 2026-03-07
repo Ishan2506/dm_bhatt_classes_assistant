@@ -245,8 +245,6 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
           ),
           elevation: 0,
           bottom: const TabBar(
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
             tabs: [
               Tab(text: "Create New"),
               Tab(text: "Exam History"),

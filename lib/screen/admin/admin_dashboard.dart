@@ -204,10 +204,6 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
                       ),
                     ],
                   ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: colorScheme.onSurfaceVariant,
-                  labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),
-                  unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
                   tabs: const [
                     Tab(text: "By Subject"),
                     Tab(text: "By Standard"),

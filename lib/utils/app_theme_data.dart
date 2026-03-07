@@ -189,6 +189,14 @@ class MaterialTheme {
         color: colorScheme.onPrimary,
       ),
     ),
+    tabBarTheme: TabBarThemeData(
+      labelColor: colorScheme.onPrimary,
+      unselectedLabelColor: colorScheme.onPrimary.withOpacity(0.7),
+      indicatorColor: colorScheme.onPrimary,
+      labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+      unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+      indicatorSize: TabBarIndicatorSize.tab,
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.primary,

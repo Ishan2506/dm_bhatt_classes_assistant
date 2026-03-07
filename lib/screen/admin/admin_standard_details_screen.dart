@@ -54,22 +54,16 @@ class _AdminStandardDetailsScreenState extends State<AdminStandardDetailsScreen>
         backgroundColor: colorScheme.surface,
         appBar: AppBar(
           title: Text("Standard ${widget.standard} Details", 
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-          backgroundColor: colorScheme.surface,
-          elevation: 0,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, color: colorScheme.primary),
+            icon: const Icon(Icons.arrow_back_ios_new),
             onPressed: () => Navigator.pop(context),
           ),
-          bottom: TabBar(
-            indicatorColor: colorScheme.primary,
-            labelColor: colorScheme.primary,
-            unselectedLabelColor: colorScheme.onSurfaceVariant,
-            tabs: const [
+          bottom: const TabBar(
+            tabs: [
               Tab(text: "Analysis"),
               Tab(text: "Students"),
             ],
-            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
         ),
         body: _isLoading 

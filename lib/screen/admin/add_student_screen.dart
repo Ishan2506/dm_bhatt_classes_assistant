@@ -346,8 +346,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
           elevation: 0,
           bottom: TabBar(
             controller: _tabController,
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
             tabs: const [
               Tab(text: "Create New"),
               Tab(text: "History"),

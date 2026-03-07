@@ -129,19 +129,10 @@ class _AdminLogScreenState extends State<AdminLogScreen> with SingleTickerProvid
       appBar: AppBar(
         title: Text(
           "Activity Log",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.blue.shade900,
-        foregroundColor: Colors.white,
-        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          indicatorWeight: 3,
-          labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-          unselectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500),
           tabs: const [
             Tab(text: "Student Log"),
             Tab(text: "Paper Set Log"),
