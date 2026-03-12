@@ -83,7 +83,17 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
             "optionD": q['optionD'] ?? "",
             "optionDImage": q['optionDImage'],
             "correctAnswer": q['correctAnswer'] ?? "",
-          })
+          }).map((q) {
+            // Reverse map from actual text value to Option label
+            if (q['type'] == 'MCQ') {
+              final ans = q['correctAnswer'].toString().trim().toLowerCase();
+              if (ans == q['optionA'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option A";
+              else if (ans == q['optionB'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option B";
+              else if (ans == q['optionC'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option C";
+              else if (ans == q['optionD'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option D";
+            }
+            return q;
+          }).toList()
         );
       } else {
         _questions = List.generate(5, (index) => {
@@ -166,7 +176,17 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
             "optionD": q['optionD'] ?? "",
             "optionDImage": q['optionDImage'],
             "correctAnswer": q['correctAnswer'] ?? "",
-          })
+          }).map((q) {
+             // Reverse map from actual text value to Option label
+            if (q['type'] == 'MCQ') {
+              final ans = q['correctAnswer'].toString().trim().toLowerCase();
+              if (ans == q['optionA'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option A";
+              else if (ans == q['optionB'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option B";
+              else if (ans == q['optionC'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option C";
+              else if (ans == q['optionD'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option D";
+            }
+            return q;
+          }).toList()
         );
       } else {
         _questions = List.generate(5, (index) => {
@@ -377,6 +397,19 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
 
       CustomLoader.show(context);
       try {
+        // Prepare questions for submission (map labels to values)
+        final List<Map<String, dynamic>> finalQuestions = _questions.map((q) {
+          final newQ = Map<String, dynamic>.from(q);
+          if (q['type'] == 'MCQ') {
+            final ans = q['correctAnswer'];
+            if (ans == "Option A") newQ['correctAnswer'] = q['optionA'];
+            else if (ans == "Option B") newQ['correctAnswer'] = q['optionB'];
+            else if (ans == "Option C") newQ['correctAnswer'] = q['optionC'];
+            else if (ans == "Option D") newQ['correctAnswer'] = q['optionD'];
+          }
+          return newQ;
+        }).toList();
+
         final response = (_isEditing || _editingId != null) 
           ? await ApiService.updateFiveMinTest(
               id: _editingId ?? widget.testToEdit!['_id'],
@@ -388,7 +421,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
               subject: _selectedSubject!,
               unit: _unitController.text,
               overview: _overviewController.text,
-              questions: _questions,
+              questions: finalQuestions,
             )
           : await ApiService.createFiveMinTest(
               title: _titleController.text,
@@ -399,7 +432,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
               subject: _selectedSubject!,
               unit: _unitController.text,
               overview: _overviewController.text,
-              questions: _questions,
+              questions: finalQuestions,
             );
 
         CustomLoader.hide(context);
