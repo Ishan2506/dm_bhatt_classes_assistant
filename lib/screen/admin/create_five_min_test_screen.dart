@@ -85,12 +85,19 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
             "correctAnswer": q['correctAnswer'] ?? "",
           }).map((q) {
             // Reverse map from actual text value to Option label
-            if (q['type'] == 'MCQ') {
-              final ans = q['correctAnswer'].toString().trim().toLowerCase();
-              if (ans == q['optionA'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option A";
-              else if (ans == q['optionB'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option B";
-              else if (ans == q['optionC'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option C";
-              else if (ans == q['optionD'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option D";
+            if (q['type'].toString().trim().toUpperCase() == 'MCQ') {
+              final String ans = q['correctAnswer'].toString().trim().toLowerCase();
+              final String optA = q['optionA'].toString().trim().toLowerCase();
+              final String optB = q['optionB'].toString().trim().toLowerCase();
+              final String optC = q['optionC'].toString().trim().toLowerCase();
+              final String optD = q['optionD'].toString().trim().toLowerCase();
+              
+              if (ans.isNotEmpty) {
+                if (ans == optA) q['correctAnswer'] = "Option A";
+                else if (ans == optB) q['correctAnswer'] = "Option B";
+                else if (ans == optC) q['correctAnswer'] = "Option C";
+                else if (ans == optD) q['correctAnswer'] = "Option D";
+              }
             }
             return q;
           }).toList()
@@ -178,12 +185,19 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
             "correctAnswer": q['correctAnswer'] ?? "",
           }).map((q) {
              // Reverse map from actual text value to Option label
-            if (q['type'] == 'MCQ') {
-              final ans = q['correctAnswer'].toString().trim().toLowerCase();
-              if (ans == q['optionA'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option A";
-              else if (ans == q['optionB'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option B";
-              else if (ans == q['optionC'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option C";
-              else if (ans == q['optionD'].toString().trim().toLowerCase()) q['correctAnswer'] = "Option D";
+            if (q['type'].toString().trim().toUpperCase() == 'MCQ') {
+              final String ans = q['correctAnswer'].toString().trim().toLowerCase();
+              final String optA = q['optionA'].toString().trim().toLowerCase();
+              final String optB = q['optionB'].toString().trim().toLowerCase();
+              final String optC = q['optionC'].toString().trim().toLowerCase();
+              final String optD = q['optionD'].toString().trim().toLowerCase();
+
+              if (ans.isNotEmpty) {
+                if (ans == optA) q['correctAnswer'] = "Option A";
+                else if (ans == optB) q['correctAnswer'] = "Option B";
+                else if (ans == optC) q['correctAnswer'] = "Option C";
+                else if (ans == optD) q['correctAnswer'] = "Option D";
+              }
             }
             return q;
           }).toList()
@@ -400,12 +414,12 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
         // Prepare questions for submission (map labels to values)
         final List<Map<String, dynamic>> finalQuestions = _questions.map((q) {
           final newQ = Map<String, dynamic>.from(q);
-          if (q['type'] == 'MCQ') {
-            final ans = q['correctAnswer'];
-            if (ans == "Option A") newQ['correctAnswer'] = q['optionA'];
-            else if (ans == "Option B") newQ['correctAnswer'] = q['optionB'];
-            else if (ans == "Option C") newQ['correctAnswer'] = q['optionC'];
-            else if (ans == "Option D") newQ['correctAnswer'] = q['optionD'];
+          if (q['type'].toString().trim().toUpperCase() == 'MCQ') {
+            final String ansLabel = q['correctAnswer'].toString().trim().toUpperCase();
+            if (ansLabel == "OPTION A") newQ['correctAnswer'] = q['optionA'];
+            else if (ansLabel == "OPTION B") newQ['correctAnswer'] = q['optionB'];
+            else if (ansLabel == "OPTION C") newQ['correctAnswer'] = q['optionC'];
+            else if (ansLabel == "OPTION D") newQ['correctAnswer'] = q['optionD'];
           }
           return newQ;
         }).toList();
