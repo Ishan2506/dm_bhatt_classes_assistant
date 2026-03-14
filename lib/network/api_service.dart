@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
 class ApiService {
-     static const String baseUrl = "http://103.212.121.139:5000/api";
-  //  static const String baseUrl = "http://localhost:5000/api";
+    //  static const String baseUrl = "http://103.212.121.139:5000/api";
+   static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -972,6 +972,39 @@ class ApiService {
     if (stream != null) request.fields['stream'] = stream;
     request.fields['year'] = year;
     if (schoolName != null) request.fields['schoolName'] = schoolName;
+
+    final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: file.name,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
+  static Future<http.Response> uploadNotes({
+    required String title,
+    required String board,
+    required String standard,
+    required String medium,
+    String? stream,
+    required String subject,
+    required String year,
+    required PlatformFile file,
+  }) async {
+    final uri = Uri.parse("$baseUrl/material/upload-notes");
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['title'] = title;
+    request.fields['board'] = board;
+    request.fields['standard'] = standard;
+    request.fields['medium'] = medium;
+    if (stream != null) request.fields['stream'] = stream;
+    request.fields['subject'] = subject;
+    request.fields['year'] = year;
 
     final bytes = file.bytes ?? await File(file.path!).readAsBytes();
     final multipartFile = http.MultipartFile.fromBytes(

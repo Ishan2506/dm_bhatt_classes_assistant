@@ -38,8 +38,17 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   String? _selectedStdSi;
   String? _selectedStreamSi;
   String? _selectedYearSi;
-  DateTime? _selectedDateSi;
   PlatformFile? _schoolPdfFile;
+
+  // Notes Fields
+  final TextEditingController _notesTitleController = TextEditingController();
+  String? _selectedBoardNi;
+  String? _selectedSubjectNi;
+  String? _selectedMediumNi;
+  String? _selectedStdNi;
+  String? _selectedStreamNi;
+  String? _selectedYearNi;
+  PlatformFile? _notesPdfFile;
 
   // Image Material Fields
   final TextEditingController _imageTitleController = TextEditingController();
@@ -54,6 +63,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   PlatformFile? _imageFile;
   String? _existingBoardFileUrl;
   String? _existingSchoolFileUrl;
+  String? _existingNotesFileUrl;
   String? _existingImageFileUrl;
 
   String? _editingMaterialId;
@@ -67,7 +77,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -76,6 +86,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     _boardTitleController.dispose();
     _schoolTitleController.dispose();
     _schoolNameController.dispose();
+    _notesTitleController.dispose();
     _imageTitleController.dispose();
     _imageSchoolNameController.dispose();
     super.dispose();
@@ -122,6 +133,15 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           _selectedYearSi = item['year'];
           _schoolNameController.text = item['schoolName'] ?? "";
           _tabController.animateTo(1);
+       } else if (type == 'Notes') {
+          _notesTitleController.text = item['title'] ?? "";
+          _selectedBoardNi = item['board'];
+          _selectedSubjectNi = item['subject'];
+          _selectedMediumNi = item['medium'];
+          _selectedStdNi = item['standard'];
+          _selectedStreamNi = item['stream'] ?? "None";
+          _selectedYearNi = item['year'];
+          _tabController.animateTo(2);
        } else if (type == 'ImageMaterial') {
           _imageTitleController.text = item['title'] ?? "";
           _selectedBoardIm = item['board'];
@@ -132,12 +152,13 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           _selectedYearIm = item['year'];
           _selectedUnitIm = item['unit'];
           _imageSchoolNameController.text = item['schoolName'] ?? "";
-          _tabController.animateTo(2);
+          _tabController.animateTo(3);
        }
 
        // Store existing file URL
        if (type == 'BoardPaper') _existingBoardFileUrl = item['file'];
        if (type == 'SchoolPaper') _existingSchoolFileUrl = item['file'];
+       if (type == 'Notes') _existingNotesFileUrl = item['file'];
        if (type == 'ImageMaterial') _existingImageFileUrl = item['file'];
      });
   }
@@ -166,6 +187,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       setState(() {
         if (type == 'board') _boardPdfFile = result.files.first;
         if (type == 'school') _schoolPdfFile = result.files.first;
+        if (type == 'notes') _notesPdfFile = result.files.first;
         if (type == 'image') _imageFile = result.files.first;
       });
     }
@@ -261,6 +283,50 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     }
   }
 
+  Future<void> _submitNotes() async {
+    if (_formKey.currentState!.validate() && (_notesPdfFile != null || _editingMaterialId != null)) {
+      setState(() => _isLoading = true);
+      try {
+        final response = _editingMaterialId != null
+          ? await ApiService.updateMaterial(
+              id: _editingMaterialId!,
+              title: _notesTitleController.text,
+              board: _selectedBoardNi!,
+              subject: _selectedSubjectNi!,
+              medium: _selectedMediumNi!,
+              standard: _selectedStdNi!,
+              stream: _selectedStreamNi ?? "None",
+              year: _selectedYearNi!,
+              file: _notesPdfFile,
+            )
+          : await ApiService.uploadNotes(
+              title: _notesTitleController.text,
+              board: _selectedBoardNi!,
+              subject: _selectedSubjectNi!,
+              medium: _selectedMediumNi!,
+              standard: _selectedStdNi!,
+              stream: _selectedStreamNi ?? "None",
+              year: _selectedYearNi!,
+              file: _notesPdfFile!,
+            );
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          CustomToast.showSuccess(context, _editingMaterialId != null ? "Notes updated successfully" : "Notes added successfully");
+          _resetForm();
+          _fetchHistory();
+        } else {
+          CustomToast.showError(context, "Failed: ${response.body}");
+        }
+      } catch (e) {
+        CustomToast.showError(context, "Error: $e");
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    } else if (_notesPdfFile == null && _editingMaterialId == null) {
+      CustomToast.showError(context, "Please select a PDF file");
+    }
+  }
+
   Future<void> _submitImageMaterial() async {
     if (_formKey.currentState!.validate() && (_imageFile != null || _editingMaterialId != null)) {
       setState(() => _isLoading = true);
@@ -314,22 +380,32 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       _boardTitleController.clear();
       _schoolTitleController.clear();
       _schoolNameController.clear();
+      _notesTitleController.clear();
       _imageTitleController.clear();
       _imageSchoolNameController.clear();
       _boardPdfFile = null;
       _schoolPdfFile = null;
+      _notesPdfFile = null;
       _imageFile = null;
+      _selectedBoardBi = null;
       _selectedMediumBi = null;
       _selectedStdBi = null;
       _selectedStreamBi = null;
       _selectedYearBi = null;
       _selectedSubjectBi = null;
+      _selectedBoardSi = null;
       _selectedSubjectSi = null;
       _selectedMediumSi = null;
       _selectedStdSi = null;
       _selectedStreamSi = null;
       _selectedYearSi = null;
-      _selectedDateSi = null;
+      _selectedBoardNi = null;
+      _selectedSubjectNi = null;
+      _selectedMediumNi = null;
+      _selectedStdNi = null;
+      _selectedStreamNi = null;
+      _selectedYearNi = null;
+      _selectedBoardIm = null;
       _selectedSubjectIm = null;
       _selectedMediumIm = null;
       _selectedStdIm = null;
@@ -339,6 +415,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       _editingMaterialId = null;
       _existingBoardFileUrl = null;
       _existingSchoolFileUrl = null;
+      _existingNotesFileUrl = null;
       _existingImageFileUrl = null;
     });
   }
@@ -351,12 +428,13 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
         bottom: TabBar(
           controller: _tabController,
           onTap: (index) {
-            if (index == 3) _fetchHistory();
+            if (index == 4) _fetchHistory();
           },
           tabs: [
             Tab(text: _editingMaterialId != null && _tabController.index == 0 ? "Edit Board" : "Board"),
             Tab(text: _editingMaterialId != null && _tabController.index == 1 ? "Edit School" : "School"),
-            Tab(text: _editingMaterialId != null && _tabController.index == 2 ? "Edit Images" : "Images"),
+            Tab(text: _editingMaterialId != null && _tabController.index == 2 ? "Edit Notes" : "Notes"),
+            Tab(text: _editingMaterialId != null && _tabController.index == 3 ? "Edit Images" : "Images"),
             const Tab(text: "History"),
           ],
         ),
@@ -370,6 +448,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               children: [
                 _buildBoardForm(),
                 _buildSchoolForm(),
+                _buildNotesForm(),
                 _buildImageForm(),
                 _buildHistoryView(),
               ],
@@ -477,12 +556,59 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     );
   }
 
-  Widget _buildImageForm() {
+  Widget _buildNotesForm() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           if (_editingMaterialId != null && _tabController.index == 2)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: _resetForm,
+                  icon: const Icon(Icons.cancel, color: Colors.deepOrange),
+                  label: const Text("Cancel Edit", style: TextStyle(color: Colors.deepOrange)),
+                )
+              ],
+            ),
+          _buildTextField(_notesTitleController, "Notes Title", Icons.title),
+          const SizedBox(height: 16),
+          _buildDropdown("Board", Icons.school, _selectedBoardNi, AcademicConstants.boards, (val) => setState(() {
+            _selectedBoardNi = val;
+            _selectedStdNi = null;
+            _selectedSubjectNi = null;
+          })),
+          const SizedBox(height: 16),
+          _buildDropdown("Standard", Icons.class_outlined, _selectedStdNi, _selectedBoardNi == null ? [] : AcademicConstants.standards[_selectedBoardNi!] ?? [], (val) => setState(() {
+             _selectedStdNi = val;
+             _selectedSubjectNi = null;
+          })),
+          const SizedBox(height: 16),
+          if (_selectedStdNi == "12" || _selectedStdNi == "11") ...[
+            _buildDropdown("Stream", Icons.school_outlined, _selectedStreamNi, _streams, (val) => setState(() => _selectedStreamNi = val)),
+            const SizedBox(height: 16),
+          ],
+          _buildDropdown("Medium", Icons.language, _selectedMediumNi, AcademicConstants.mediums, (val) => setState(() => _selectedMediumNi = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectNi, (_selectedBoardNi == null || _selectedStdNi == null) ? [] : AcademicConstants.subjects["$_selectedBoardNi-$_selectedStdNi"] ?? [], (val) => setState(() => _selectedSubjectNi = val)),
+          const SizedBox(height: 16),
+          _buildDropdown("Year", Icons.calendar_today, _selectedYearNi, _years, (val) => setState(() => _selectedYearNi = val)),
+          const SizedBox(height: 24),
+          _buildFilePicker("PDF File", _notesPdfFile?.name, () => _pickFile('notes'), existingFileUrl: _existingNotesFileUrl),
+          const SizedBox(height: 32),
+          _buildSubmitButton(_editingMaterialId != null ? "Update Notes" : "Upload Notes", _submitNotes),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          if (_editingMaterialId != null && _tabController.index == 3)
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -555,7 +681,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   Widget _buildFilePicker(String label, String? fileName, VoidCallback onTap, {bool isImage = false, String? existingFileUrl}) {
     String? displayFileName = fileName;
     if (displayFileName == null && existingFileUrl != null) {
-      displayFileName = "Current: ${existingFileUrl.split('/').last}";
+      displayFileName = "${existingFileUrl.split('/').last}";
     }
 
     return InkWell(
@@ -611,7 +737,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           final material = _materialsHistory[index];
           IconData icon = Icons.description;
           if (material['type'] == 'ImageMaterial') icon = Icons.image;
-          if (material['type'] == 'BoardPaper' || material['type'] == 'SchoolPaper') icon = Icons.picture_as_pdf;
+          if (material['type'] == 'BoardPaper' || material['type'] == 'SchoolPaper' || material['type'] == 'Notes') icon = Icons.picture_as_pdf;
 
           return Card(
             elevation: 2,

@@ -87,7 +87,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
   }
 
   Map<String, dynamic> _mindMapData = {
-    'name': 'Main Topic',
+    'name': '',
     'children': <Map<String, dynamic>>[]
   };
 
@@ -101,7 +101,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
       _unitController.clear();
       _titleController.clear();
       _mindMapData = {
-        'name': 'Main Topic',
+        'name': '',
         'children': <Map<String, dynamic>>[]
       };
     });
@@ -129,7 +129,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
       _unitController.text = item['unit'] ?? '';
       _titleController.text = item['title'] ?? '';
       _mindMapData = Map<String, dynamic>.from(item['data'] ?? {
-        'name': 'Main Topic',
+        'name': '',
         'children': <Map<String, dynamic>>[]
       });
     });
@@ -393,7 +393,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
                   onChanged: (val) => node['name'] = val,
                   controller: TextEditingController(text: node['name'])..selection = TextSelection.collapsed(offset: node['name'].length),
                   decoration: InputDecoration(
-                    hintText: "Node Name",
+                    hintText: isRoot ? "Main Topic" : "Sub-Topic",
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -404,7 +404,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
                 icon: const Icon(Icons.add_circle, color: Colors.green),
                 onPressed: () {
                   setState(() {
-                    (node['children'] as List).add({'name': 'New Child', 'children': []});
+                    (node['children'] as List).add({'name': '', 'children': []});
                   });
                 },
               ),

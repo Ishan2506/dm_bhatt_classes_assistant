@@ -76,7 +76,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
 
     final int expectedMarks = int.tryParse(_selectedMarks ?? "0") ?? 0;
     if (_questions.length != expectedMarks) {
-      CustomToast.showError(context, "Please add exactly $expectedMarks questions (Current: ${_questions.length})");
+      CustomToast.showError(context, "Please add exactly $expectedMarks questions (${_questions.length})");
       return;
     }
 
