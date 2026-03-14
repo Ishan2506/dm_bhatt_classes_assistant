@@ -30,16 +30,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
   String _difficulty = 'Medium';
   bool _isLoading = false;
 
-  final List<String> _gameTypes = [
-    'Speed Math',
-    'Word Scramble',
-    'Odd One Out',
-    'Fact or Fiction',
-    'Sentence Builder',
-    'Grammar Guardian',
-    'Word Bridge',
-    'Emoji Decoder'
-  ];
+  List<String> _gameTypes = []; // Dynamic
 
   // List of existing questions
   List<dynamic> _existingQuestions = [];
@@ -53,7 +44,38 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // Fetch initial questions if needed, or wait for user to select filter
+    _fetchGameTypes();
+  }
+
+  Future<void> _fetchGameTypes() async {
+    try {
+      final response = await ApiService.getGameTypes();
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          _gameTypes = data.cast<String>();
+        });
+      } else {
+        _useFallbackGameTypes();
+      }
+    } catch (e) {
+      _useFallbackGameTypes();
+    }
+  }
+
+  void _useFallbackGameTypes() {
+    setState(() {
+      _gameTypes = [
+        'Speed Math',
+        'Word Scramble',
+        'Odd One Out',
+        'Fact or Fiction',
+        'Sentence Builder',
+        'Grammar Guardian',
+        'Word Bridge',
+        'Emoji Decoder'
+      ];
+    });
   }
 
   @override
@@ -214,25 +236,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
                  ),
                ),
 
-            DropdownButtonFormField<String>(
-              value: _selectedGameType,
-              decoration: InputDecoration(
-                labelText: "Select Game Type",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              items: _gameTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
-              onChanged: (val) {
-                 if (_editingQuestionId != null) {
-                   CustomToast.showError(context, "Cannot change game type while editing. Cancel edit first.");
-                   return; 
-                 }
-                setState(() {
-                  _selectedGameType = val;
-                  _clearFormFieldsOnly();
-                });
-              },
-              validator: (val) => val == null ? "Please select a game type" : null,
-            ),
+            _buildGameTypeDropdown(),
             const SizedBox(height: 16),
             
             if (_selectedGameType != null) ...[
@@ -347,20 +351,37 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
         Map<String, dynamic> meta = {};
 
         // Prepare data based on Game Type
-        if (_selectedGameType == 'Speed Math' || _selectedGameType == 'Odd One Out') {
+        // 1. Games that use Options (Standard MCQ format)
+        if ([
+          'Speed Math', 'Odd One Out', 'Grammar Guardian', 'GK Quiz', 
+          'Spelling Master', 'Capital City Quest', 'Flag Explorer', 
+          'Logic Gates Quest', 'Stroop Effect Challenge', 'Memory Match', 
+          'Spot The Difference', 'Code Breaker', 'Number Mastermind', 
+          'Mental Math Speedrun', 'Sequence Memory'
+        ].contains(_selectedGameType)) {
            options = _optionControllers.map((c) => c.text.trim()).toList();
         }
         
+        // 2. Games that use Hints
+        if ([
+          'Math Riddles', 'Number Series', 'Magic Square', 'Algebra Balancer', 
+          'Syllable Scramble', 'Proverb Completer', 'Direction Sense', 
+          'Word Chain', 'Sorting Sweep', 'Path Finder', 'Color Flood', 'Emoji Decoder'
+        ].contains(_selectedGameType)) {
+           meta['hint'] = _hintController.text.trim();
+        }
+        
+        // 3. Specific Meta Fields
         if (_selectedGameType == 'Odd One Out') {
            meta['reason'] = _reasonController.text.trim();
         }
         
-        if (_selectedGameType == 'Emoji Decoder') {
-           meta['hint'] = _hintController.text.trim();
-        }
-        
         if (_selectedGameType == 'Fact or Fiction') {
            meta['fact'] = _factController.text.trim();
+        }
+
+        if (['Subject Word Search', 'Grammar Sorter'].contains(_selectedGameType)) {
+           meta['wordsList'] = _reasonController.text.trim();
         }
         
         http.Response response;
@@ -439,6 +460,44 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
         return _buildWordScrambleFields();
       case 'Sentence Builder':
          return _buildSentenceBuilderFields();
+      
+      // Standard MCQ mapped games
+      case 'GK Quiz':
+      case 'Spelling Master':
+      case 'Capital City Quest':
+      case 'Flag Explorer':
+      case 'Logic Gates Quest':
+      case 'Stroop Effect Challenge':
+      case 'Memory Match':
+      case 'Spot The Difference':
+      case 'Code Breaker':
+      case 'Number Mastermind':
+      case 'Mental Math Speedrun':
+      case 'Sequence Memory':
+        return _buildStandardMCQFields();
+
+      // Short Answer mapped games
+      case 'Math Riddles':
+      case 'Number Series':
+      case 'Magic Square':
+      case 'Algebra Balancer':
+      case 'Syllable Scramble':
+      case 'Proverb Completer':
+      case 'Direction Sense':
+      case 'Word Chain':
+        return _buildShortAnswerFields();
+
+      // Word Pair mapped games
+      case 'Language Translator':
+      case 'Synonym & Antonym':
+      case 'Word Bridge':
+        return _buildWordPairFields();
+
+      // List based games
+      case 'Subject Word Search':
+      case 'Grammar Sorter':
+        return _buildListFields();
+
       default:
         return const Center(child: Text("Configuration for this game type not yet implemented."));
     }
@@ -599,6 +658,138 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
          const SizedBox(height: 8),
          const Text("Note: The game will automatically shuffle the words.", style: TextStyle(color: Colors.grey)),
       ],
+    );
+  }
+
+  // 7. Standard MCQ: Question + 4 Options
+  Widget _buildStandardMCQFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: InputDecoration(
+            labelText: _selectedGameType == 'Memory Match' || _selectedGameType == 'Spot The Difference' 
+              ? "Prompt / Theme (e.g. Find matching pairs)" 
+              : "Question Text", 
+            border: const OutlineInputBorder()
+          ),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+           controller: _correctAnswerController,
+           decoration: const InputDecoration(labelText: "Correct Answer", border: OutlineInputBorder()),
+           validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        const Text("Options (Include correct answer):"),
+        for (int i = 0; i < 4; i++)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: TextFormField(
+              controller: _optionControllers[i],
+              decoration: InputDecoration(labelText: "Option ${i + 1}", border: const OutlineInputBorder()),
+              validator: (v) => v!.isEmpty ? "Required" : null,
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 8. Short Answer: Q + A
+  Widget _buildShortAnswerFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(labelText: "Question / Challenge Description", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+          maxLines: 2,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+           controller: _correctAnswerController,
+           decoration: const InputDecoration(labelText: "Correct Answer", border: OutlineInputBorder()),
+           validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+           controller: _hintController,
+           decoration: const InputDecoration(labelText: "Hint (Optional)", border: OutlineInputBorder()),
+        ),
+      ],
+    );
+  }
+
+  // 9. Word Pairs: Word A (Q), Word B (A)
+  Widget _buildWordPairFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: InputDecoration(
+            labelText: _selectedGameType == 'Language Translator' ? "Word in Source Language" : "First Word", 
+            border: const OutlineInputBorder()
+          ),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+           controller: _correctAnswerController,
+           decoration: InputDecoration(
+             labelText: _selectedGameType == 'Language Translator' ? "Word in Target Language" : "Second Word (Synonym/Antonym/Match)", 
+             border: const OutlineInputBorder()
+           ),
+           validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+      ],
+    );
+  }
+
+  // 10. List Based: Title (Q), CSV List (Reason)
+  Widget _buildListFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(labelText: "Title / Instruction", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+           controller: _reasonController,
+           decoration: const InputDecoration(labelText: "Words List (Comma separated)", border: OutlineInputBorder()),
+           validator: (v) => v!.isEmpty ? "Required" : null,
+           maxLines: 3,
+        ),
+        const SizedBox(height: 8),
+        const Text("Note: Enter multiple words separated by commas.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+      ],
+    );
+  }
+
+  Widget _buildGameTypeDropdown() {
+    if (_gameTypes.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return DropdownButtonFormField<String>(
+      value: _selectedGameType,
+      decoration: InputDecoration(
+        labelText: "Select Game Type",
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      items: _gameTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
+      onChanged: (val) {
+        if (_editingQuestionId != null) {
+          CustomToast.showError(context, "Cannot change game type while editing. Cancel edit first.");
+          return;
+        }
+        setState(() {
+          _selectedGameType = val;
+          _clearFormFieldsOnly();
+        });
+      },
+      validator: (val) => val == null ? "Please select a game type" : null,
     );
   }
 }

@@ -802,6 +802,11 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/games/delete/$id");
     return await http.delete(uri);
   }
+
+  static Future<http.Response> getGameTypes() async {
+    final uri = Uri.parse("$baseUrl/games/types");
+    return await http.get(uri);
+  }
   
   static Future<http.Response> getDashboardStats() async {
     final uri = Uri.parse("$baseUrl/admin/dashboard-stats");
