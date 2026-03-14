@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 
 class ApiService {
      static const String baseUrl = "http://103.212.121.139:5000/api";
-   //static const String baseUrl = "http://localhost:5000/api";
+  //  static const String baseUrl = "http://localhost:5000/api";
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -112,6 +112,7 @@ class ApiService {
 
   static Future<http.Response> addStudent({
     required String name,
+    String? email,
     required String phone,
     required String password,
     required String parentPhone,
@@ -121,14 +122,15 @@ class ApiService {
     String? stream,
     required String state,
     required String city,
-    required String address,
-    required String schoolName,
+    String? address,
+    String? schoolName,
     File? imageFile,
   }) async {
     final uri = Uri.parse("$baseUrl/admin/add-student");
     final request = http.MultipartRequest('POST', uri);
 
     request.fields['name'] = name;
+    if (email != null) request.fields['email'] = email;
     request.fields['phone'] = phone;
     request.fields['password'] = password;
     request.fields['parentPhone'] = parentPhone;
@@ -138,8 +140,8 @@ class ApiService {
     if (stream != null) request.fields['stream'] = stream;
     request.fields['state'] = state;
     request.fields['city'] = city;
-    request.fields['address'] = address;
-    request.fields['schoolName'] = schoolName;
+    request.fields['address'] = address ?? "";
+    request.fields['schoolName'] = schoolName ?? "";
 
     if (imageFile != null) {
       final multipartFile = await http.MultipartFile.fromPath('image', imageFile.path);
@@ -158,6 +160,7 @@ class ApiService {
   static Future<http.Response> editStudent({
     required String id,
     String? name,
+    String? email,
     String? phone,
     String? password,
     String? parentPhone,
@@ -175,6 +178,7 @@ class ApiService {
     final request = http.MultipartRequest('PUT', uri);
 
     if (name != null) request.fields['name'] = name;
+    if (email != null) request.fields['email'] = email;
     if (phone != null) request.fields['phone'] = phone;
     if (password != null && password.isNotEmpty) request.fields['password'] = password;
     if (parentPhone != null) request.fields['parentPhone'] = parentPhone;

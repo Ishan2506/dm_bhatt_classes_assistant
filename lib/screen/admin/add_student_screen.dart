@@ -25,9 +25,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _schoolNameController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isEditing = false; // To track if we are in edit mode
@@ -38,7 +36,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   String? _selectedStandard;
   String? _selectedMedium;
   String? _selectedStream;
-  String? _selectedState = "Gujarat";
+  String? _selectedState;
+  String? _selectedCity;
 
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
@@ -90,33 +89,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
     _phoneController.dispose();
     _passwordController.dispose();
     _parentPhoneController.dispose();
-    _cityController.dispose();
-    _schoolNameController.dispose();
-    _addressController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  Future<List<String>> _fetchSchools(String query) async {
-    final cityToSearch = _cityController.text.isNotEmpty ? _cityController.text : "Ahmedabad";
-    if (query.isEmpty) return [];
-    
-    final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/search?q=$query+school+in+$cityToSearch&format=json&limit=5');
-    
-    try {
-      final response = await http.get(url, headers: {
-        'User-Agent': 'DMBhattClasses/1.0', 
-      });
-
-      if (response.statusCode == 200) {
-        final List data = json.decode(response.body);
-        return data.map<String>((e) => e['display_name'] as String).toList();
-      }
-    } catch (e) {
-      debugPrint("Error fetching schools: $e");
-    }
-    return [];
-  }
 
   Future<void> _pickImage() async {
     try {
@@ -141,6 +117,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
              final response = await ApiService.editStudent(
                 id: _editingId!,
                 name: _nameController.text,
+                email: _emailController.text,
                 phone: _phoneController.text,
                 password: _passwordController.text, // Optional in edit
                 parentPhone: _parentPhoneController.text,
@@ -149,9 +126,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                 medium: _selectedMedium,
                 stream: _selectedStream,
                 state: _selectedState,
-                city: _cityController.text,
-                address: _addressController.text,
-                schoolName: _schoolNameController.text,
+                city: _selectedCity ?? "",
                 imageFile: _imageFile,
              );
 
@@ -171,6 +146,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
               // Create Logic
               final response = await ApiService.addStudent(
                 name: _nameController.text,
+                email: _emailController.text,
                 phone: _phoneController.text,
                 password: _passwordController.text,
                 parentPhone: _parentPhoneController.text,
@@ -179,9 +155,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                 medium: _selectedMedium ?? "",
                 stream: _selectedStream,
                 state: _selectedState ?? "Gujarat",
-                city: _cityController.text,
-                address: _addressController.text,
-                schoolName: _schoolNameController.text,
+                city: _selectedCity ?? "",
                 imageFile: _imageFile,
               );
 
@@ -214,6 +188,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
        _nameController.text = item['name'] ?? "";
        _phoneController.text = item['phone'] ?? "";
        _parentPhoneController.text = item['parentPhone'] ?? "";
+       _emailController.text = item['email'] ?? "";
        
        // Handle dropdowns safely
        _selectedBoard = item['board'] != null && AcademicConstants.boards.contains(item['board']) ? item['board'] : null;
@@ -221,9 +196,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
        _selectedMedium = item['medium'] != null && AcademicConstants.mediums.contains(item['medium']) ? item['medium'] : null;
        _selectedStream = item['stream'] != null && _streams.contains(item['stream']) ? item['stream'] : null;
        
-       _cityController.text = item['city'] ?? "";
-       _addressController.text = item['address'] ?? "";
-       _schoolNameController.text = item['school'] ?? "";
+       _selectedState = item['state'];
+       _selectedCity = item['city'] != null && _selectedState != null && _stateCityMap[_selectedState!] != null && _stateCityMap[_selectedState!]!.contains(item['city']) ? item['city'] : null;
        
        // Note: Image handling would require showing network image if available, skipped for brevity in form setup.
        // Password remains empty for security, user enters only if changing.
@@ -320,9 +294,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
     _phoneController.clear();
     _passwordController.clear();
     _parentPhoneController.clear();
-    _schoolNameController.clear();
-    _addressController.clear();
-    _cityController.clear();
+    _emailController.clear();
     setState(() {
       _imageFile = null;
       _selectedBoard = null;
@@ -331,6 +303,8 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
       _selectedStream = null;
       _isEditing = false;
       _editingId = null;
+      _selectedState = null;
+      _selectedCity = null;
     });
   }
 
@@ -408,6 +382,15 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                       hint: "Name", 
                       icon: Icons.person_outline,
                       validator: (val) => val!.isEmpty ? "Required" : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email
+                    _buildTextField(
+                      controller: _emailController,
+                      hint: "Email", 
+                      icon: Icons.email_outlined, 
+                      inputType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),
 
@@ -498,103 +481,21 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                       onChanged: (val) {
                         setState(() {
                           _selectedState = val;
+                          _selectedCity = null; // Reset city on state change
                         });
                       },
                     ),
                     const SizedBox(height: 16),
 
-                     _buildTextField(
-                      controller: _cityController,
+                    _buildDropdown(
                       hint: "City",
                       icon: Icons.location_city,
+                      value: _selectedCity,
+                      items: _selectedState == null ? [] : _stateCityMap[_selectedState!] ?? [],
+                      onChanged: (val) => setState(() => _selectedCity = val),
                     ),
                     const SizedBox(height: 16),
 
-                    _buildTextField(
-                      controller: _addressController,
-                      hint: "Address",
-                      icon: Icons.home_outlined,
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // School Name
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Autocomplete<String>(
-                          optionsBuilder: (TextEditingValue textEditingValue) {
-                            if (textEditingValue.text == '') {
-                              return const Iterable<String>.empty();
-                            }
-                            return _fetchSchools(textEditingValue.text);
-                          },
-                          onSelected: (String selection) {
-                            _schoolNameController.text = selection;
-                          },
-                          fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                             // Sync with main controller
-                             textEditingController.addListener(() {
-                                _schoolNameController.text = textEditingController.text;
-                             });
-                             // Set initial value if editing
-                             if (_schoolNameController.text.isNotEmpty && textEditingController.text.isEmpty) {
-                               textEditingController.text = _schoolNameController.text;
-                             }
-                            
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: TextFormField(
-                                controller: textEditingController,
-                                focusNode: focusNode,
-                                 validator: (val) => val == null || val.isEmpty ? "Required" : null,
-                                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold), 
-                                decoration: InputDecoration(
-                                  hintText: "School Name",
-                                  hintStyle: GoogleFonts.poppins(color: Colors.grey),
-                                  prefixIcon: const Icon(Icons.school_outlined, color: Colors.black54),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                ),
-                              ),
-                            );
-                          },
-                          optionsViewBuilder: (context, onSelected, options) {
-                            return Align(
-                              alignment: Alignment.topLeft,
-                              child: Material(
-                                elevation: 4.0,
-                                 borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  width: constraints.maxWidth,
-                                  color: Colors.white,
-                                  constraints: const BoxConstraints(maxHeight: 200),
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.zero,
-                                    shrinkWrap: true,
-                                    itemCount: options.length,
-                                    itemBuilder: (BuildContext context, int index) {
-                                      final String option = options.elementAt(index);
-                                      final displayName = option.split(',')[0]; 
-                                      return InkWell(
-                                        onTap: () => onSelected(option),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Text(displayName, style: GoogleFonts.poppins(color: Colors.black87)),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }
-                    ),
 
                     const SizedBox(height: 32),
 
@@ -646,6 +547,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
               itemBuilder: (context, index) {
                 final item = _students[index];
                 final String name = item['name'] ?? "Unknown";
+                final String? email = item['email'];
                 final String std = item['std'] ?? "?";
                 final String? stream = item['stream'];
                 final String phone = item['phone'] ?? "";
@@ -665,7 +567,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                        child: Text(name.isNotEmpty ? name[0] : "?", style: TextStyle(color: Colors.blue.shade900)),
                     ),
                     title: Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                    subtitle: Text("Std: $std ${stream != null ? '($stream)' : ''} • $phone", style: GoogleFonts.poppins(fontSize: 12)),
+                    subtitle: Text("${email != null ? '$email • ' : ''}Std: $std ${ (stream != null && stream != 'None' && stream != 'none' && stream != '-') ? '($stream)' : ''} • $phone", style: GoogleFonts.poppins(fontSize: 12)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
