@@ -52,6 +52,9 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   String? _selectedYearIm;
   String? _selectedUnitIm;
   PlatformFile? _imageFile;
+  String? _existingBoardFileUrl;
+  String? _existingSchoolFileUrl;
+  String? _existingImageFileUrl;
 
   String? _editingMaterialId;
 
@@ -131,6 +134,11 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           _imageSchoolNameController.text = item['schoolName'] ?? "";
           _tabController.animateTo(2);
        }
+
+       // Store existing file URL
+       if (type == 'BoardPaper') _existingBoardFileUrl = item['file'];
+       if (type == 'SchoolPaper') _existingSchoolFileUrl = item['file'];
+       if (type == 'ImageMaterial') _existingImageFileUrl = item['file'];
      });
   }
 
@@ -329,6 +337,9 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       _selectedYearIm = null;
       _selectedUnitIm = null;
       _editingMaterialId = null;
+      _existingBoardFileUrl = null;
+      _existingSchoolFileUrl = null;
+      _existingImageFileUrl = null;
     });
   }
 
@@ -409,7 +420,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearBi, _years, (val) => setState(() => _selectedYearBi = val)),
           const SizedBox(height: 24),
-          _buildFilePicker("PDF File", _boardPdfFile?.name, () => _pickFile('board')),
+          _buildFilePicker("PDF File", _boardPdfFile?.name, () => _pickFile('board'), existingFileUrl: _existingBoardFileUrl),
           const SizedBox(height: 32),
           _buildSubmitButton(_editingMaterialId != null ? "Update Board Paper" : "Upload Board Paper", _submitBoardPaper),
         ],
@@ -458,7 +469,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildTextField(_schoolNameController, "School Name", Icons.school),
           const SizedBox(height: 24),
-          _buildFilePicker("PDF File", _schoolPdfFile?.name, () => _pickFile('school')),
+          _buildFilePicker("PDF File", _schoolPdfFile?.name, () => _pickFile('school'), existingFileUrl: _existingSchoolFileUrl),
           const SizedBox(height: 32),
           _buildSubmitButton(_editingMaterialId != null ? "Update School Paper" : "Upload School Paper", _submitSchoolPaper),
         ],
@@ -507,7 +518,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearIm, _years, (val) => setState(() => _selectedYearIm = val)),
           const SizedBox(height: 24),
-          _buildFilePicker("Image File", _imageFile?.name, () => _pickFile('image'), isImage: true),
+          _buildFilePicker("Image File", _imageFile?.name, () => _pickFile('image'), isImage: true, existingFileUrl: _existingImageFileUrl),
           const SizedBox(height: 32),
           _buildSubmitButton(_editingMaterialId != null ? "Update Image Material" : "Upload Image Material", _submitImageMaterial),
         ],
@@ -541,7 +552,12 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     );
   }
 
-  Widget _buildFilePicker(String label, String? fileName, VoidCallback onTap, {bool isImage = false}) {
+  Widget _buildFilePicker(String label, String? fileName, VoidCallback onTap, {bool isImage = false, String? existingFileUrl}) {
+    String? displayFileName = fileName;
+    if (displayFileName == null && existingFileUrl != null) {
+      displayFileName = "Current: ${existingFileUrl.split('/').last}";
+    }
+
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -555,7 +571,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
             Icon(isImage ? Icons.image : Icons.picture_as_pdf, color: Colors.blue.shade900),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(fileName ?? "Select $label", style: GoogleFonts.poppins(color: fileName == null ? Colors.grey : Colors.black)),
+              child: Text(displayFileName ?? "Select $label", style: GoogleFonts.poppins(color: displayFileName == null ? Colors.grey : Colors.black)),
             ),
             const Icon(Icons.upload_file, color: Colors.grey),
           ],
