@@ -73,7 +73,8 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
         'Sentence Builder',
         'Grammar Guardian',
         'Word Bridge',
-        'Emoji Decoder'
+        'Emoji Decoder',
+        'Word Chain'
       ];
     });
   }
@@ -144,7 +145,9 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       if (q['meta'] != null) {
         _hintController.text = q['meta']['hint'] ?? "";
         _factController.text = q['meta']['fact'] ?? "";
-        _reasonController.text = q['meta']['reason'] ?? "";
+        
+        // For list-based games, the data might be in 'wordsList' or 'reason'
+        _reasonController.text = q['meta']['wordsList'] ?? q['meta']['reason'] ?? "";
       }
     });
     // Switch to Create Tab
@@ -346,9 +349,14 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
 
       try {
         final String questionText = _questionController.text.trim();
-        final String correctAnswer = _correctAnswerController.text.trim();
+        String correctAnswer = _correctAnswerController.text.trim();
         List<String> options = [];
         Map<String, dynamic> meta = {};
+
+        // If correctAnswer is empty but required by schema, set a placeholder for certain games
+        if (correctAnswer.isEmpty && ['Subject Word Search', 'Grammar Sorter', 'Word Chain'].contains(_selectedGameType)) {
+           correctAnswer = "Dynamic List";
+        }
 
         // Prepare data based on Game Type
         // 1. Games that use Options (Standard MCQ format)
@@ -380,7 +388,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
            meta['fact'] = _factController.text.trim();
         }
 
-        if (['Subject Word Search', 'Grammar Sorter'].contains(_selectedGameType)) {
+        if (['Subject Word Search', 'Grammar Sorter', 'Word Chain'].contains(_selectedGameType)) {
            meta['wordsList'] = _reasonController.text.trim();
         }
         
@@ -466,7 +474,6 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       case 'Spelling Master':
       case 'Capital City Quest':
       case 'Flag Explorer':
-      case 'Logic Gates Quest':
       case 'Stroop Effect Challenge':
       case 'Memory Match':
       case 'Spot The Difference':
@@ -484,7 +491,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       case 'Syllable Scramble':
       case 'Proverb Completer':
       case 'Direction Sense':
-      case 'Word Chain':
+      case 'Logic Gates Quest':
         return _buildShortAnswerFields();
 
       // Word Pair mapped games
@@ -496,6 +503,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       // List based games
       case 'Subject Word Search':
       case 'Grammar Sorter':
+      case 'Word Chain':
         return _buildListFields();
 
       default:
