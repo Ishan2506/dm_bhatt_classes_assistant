@@ -874,15 +874,33 @@ class ApiService {
     return await http.get(uri);
   }
 
-  static Future<http.Response> getExamReports() async {
+  static Future<http.Response> getExamReports({String? type, String? board, String? std, String? medium, String? stream, String? studentId}) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
-    final uri = Uri.parse("$baseUrl/admin/exam-reports");
+    
+    final Map<String, String> queryParams = {};
+    if (type != null) queryParams['type'] = type;
+    if (board != null) queryParams['board'] = board;
+    if (std != null) queryParams['std'] = std;
+    if (medium != null) queryParams['medium'] = medium;
+    if (stream != null) queryParams['stream'] = stream;
+    if (studentId != null) queryParams['studentId'] = studentId;
+
+    final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
+    final uri = Uri.parse("$baseUrl/admin/exam-reports$queryString");
     return await http.get(uri);
   }
 
-  static Future<http.Response> getStudentReports() async {
+  static Future<http.Response> getStudentReports({String? board, String? std, String? medium, String? stream}) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
-    final uri = Uri.parse("$baseUrl/admin/student-reports");
+
+    final Map<String, String> queryParams = {};
+    if (board != null) queryParams['board'] = board;
+    if (std != null) queryParams['std'] = std;
+    if (medium != null) queryParams['medium'] = medium;
+    if (stream != null) queryParams['stream'] = stream;
+
+    final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
+    final uri = Uri.parse("$baseUrl/admin/student-reports$queryString");
     return await http.get(uri);
   }
 
