@@ -344,7 +344,7 @@ class _AddEventDialogState extends State<AddEventDialog> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
-                              imageUrl, // Assuming Cloudinary URL or reachable URL
+                              ApiService.getFileUrl(imageUrl), // Assuming Cloudinary URL or reachable URL
                               width: 60,
                               height: 60,
                               fit: BoxFit.cover,

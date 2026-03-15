@@ -348,7 +348,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                           );
                         } else {
                           return Image.network(
-                            existingImageUrl,
+                            ApiService.getFileUrl(existingImageUrl),
                             fit: BoxFit.cover,
                             errorBuilder: (c, e, s) => const Center(
                               child: Column(

@@ -6,10 +6,33 @@ import 'package:dm_bhatt_classes_new/main.dart';
 import 'package:dm_bhatt_classes_new/utils/connectivity_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = "http://103.212.121.139:5000/api";
-  //  static const String baseUrl = "http://localhost:5000/api";
+  static String get baseUrl {
+    // For Android Emulator, use 10.0.2.2. For others, use localhost or the production IP.
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return "http://10.0.2.2:5000/api";
+    }
+    return "http://localhost:5000/api";
+    // return "http://103.212.121.139:5000/api"; // Production
+  }
+
+  /// Helper to get the full URL for a file (image, pdf, etc.)
+  static String getFileUrl(String? url) {
+    if (url == null || url.isEmpty) return "";
+    if (url.startsWith('http')) return url;
+    
+    // Remove /api from baseUrl to get the server root
+    final serverRoot = baseUrl.replaceAll('/api', '');
+    
+    // If it's a relative path from our server
+    if (url.startsWith('uploads/')) {
+        return "$serverRoot/$url";
+    }
+    
+    return url;
+  }
 
   static Future<bool> _checkConnectivity() async {
     final isConnected = await ConnectivityService.isConnected();
