@@ -32,12 +32,19 @@ import 'package:pdf/pdf.dart';
 
 class PdfGeneratorService {
   static Future<File> generateQuestionPdf(String content) async {
+    final pdfBytes = await generateQuestionPdfBytes(content);
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/Generated_Question_Paper_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    await file.writeAsBytes(pdfBytes);
+    return file;
+  }
+
+  static Future<Uint8List> generateQuestionPdfBytes(String content) async {
     try {
       final pdf = pw.Document();
 
       // ✅ Load Gujarati Unicode Font
-      final fontData = await rootBundle
-          .load('assets/fonts/NotoSansGujarati-Regular.ttf');
+      final fontData = await rootBundle.load('assets/fonts/NotoSansGujarati-Regular.ttf');
       final ttf = pw.Font.ttf(fontData);
 
       pdf.addPage(
@@ -97,6 +104,7 @@ class PdfGeneratorService {
               // Check if it's a section header (like "Fill in the Blanks" or "True / False")
               final isHeader = trimmedLine.toLowerCase().contains("fill in") || 
                                trimmedLine.toLowerCase().contains("true / false") ||
+                               trimmedLine.toLowerCase().contains("mcq") ||
                                trimmedLine.toLowerCase().contains("multiple choice");
 
               // But only if it's NOT a question (e.g., doesn't start with 01., 1., etc.)
@@ -136,14 +144,9 @@ class PdfGeneratorService {
         ),
       );
 
-      final dir = await getApplicationDocumentsDirectory();
-      final file =
-          File('${dir.path}/Generated_Question_Paper_${DateTime.now().millisecondsSinceEpoch}.pdf');
-
-      await file.writeAsBytes(await pdf.save());
-      return file;
+      return pdf.save();
     } catch (e) {
-      throw Exception("PDF generation failed: $e");
+      throw Exception("PDF bytes generation failed: $e");
     }
   }
 }

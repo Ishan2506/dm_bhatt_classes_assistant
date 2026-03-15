@@ -52,16 +52,20 @@ class AdminAIService {
       final isFillBlanks =
           questionType.toLowerCase().contains("fill");
 
+      final isExtractMCQ =
+          questionType.toLowerCase().contains("extract") ||
+              questionType.toLowerCase().contains("mcq");
+
       final prompt = """
-You are an expert school question paper generator.
+You are an expert school question paper generator and analyzer.
 
 TASK:
 1. First, write the word "OVERVIEW:" followed by a newline.
 2. Then, write a brief summary (2-3 sentences) of the provided content.
 3. Then, write the question type header: "$questionType".
-4. Then, generate MAXIMUM 20 questions based ONLY on the content.
+4. Then, ${isExtractMCQ ? "EXTRACT all existing Multiple Choice Questions (MCQs) found in the content. Do NOT create new ones unless there are fewer than 5 MCQs in the document." : "generate MAXIMUM 20 questions based ONLY on the content."}
 
-Do NOT exceed 20 questions.
+${isExtractMCQ ? "If you find existing MCQs, maintain their original options (A, B, C, D) and identify the correct answer." : "Do NOT exceed 20 questions."}
 Generate questions ONLY from the provided content below.
 
 QUESTION TYPE: $questionType
@@ -74,7 +78,7 @@ STRICT RULES:
 3. No headings (except the word OVERVIEW: and the question type header).
 4. Do NOT repeat "Fill in the blank:" or "True/False" at the start of every question. Just start with the number and the question text.
 5. Start numbering from 01.
-6. Maximum 20 questions.
+${isExtractMCQ ? "6. Extract as many MCQs as available, up to 30. If no MCQs found, generate 10 new MCQs based on the content." : "6. Maximum 20 questions."}
 
 FORMAT:
 
@@ -83,7 +87,17 @@ OVERVIEW:
 
 $questionType
 
-${isTrueFalse ? """
+${isExtractMCQ ? """
+01. [Question text]
+A. Option A
+B. Option B
+C. Option C
+D. Option D
+Ans. (Correct Letter)
+
+02. [Question text]
+...
+""" : isTrueFalse ? """
 01. [Question text]
 A. True
 B. False

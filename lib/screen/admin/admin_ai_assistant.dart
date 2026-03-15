@@ -2,11 +2,13 @@ import 'dart:io';
 import 'package:dm_bhatt_classes_new/models/ai_message.dart';
 import 'package:dm_bhatt_classes_new/network/admin_ai_service.dart';
 import 'package:dm_bhatt_classes_new/network/pdf_generator_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
+import 'package:universal_html/html.dart' as html;
 import '../../utils/ai_flow_step.dart';
 
 class AdminAIAssistantScreen extends StatefulWidget {
@@ -21,6 +23,7 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
   final _messages = <AIMessage>[];
   final _aiService = AdminAIService();
   File? _generatedPdf;
+  Uint8List? _generatedPdfBytes; // Store bytes for web compatibility
   String? _aiText;
   AIFlowStep _step = AIFlowStep.initial;
   String _questionType = "";
@@ -44,7 +47,7 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     final count = prefs.getInt(today) ?? 0;
-    if (count >= 3) return false;
+    if (count >= 5) return false;
 
     prefs.setInt(today, count + 1);
     return true;
@@ -59,12 +62,7 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
 
     switch (_step) {
       case AIFlowStep.initial:
-        _addBot("Hey! What can i help you!");
-        _step = AIFlowStep.greeting;
-        break;
-
-      case AIFlowStep.greeting:
-        _addBot("Great! Which type of questions?\n• Fill in the Blanks\n• True / False");
+        _addBot("Hey! What can i help you! Which type of questions would you like to generate or extract?\n• Fill in the Blanks\n• True / False\n• Extract MCQs");
         _step = AIFlowStep.questionType;
         break;
 
@@ -82,19 +80,25 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
   Future<void> _pickFile() async {
     try {
       if (!await _canUseToday()) {
-        _addBot("🚫 Daily limit reached (3 times/day)");
+        _addBot("🚫 Daily limit reached (5 times/day)");
         return;
       }
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+        withData: true, // Necessary for web
       );
 
       if (result == null) return;
 
-      final file = File(result.files.single.path!);
-      final fileSize = await file.length();
+      final fileBytes = result.files.single.bytes;
+      if (fileBytes == null) {
+        _addBot("❌ Failed to read file bytes.");
+        return;
+      }
+
+      final fileSize = result.files.single.size;
 
       // Check 5MB limit (5 * 1024 * 1024 bytes)
       if (fileSize > 5 * 1024 * 1024) {
@@ -104,8 +108,6 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
 
       _addBot("Generating questions... ⏳\n(This may take up to 90 seconds for large documents)");
       _step = AIFlowStep.generating;
-
-      final fileBytes = await file.readAsBytes();
 
       final output = await _aiService.generateQuestions(
         fileBytes: fileBytes,
@@ -120,7 +122,13 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
       }
 
       _aiText = output;
-      _generatedPdf = await PdfGeneratorService.generateQuestionPdf(output);
+      
+      if (kIsWeb) {
+        _generatedPdfBytes = await PdfGeneratorService.generateQuestionPdfBytes(output);
+      } else {
+        _generatedPdf = await PdfGeneratorService.generateQuestionPdf(output);
+      }
+
       _step = AIFlowStep.done;
       _addBot("✅ Questions generated successfully! You can now download the PDF.");
     } catch (e) {
@@ -166,12 +174,45 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
           onPressed: () => _handleSubmit(manualInput: "True / False"),
           backgroundColor: Colors.blue.withOpacity(0.1),
         ),
+        ActionChip(
+          label: const Text("Extract MCQs"),
+          onPressed: () => _handleSubmit(manualInput: "Extract MCQs"),
+          backgroundColor: Colors.blue.withOpacity(0.1),
+        ),
       ],
     );
   }
 
-  Future<void> downloadPdf(BuildContext context, File pdfFile) async {
-    if (pdfFile == null || !pdfFile.existsSync()) return;
+  Future<void> downloadPdf(BuildContext context) async {
+    if (kIsWeb) {
+      if (_generatedPdfBytes == null) return;
+      
+      try {
+        // Universal HTML for Web Download
+        final blob = html.Blob([_generatedPdfBytes], 'application/pdf');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.document.createElement('a') as html.AnchorElement
+          ..href = url
+          ..style.display = 'none'
+          ..download = 'Generated_Question_Paper_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        html.document.body!.children.add(anchor);
+        anchor.click();
+        html.document.body!.children.remove(anchor);
+        html.Url.revokeObjectUrl(url);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ PDF download started")),
+        );
+        _restart();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ Download failed: $e")),
+        );
+      }
+      return;
+    }
+
+    if (_generatedPdf == null || !_generatedPdf!.existsSync()) return;
 
     // Let user pick folder (internal or SD card)
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
@@ -187,7 +228,7 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
         '$selectedDirectory/Generated_Question_Paper_${DateTime.now().millisecondsSinceEpoch}.pdf');
 
     try {
-      await pdfFile.copy(newFile.path);
+      await _generatedPdf!.copy(newFile.path);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -206,6 +247,7 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -264,20 +306,22 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
               ),
             ),
             
-          if (_step == AIFlowStep.done && _generatedPdf != null)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.download),
-                  label: const Text("Download PDF"),
-                  onPressed: () => downloadPdf(context, _generatedPdf!),
-                ),
+          if (_step == AIFlowStep.done && (_generatedPdf != null || _generatedPdfBytes != null))
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.download),
+                label: const Text("Download PDF"),
+                onPressed: () => downloadPdf(context),
               ),
-        if (_step == AIFlowStep.questionType)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: _buildQuestionTypeOptions(),
-          ),
+            ),
+
+          if (_step == AIFlowStep.questionType)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: _buildQuestionTypeOptions(),
+            ),
+
           Padding(
             padding: const EdgeInsets.all(8),
             child: TextField(
