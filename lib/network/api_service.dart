@@ -2,10 +2,25 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:dm_bhatt_classes_new/main.dart';
+import 'package:dm_bhatt_classes_new/utils/connectivity_service.dart';
+import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:flutter/material.dart';
 
 class ApiService {
   static const String baseUrl = "http://103.212.121.139:5000/api";
   //  static const String baseUrl = "http://localhost:5000/api";
+
+  static Future<bool> _checkConnectivity() async {
+    final isConnected = await ConnectivityService.isConnected();
+    if (!isConnected) {
+      if (navigatorKey.currentContext != null) {
+        CustomToast.showError(navigatorKey.currentContext!, "Internet connection is required");
+      }
+      return false;
+    }
+    return true;
+  }
 
   static Future<http.Response> addExploreProduct({
     required String name,
@@ -17,6 +32,7 @@ class ApiService {
     required double discount,
     required PlatformFile file,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/explore/add");
     final request = http.MultipartRequest('POST', uri);
 
@@ -41,6 +57,7 @@ class ApiService {
   }
 
   static Future<http.Response> getExploreProducts() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/explore/all");
     return await http.get(uri);
   }
@@ -56,6 +73,7 @@ class ApiService {
     double? discount,
     PlatformFile? file,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/explore/edit/$id");
     final request = http.MultipartRequest('PUT', uri);
 
@@ -82,6 +100,7 @@ class ApiService {
   }
 
   static Future<http.Response> deleteExploreProduct(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/explore/delete/$id");
     return await http.delete(uri);
   }
@@ -91,6 +110,7 @@ class ApiService {
     required String loginCode,
     required String phoneNum,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/auth/login");
     // Ensure role is lowercase as backend expects 'admin', 'student', etc.
     final String formattedRole = role.toLowerCase();
@@ -126,6 +146,7 @@ class ApiService {
     String? schoolName,
     File? imageFile,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/add-student");
     final request = http.MultipartRequest('POST', uri);
 
@@ -153,6 +174,7 @@ class ApiService {
   }
 
   static Future<http.Response> getAllStudents() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/all-students");
     return await http.get(uri);
   }
@@ -174,6 +196,7 @@ class ApiService {
     String? schoolName,
     File? imageFile,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/edit-student/$id");
     final request = http.MultipartRequest('PUT', uri);
 
@@ -201,6 +224,7 @@ class ApiService {
   }
 
   static Future<http.Response> deleteStudent(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/delete-student/$id");
     return await http.delete(uri);
   }
@@ -216,6 +240,7 @@ class ApiService {
     required String standard,
     required String stream,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/create");
     return await http.post(
       uri,
@@ -233,11 +258,13 @@ class ApiService {
   }
 
   static Future<http.Response> getAllPaperSets() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/all");
     return await http.get(uri);
   }
 
   static Future<http.Response> updatePaperSetStatus(String id, String status, {String performedBy = 'Admin'}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/update-status/$id");
     return await http.put(
       uri,
@@ -250,6 +277,7 @@ class ApiService {
   }
 
   static Future<http.Response> getPaperSetLogs() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/logs");
     return await http.get(uri);
   }
@@ -265,6 +293,7 @@ class ApiService {
     String? stream,
     // Add other fields if needed for edit
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/edit-paperset/$id");
     final body = {
       if (examName != null) 'examName': examName,
@@ -283,6 +312,7 @@ class ApiService {
   }
 
   static Future<http.Response> deletePaperSet(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/delete-paperset/$id");
     return await http.delete(uri);
   }
@@ -291,6 +321,7 @@ class ApiService {
   static Future<http.Response> forgetPassword({
     required String phone,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/auth/forget-password");
     
     final response = await http.post(
@@ -309,6 +340,7 @@ class ApiService {
     required String phone,
     required String otp,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/auth/verify-otp");
     
     final response = await http.post(
@@ -328,6 +360,7 @@ class ApiService {
     required String phone,
     required String newPassword,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/auth/reset-password");
     
     final response = await http.post(
@@ -347,6 +380,7 @@ class ApiService {
     required String oldPassword,
     required String newPassword,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/auth/update-password");
     
     final response = await http.post(
@@ -364,6 +398,7 @@ class ApiService {
   }
 
   static Future<http.Response> importStudents({required List<int> bytes, required String filename}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/import-students");
     final request = http.MultipartRequest('POST', uri);
     
@@ -379,6 +414,7 @@ class ApiService {
   }
 
   static Future<http.Response> uploadImage({required PlatformFile file}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/media/upload-image");
     final request = http.MultipartRequest('POST', uri);
 
@@ -397,6 +433,7 @@ class ApiService {
   // --- Exam APIs ---
 
   static Future<http.Response> uploadExamPdf({required List<int> bytes, required String filename}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/upload-pdf");
     final request = http.MultipartRequest('POST', uri);
 
@@ -422,6 +459,7 @@ class ApiService {
     required int totalMarks,
     required List<Map<String, dynamic>> questions,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/create");
     return await http.post(
       uri,
@@ -439,6 +477,7 @@ class ApiService {
   }
 
   static Future<http.Response> getAllExams({String? board, String? std, String? medium, String? stream, String? subject}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final queryParams = <String, String>{};
     if (board != null) queryParams['board'] = board;
     if (std != null) queryParams['std'] = std;
@@ -451,6 +490,7 @@ class ApiService {
   }
 
   static Future<http.Response> getExamById(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/$id");
     return await http.get(uri);
   }
@@ -467,6 +507,7 @@ class ApiService {
     required int totalMarks,
     required List<dynamic> questions,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/update/$id");
     return await http.put(
       uri,
@@ -484,6 +525,7 @@ class ApiService {
   }
 
   static Future<http.Response> deleteExam(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/delete/$id");
     return await http.delete(uri);
   }
@@ -501,6 +543,7 @@ class ApiService {
     required String overview,
     required List<Map<String, dynamic>> questions,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/create");
     return await http.post(
       uri,
@@ -520,6 +563,7 @@ class ApiService {
   }
 
   static Future<http.Response> getAllFiveMinTests() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/all");
     return await http.get(uri);
   }
@@ -536,6 +580,7 @@ class ApiService {
     required String overview,
     required List<Map<String, dynamic>> questions,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/update/$id");
     return await http.put(
       uri,
@@ -555,11 +600,13 @@ class ApiService {
   }
 
   static Future<http.Response> deleteFiveMinTest(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/delete/$id");
     return await http.delete(uri);
   }
 
   static Future<http.Response> uploadFiveMinTestPdf({required List<int> bytes, required String filename}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/upload-pdf");
     final request = http.MultipartRequest('POST', uri);
 
@@ -586,6 +633,7 @@ class ApiService {
     String? stream,
     String? photo,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/create");
     return await http.post(
       uri,
@@ -604,6 +652,7 @@ class ApiService {
   }
 
   static Future<http.Response> getAllTopRankers() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/all");
     return await http.get(uri);
   }
@@ -619,6 +668,7 @@ class ApiService {
     String? stream,
     String? photo,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/update/$id");
     return await http.put(
       uri,
@@ -637,6 +687,7 @@ class ApiService {
   }
 
   static Future<http.Response> deleteTopRanker(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/delete/$id");
     return await http.delete(uri);
   }
@@ -649,6 +700,7 @@ class ApiService {
     required DateTime date,
     required List<PlatformFile> images,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/event/create");
     final request = http.MultipartRequest("POST", uri);
 
@@ -682,6 +734,7 @@ class ApiService {
   }
 
   static Future<http.Response> getAllEvents() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/event/all");
     return await http.get(uri);
   }
@@ -694,6 +747,7 @@ class ApiService {
     List<PlatformFile>? newImages,
     List<String>? existingImages,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/event/update/$id");
     final request = http.MultipartRequest("PUT", uri);
 
@@ -739,6 +793,7 @@ class ApiService {
   }
 
   static Future<http.Response> deleteEvent(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/event/$id");
     return await http.delete(uri);
   }
@@ -753,6 +808,7 @@ class ApiService {
     required String difficulty,
     Map<String, dynamic>? meta,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/add");
     return await http.post(
       uri,
@@ -769,6 +825,7 @@ class ApiService {
   }
 
   static Future<http.Response> getGameQuestions(String gameType) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/$gameType");
     return await http.get(uri);
   }
@@ -782,6 +839,7 @@ class ApiService {
     String? difficulty,
     Map<String, dynamic>? meta,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/edit/$id");
     final body = {
       if (gameType != null) "gameType": gameType,
@@ -799,26 +857,31 @@ class ApiService {
   }
 
   static Future<http.Response> deleteGameQuestion(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/delete/$id");
     return await http.delete(uri);
   }
 
   static Future<http.Response> getGameTypes() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/types");
     return await http.get(uri);
   }
   
   static Future<http.Response> getDashboardStats() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/dashboard-stats");
     return await http.get(uri);
   }
 
   static Future<http.Response> getExamReports() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/exam-reports");
     return await http.get(uri);
   }
 
   static Future<http.Response> getStudentReports() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/student-reports");
     return await http.get(uri);
   }
@@ -826,6 +889,7 @@ class ApiService {
   // --- Mind Map APIs ---
 
   static Future<http.Response> createMindMap(Map<String, dynamic> data) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/add");
     return await http.post(
       uri,
@@ -835,6 +899,7 @@ class ApiService {
   }
 
   static Future<http.Response> updateMindMap(String id, Map<String, dynamic> data) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/$id");
     return await http.put(
       uri,
@@ -844,11 +909,13 @@ class ApiService {
   }
 
   static Future<http.Response> getAllMindMaps() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/all");
     return await http.get(uri);
   }
 
   static Future<http.Response> deleteMindMap(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/$id");
     return await http.delete(uri);
   }
@@ -856,6 +923,7 @@ class ApiService {
   // --- One Liner Exam APIs ---
 
   static Future<http.Response> createOneLinerExam(Map<String, dynamic> data) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/add");
     return await http.post(
       uri,
@@ -865,16 +933,19 @@ class ApiService {
   }
 
   static Future<http.Response> getAllOneLinerExams() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/all");
     return await http.get(uri);
   }
 
   static Future<http.Response> deleteOneLinerExam(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/$id");
     return await http.delete(uri);
   }
 
   static Future<http.Response> updateOneLinerExam(String id, Map<String, dynamic> data) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/$id");
     return await http.put(
       uri,
@@ -895,6 +966,7 @@ class ApiService {
     required String subject,
     required PlatformFile file,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/upload-board-paper");
     final request = http.MultipartRequest('POST', uri);
 
@@ -929,6 +1001,7 @@ class ApiService {
     required String schoolName,
     required PlatformFile file,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/upload-school-paper");
     final request = http.MultipartRequest('POST', uri);
 
@@ -965,6 +1038,7 @@ class ApiService {
     String? schoolName,
     required PlatformFile file,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/upload-image-material");
     final request = http.MultipartRequest('POST', uri);
 
@@ -1000,6 +1074,7 @@ class ApiService {
     required String year,
     required PlatformFile file,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/upload-notes");
     final request = http.MultipartRequest('POST', uri);
 
@@ -1036,6 +1111,7 @@ class ApiService {
     String? unit,
     PlatformFile? file,
   }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/update/$id");
     final request = http.MultipartRequest('PUT', uri);
 
@@ -1064,16 +1140,19 @@ class ApiService {
   }
 
   static Future<http.Response> getAllMaterials({String? type}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final queryParams = type != null ? "?type=$type" : "";
     final uri = Uri.parse("$baseUrl/material/all$queryParams");
     return await http.get(uri);
   }
 
   static Future<http.Response> deleteMaterial(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/delete/$id");
     return await http.delete(uri);
   }
   static Future<http.Response> getStandardDetailedStats(String standard) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/dashboard/standard-stats/$standard");
     return await http.get(uri);
   }
