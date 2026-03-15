@@ -9,14 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static String get baseUrl {
-    // For Android Emulator, use 10.0.2.2. For others, use localhost or the production IP.
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return "http://10.0.2.2:5000/api";
-    }
-    return "http://localhost:5000/api";
-    // return "http://103.212.121.139:5000/api"; // Production
-  }
+  static const String baseUrl = "http://103.212.121.139:5000/api";
 
   /// Helper to get the full URL for a file (image, pdf, etc.)
   static String getFileUrl(String? url) {
