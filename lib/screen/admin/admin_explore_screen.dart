@@ -45,7 +45,7 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.productToEdit?['name'] ?? "");
-    _descriptionController = TextEditingController(text: widget.productToEdit?['description'] ?? "Mock Description"); 
+    _descriptionController = TextEditingController(text: widget.productToEdit?['description'] ?? ""); 
     _priceController = TextEditingController(text: widget.productToEdit?['price']?.toString() ?? "");
     _originalPriceController = TextEditingController(text: widget.productToEdit?['originalPrice']?.toString() ?? "");
     _discountController = TextEditingController(); 
