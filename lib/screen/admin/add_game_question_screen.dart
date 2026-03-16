@@ -471,6 +471,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       
       // Standard MCQ mapped games
       case 'GK Quiz':
+      case 'Grammar Guardian':
       case 'Spelling Master':
       case 'Capital City Quest':
       case 'Flag Explorer':
