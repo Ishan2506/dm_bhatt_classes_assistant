@@ -69,7 +69,8 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   String? _editingMaterialId;
 
   final List<String> _streams = ["None", "Science", "General"];
-  final List<String> _years = List.generate(10, (index) => (DateTime.now().year - index).toString());
+  final List<String> _pastYears = List.generate(10, (index) => (DateTime.now().year - 1 - index).toString());
+  final List<String> _allYears = List.generate(10, (index) => (DateTime.now().year - index).toString());
   final List<String> _units = List.generate(20, (index) => (index + 1).toString());
 
   bool _isLoading = false;
@@ -497,7 +498,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectBi, (_selectedBoardBi == null || _selectedStdBi == null) ? [] : AcademicConstants.subjects["$_selectedBoardBi-$_selectedStdBi"] ?? [], (val) => setState(() => _selectedSubjectBi = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Year", Icons.calendar_today, _selectedYearBi, _years, (val) => setState(() => _selectedYearBi = val)),
+          _buildDropdown("Year", Icons.calendar_today, _selectedYearBi, _pastYears, (val) => setState(() => _selectedYearBi = val)),
           const SizedBox(height: 24),
           _buildFilePicker("PDF File", _boardPdfFile?.name, () => _pickFile('board'), existingFileUrl: _existingBoardFileUrl),
           const SizedBox(height: 32),
@@ -544,7 +545,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectSi, (_selectedBoardSi == null || _selectedStdSi == null) ? [] : AcademicConstants.subjects["$_selectedBoardSi-$_selectedStdSi"] ?? [], (val) => setState(() => _selectedSubjectSi = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Year", Icons.calendar_today, _selectedYearSi, _years, (val) => setState(() => _selectedYearSi = val)),
+          _buildDropdown("Year", Icons.calendar_today, _selectedYearSi, _pastYears, (val) => setState(() => _selectedYearSi = val)),
           const SizedBox(height: 16),
           _buildTextField(_schoolNameController, "School Name", Icons.school),
           const SizedBox(height: 24),
@@ -593,7 +594,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectNi, (_selectedBoardNi == null || _selectedStdNi == null) ? [] : AcademicConstants.subjects["$_selectedBoardNi-$_selectedStdNi"] ?? [], (val) => setState(() => _selectedSubjectNi = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Year", Icons.calendar_today, _selectedYearNi, _years, (val) => setState(() => _selectedYearNi = val)),
+          _buildDropdown("Year", Icons.calendar_today, _selectedYearNi, _allYears, (val) => setState(() => _selectedYearNi = val)),
           const SizedBox(height: 24),
           _buildFilePicker("PDF File", _notesPdfFile?.name, () => _pickFile('notes'), existingFileUrl: _existingNotesFileUrl),
           const SizedBox(height: 32),
@@ -642,7 +643,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Unit", Icons.list_alt, _selectedUnitIm, _units, (val) => setState(() => _selectedUnitIm = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Year", Icons.calendar_today, _selectedYearIm, _years, (val) => setState(() => _selectedYearIm = val)),
+          _buildDropdown("Year", Icons.calendar_today, _selectedYearIm, _allYears, (val) => setState(() => _selectedYearIm = val)),
           const SizedBox(height: 24),
           _buildFilePicker("Image File", _imageFile?.name, () => _pickFile('image'), isImage: true, existingFileUrl: _existingImageFileUrl),
           const SizedBox(height: 32),
