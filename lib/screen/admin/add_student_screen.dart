@@ -26,6 +26,12 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+
+  // Filter States
+  String? _filterBoard;
+  String? _filterStandard;
+  String? _filterMedium;
 
   bool _isPasswordVisible = false;
   bool _isEditing = false; // To track if we are in edit mode
@@ -90,6 +96,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
     _passwordController.dispose();
     _parentPhoneController.dispose();
     _emailController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -535,17 +542,21 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
             ),
             
             // Tab 2: History (Now Real List)
-            _isLoadingList 
-               ? const Center(child: CustomLoader()) 
-               : _students.isEmpty 
-                   ? Center(child: Text("No students found", style: GoogleFonts.poppins(color: Colors.grey)))
-                   : RefreshIndicator(
-                       onRefresh: _fetchStudents,
-                       child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _students.length,
-              itemBuilder: (context, index) {
-                final item = _students[index];
+            Column(
+              children: [
+                _buildSearchAndFilterHeader(),
+                Expanded(
+                  child: _isLoadingList 
+                     ? const Center(child: CustomLoader()) 
+                     : _getFilteredStudents().isEmpty 
+                         ? Center(child: Text("No students found", style: GoogleFonts.poppins(color: Colors.grey)))
+                         : RefreshIndicator(
+                             onRefresh: _fetchStudents,
+                             child: ListView.builder(
+                               padding: const EdgeInsets.all(16),
+                               itemCount: _getFilteredStudents().length,
+                               itemBuilder: (context, index) {
+                                 final item = _getFilteredStudents()[index];
                 final String name = item['name'] ?? "Unknown";
                 final String? email = item['email'];
                 final String std = item['std'] ?? "?";
@@ -586,9 +597,138 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
 
               },
             ),
+                   ),
+                 ),
+               ],
+             ),
+           ],
+         ),
+     );
+  }
+
+  List<dynamic> _getFilteredStudents() {
+    return _students.where((student) {
+      final name = (student['name'] ?? "").toString().toLowerCase();
+      final phone = (student['phone'] ?? "").toString().toLowerCase();
+      final query = _searchController.text.toLowerCase();
+      
+      final matchesSearch = name.contains(query) || phone.contains(query);
+      
+      final matchesBoard = _filterBoard == null || student['board'] == _filterBoard;
+      final matchesStd = _filterStandard == null || student['std'] == _filterStandard;
+      final matchesMedium = _filterMedium == null || student['medium'] == _filterMedium;
+
+      return matchesSearch && matchesBoard && matchesStd && matchesMedium;
+    }).toList();
+  }
+
+  Widget _buildSearchAndFilterHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Search Bar
+          TextField(
+            controller: _searchController,
+            onChanged: (val) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: "Search by Name or Phone...",
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              suffixIcon: _searchController.text.isNotEmpty 
+                  ? IconButton(
+                      icon: const Icon(Icons.clear), 
+                      onPressed: () => setState(() => _searchController.clear()))
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Filters Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildSmallDropdown(
+                  "Board", 
+                  _filterBoard, 
+                  AcademicConstants.boards, 
+                  (val) => setState(() => _filterBoard = val)
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildSmallDropdown(
+                  "Std", 
+                  _filterStandard, 
+                  _filterBoard == null ? [] : AcademicConstants.standards[_filterBoard!] ?? [], 
+                  (val) => setState(() => _filterStandard = val)
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildSmallDropdown(
+                  "Medium", 
+                  _filterMedium, 
+                  AcademicConstants.mediums, 
+                  (val) => setState(() => _filterMedium = val)
+                ),
+              ),
+            ],
+          ),
+          if (_filterBoard != null || _filterStandard != null || _filterMedium != null || _searchController.text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: TextButton.icon(
+                onPressed: () => setState(() {
+                  _filterBoard = null;
+                  _filterStandard = null;
+                  _filterMedium = null;
+                  _searchController.clear();
+                }),
+                icon: const Icon(Icons.filter_list_off, size: 16),
+                label: Text("Clear All Filters", style: GoogleFonts.poppins(fontSize: 12)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: value,
+          hint: Text(hint, style: GoogleFonts.poppins(fontSize: 12, color: Colors.blue.shade900)),
+          style: GoogleFonts.poppins(fontSize: 12, color: Colors.blue.shade900, fontWeight: FontWeight.bold),
+          items: [
+            DropdownMenuItem<String>(value: null, child: Text("All $hint", style: const TextStyle(fontWeight: FontWeight.normal))),
+            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e))),
           ],
+          onChanged: onChanged,
         ),
+      ),
     );
   }
 
