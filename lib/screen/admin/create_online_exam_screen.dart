@@ -51,11 +51,16 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   bool _isLoading = false;
   final TextEditingController _unitController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
-
+  final TextEditingController _searchController = TextEditingController();
+  
   // Exam History Data
   List<dynamic> _exams = [];
   bool _isLoadingHistory = true;
   bool _isManualEntry = false;
+
+  String? _filterBoard;
+  String? _filterStandard;
+  String? _filterSubject;
 
   @override
   void initState() {
@@ -227,6 +232,95 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
          CustomToast.showError(context, "Error: $e");
        }
     }
+  }
+
+  @override
+  void dispose() {
+    _unitController.dispose();
+    _titleController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<dynamic> _getFilteredExams() {
+    return _exams.where((exam) {
+      final name = (exam['title'] ?? exam['name'] ?? "").toString().toLowerCase();
+      final query = _searchController.text.toLowerCase();
+      final matchesSearch = name.contains(query);
+
+      final matchesBoard = _filterBoard == null || exam['board'] == _filterBoard;
+      final matchesStandard = _filterStandard == null || exam['std'] == _filterStandard;
+      final matchesSubject = _filterSubject == null || exam['subject'] == _filterSubject;
+
+      return matchesSearch && matchesBoard && matchesStandard && matchesSubject;
+    }).toList();
+  }
+
+  Widget _buildSearchAndFilterHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.white,
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: (val) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: "Search exams...",
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+              suffixIcon: _searchController.text.isNotEmpty 
+                  ? IconButton(icon: const Icon(Icons.clear), onPressed: () => setState(() => _searchController.clear()))
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildSmallDropdown("Board", _filterBoard, AcademicConstants.boards, (val) => setState(() => _filterBoard = val)),
+                const SizedBox(width: 8),
+                _buildSmallDropdown("Std", _filterStandard, AcademicConstants.standards["GSEB"] ?? [], (val) => setState(() => _filterStandard = val)),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.filter_alt_off_outlined, color: Colors.grey),
+                  onPressed: () => setState(() {
+                    _filterBoard = null;
+                    _filterStandard = null;
+                    _filterSubject = null;
+                  }),
+                  tooltip: "Clear Filters",
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButton<String>(
+        value: value,
+        hint: Text(hint, style: GoogleFonts.poppins(fontSize: 12)),
+        underline: Container(),
+        icon: const Icon(Icons.arrow_drop_down, size: 20),
+        items: [
+          DropdownMenuItem(value: null, child: Text("All $hint", style: GoogleFonts.poppins(fontSize: 12))),
+          ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 12)))),
+        ],
+        onChanged: onChanged,
+      ),
+    );
   }
 
   // Not used in PDF flow, but keeping if needed later or deleting?
@@ -477,71 +571,78 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
             ),
             
             // Tab 2: Exam History
-            _isLoadingHistory
-                ? const Center(child: CustomLoader())
-                : _exams.isEmpty
-                    ? Center(child: Text("No exams found", style: GoogleFonts.poppins(color: Colors.grey)))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _exams.length,
-                        itemBuilder: (context, index) {
-                          final exam = _exams[index];
-                          final String id = exam['_id'];
-                          
-                          // Format Date
-                          String displayDate = "--";
-                          if (exam['createdAt'] != null) {
-                             displayDate = exam['createdAt'].toString().split('T')[0];
-                          }
+            Column(
+              children: [
+                _buildSearchAndFilterHeader(),
+                Expanded(
+                  child: _isLoadingHistory
+                      ? const Center(child: CustomLoader())
+                      : _getFilteredExams().isEmpty
+                          ? Center(child: Text("No exams found", style: GoogleFonts.poppins(color: Colors.grey)))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _getFilteredExams().length,
+                              itemBuilder: (context, index) {
+                                final exam = _getFilteredExams()[index];
+                                final String id = exam['_id'];
+                                
+                                // Format Date
+                                String displayDate = "--";
+                                if (exam['createdAt'] != null) {
+                                   displayDate = exam['createdAt'].toString().split('T')[0];
+                                }
 
-                          return Card(
-                            elevation: 0,
-                            color: Colors.grey.shade50,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade200),
-                            ),
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade100,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.quiz_outlined, color: Colors.blue.shade900),
-                              ),
-                               title: Text(exam['title'] ?? exam['name'] ?? "Untitled", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                              subtitle: Text(
-                                "${exam['subject'] ?? 'General'} • $displayDate • ${exam['totalMarks']} Marks", 
-                                style: GoogleFonts.poppins(fontSize: 12)
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.blue),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => ExamPreviewScreen(
-                                            examId: id,
-                                          ),
+                                return Card(
+                                  elevation: 0,
+                                  color: Colors.grey.shade50,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  child: ListTile(
+                                    leading: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade100,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(Icons.quiz_outlined, color: Colors.blue.shade900),
+                                    ),
+                                     title: Text(exam['title'] ?? exam['name'] ?? "Untitled", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                                    subtitle: Text(
+                                      "${exam['subject'] ?? 'General'} • ${exam['std'] ?? ''} • $displayDate • ${exam['totalMarks']} Marks", 
+                                      style: GoogleFonts.poppins(fontSize: 12)
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => ExamPreviewScreen(
+                                                  examId: id,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                         ),
-                                      );
-                                    },
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _deleteExam(id),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () => _deleteExam(id),
-                                  ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

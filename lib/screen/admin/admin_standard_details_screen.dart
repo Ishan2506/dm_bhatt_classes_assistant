@@ -18,6 +18,7 @@ class _AdminStandardDetailsScreenState extends State<AdminStandardDetailsScreen>
   List<dynamic> _streamStats = [];
   List<dynamic> _mediumStats = [];
   List<dynamic> _studentStats = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -149,55 +150,83 @@ class _AdminStandardDetailsScreenState extends State<AdminStandardDetailsScreen>
   }
 
   Widget _buildStudentsTab(ColorScheme colorScheme) {
-    if (_studentStats.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person_off_outlined, size: 64, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            Text("No students found", style: GoogleFonts.poppins(color: Colors.grey)),
-          ],
-        ),
-      );
-    }
+    final filteredStudents = _studentStats.where((s) {
+      final name = (s['name'] ?? "").toString().toLowerCase();
+      final phone = (s['phone'] ?? "").toString().toLowerCase();
+      final query = _searchController.text.toLowerCase();
+      return name.contains(query) || phone.contains(query);
+    }).toList();
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _studentStats.length,
-      itemBuilder: (context, index) {
-        final student = _studentStats[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-            ],
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (val) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: "Search students by name or phone...",
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+              suffixIcon: _searchController.text.isNotEmpty 
+                  ? IconButton(icon: const Icon(Icons.clear), onPressed: () => setState(() => _searchController.clear()))
+                  : null,
+            ),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            title: Text(student['name'] ?? "Unknown", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text(
-                "${student['board']} | ${student['medium']} | ${student['stream']}\n${student['phone']}", 
-                style: GoogleFonts.poppins(fontSize: 12, color: colorScheme.onSurfaceVariant),
+        ),
+        Expanded(
+          child: filteredStudents.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_off_outlined, size: 64, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text("No students found", style: GoogleFonts.poppins(color: Colors.grey)),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: filteredStudents.length,
+                itemBuilder: (context, index) {
+                  final student = filteredStudents[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      title: Text(student['name'] ?? "Unknown", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          "${student['board']} | ${student['medium']} | ${student['stream']}\n${student['phone']}", 
+                          style: GoogleFonts.poppins(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text("₹${student['amount']}", 
+                            style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.primary, fontSize: 18)),
+                          Text("Total Paid", style: GoogleFonts.poppins(fontSize: 10, color: colorScheme.primary.withOpacity(0.7))),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text("₹${student['amount']}", 
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: colorScheme.primary, fontSize: 18)),
-                Text("Total Paid", style: GoogleFonts.poppins(fontSize: 10, color: colorScheme.primary.withOpacity(0.7))),
-              ],
-            ),
-          ),
-        );
-      },
+        ),
+      ],
     );
   }
 }

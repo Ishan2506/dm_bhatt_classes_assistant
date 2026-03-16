@@ -16,6 +16,8 @@ class AdminProductHistoryScreen extends StatefulWidget {
 class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
   List<dynamic> _products = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
+  String? _filterCategory;
 
   @override
   void initState() {
@@ -139,9 +141,9 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
     return url.toLowerCase().split('?').first.endsWith('.pdf');
   }
 
-  Map<String, List<dynamic>> _groupProductsByCategory() {
+  Map<String, List<dynamic>> _groupProductsByCategory(List<dynamic> products) {
     final Map<String, List<dynamic>> grouped = {};
-    for (final product in _products) {
+    for (final product in products) {
       final category = product['category'] as String? ?? "Uncategorized";
       if (!grouped.containsKey(category)) {
         grouped[category] = [];
@@ -151,12 +153,75 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
     return grouped;
   }
 
+  List<dynamic> _getFilteredProducts() {
+    return _products.where((p) {
+      final name = (p['name'] ?? "").toString().toLowerCase();
+      final query = _searchController.text.toLowerCase();
+      final matchesSearch = name.contains(query);
+      
+      final matchesCategory = _filterCategory == null || p['category'] == _filterCategory;
+      
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
+
+  Widget _buildSearchAndFilterHeader() {
+    final categories = _products.map((p) => p['category'] as String?).where((c) => c != null).toSet().cast<String>().toList()..sort();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      color: Colors.white,
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: (val) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: "Search products...",
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+              suffixIcon: _searchController.text.isNotEmpty 
+                  ? IconButton(icon: const Icon(Icons.clear), onPressed: () => setState(() => _searchController.clear()))
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _filterCategory,
+            decoration: InputDecoration(
+              labelText: "Filter by Category",
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              prefixIcon: const Icon(Icons.category_outlined),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: [
+              const DropdownMenuItem(value: null, child: Text("All Categories")),
+              ...categories.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+            ],
+            onChanged: (val) => setState(() => _filterCategory = val),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final groupedProducts = _groupProductsByCategory();
+    final filtered = _getFilteredProducts();
+    final groupedProducts = _groupProductsByCategory(filtered);
     final sortedCategories = groupedProducts.keys.toList()..sort();
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           "Product History",
@@ -164,88 +229,99 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
         ),
         elevation: 0,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: sortedCategories.length,
-        itemBuilder: (context, index) {
-          final category = sortedCategories[index];
-          final categoryProducts = groupedProducts[category]!;
+      body: Column(
+        children: [
+          _buildSearchAndFilterHeader(),
+          Expanded(
+            child: _isLoading
+              ? const Center(child: CustomLoader())
+              : filtered.isEmpty
+                ? const Center(child: Text("No products found"))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: sortedCategories.length,
+                    itemBuilder: (context, index) {
+                      final category = sortedCategories[index];
+                      final categoryProducts = groupedProducts[category]!;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
-                child: Text(
-                  category,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade900,
-                  ),
-                ),
-              ),
-              ...categoryProducts.map((product) {
-                final imageUrl = product['image'] as String?;
-                final isPdf = _isPdf(imageUrl);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
+                            child: Text(
+                              category,
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade900,
+                              ),
+                            ),
+                          ),
+                          ...categoryProducts.map((product) {
+                            final imageUrl = product['image'] as String?;
+                            final isPdf = _isPdf(imageUrl);
 
-                return Card(
-                  elevation: 0,
-                  color: Colors.grey.shade50,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey.shade200),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
-                    leading: Container(
-                      width: 50,
-                      height: 50,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: imageUrl == null || imageUrl.isEmpty
-                          ? const Icon(Icons.image, color: Colors.grey)
-                          : isPdf
-                              ? const Icon(Icons.picture_as_pdf, color: Colors.red)
-                              : Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(Icons.broken_image, color: Colors.grey),
+                            return Card(
+                              elevation: 0,
+                              color: Colors.grey.shade50,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.all(12),
+                                leading: Container(
+                                  width: 50,
+                                  height: 50,
+                                  clipBehavior: Clip.antiAlias,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: imageUrl == null || imageUrl.isEmpty
+                                      ? const Icon(Icons.image, color: Colors.grey)
+                                      : isPdf
+                                          ? const Icon(Icons.picture_as_pdf, color: Colors.red)
+                                          : Image.network(
+                                              imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) =>
+                                                  const Icon(Icons.broken_image, color: Colors.grey),
+                                            ),
                                 ),
-                    ),
-                    title: Text(
-                      product['name'],
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      "₹${product['price']}",
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.green),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _editProduct(product),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteProduct(product['_id']),
-                        ),
-                      ],
-                    ),
+                                title: Text(
+                                  product['name'],
+                                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                                ),
+                                subtitle: Text(
+                                  "₹${product['price']}",
+                                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.green),
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.blue),
+                                      onPressed: () => _editProduct(product),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteProduct(product['_id']),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
                   ),
-                );
-              }),
-              const SizedBox(height: 16),
-            ],
-          );
-        },
+          ),
+        ],
       ),
     );
   }
