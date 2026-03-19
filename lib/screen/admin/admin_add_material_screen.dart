@@ -485,7 +485,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
             _selectedSubjectBi = null;
           })),
           const SizedBox(height: 16),
-          _buildDropdown("Standard", Icons.class_outlined, _selectedStdBi, _selectedBoardBi == null ? [] : AcademicConstants.standards[_selectedBoardBi!] ?? [], (val) => setState(() {
+          _buildDropdown("Standard", Icons.class_outlined, _selectedStdBi, _selectedBoardBi == null ? [] : (AcademicConstants.standards[_selectedBoardBi!] ?? []).where((std) => std == "10" || std == "12").toList(), (val) => setState(() {
              _selectedStdBi = val;
              _selectedSubjectBi = null;
           })),
