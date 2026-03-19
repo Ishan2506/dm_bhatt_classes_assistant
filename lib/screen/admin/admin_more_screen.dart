@@ -6,7 +6,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/manage_events_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/shared/help_support_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/shared/my_profile_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/shared/settings_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/authentication/login_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_reports_screen.dart';
 import 'package:dm_bhatt_classes_new/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -152,7 +152,7 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
                // Navigate to Welcome Screen and clear stack
                Navigator.pushAndRemoveUntil(
                  context, 
-                 MaterialPageRoute(builder: (context) => const WelcomeScreen()), 
+                 MaterialPageRoute(builder: (context) => const LoginScreen(role: 'Admin')), 
                  (route) => false
                );
             },

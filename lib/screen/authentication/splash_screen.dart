@@ -3,7 +3,7 @@ import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 
 import 'package:dm_bhatt_classes_new/screen/admin/admin_home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/authentication/login_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/app_sizes.dart';
 import 'package:flutter/material.dart';
 
@@ -69,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         // App does not support other roles except Admin now
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+          MaterialPageRoute(builder: (context) => const LoginScreen(role: 'Admin')),
         );
         return;
       }
@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen(role: 'Admin')),
       );
     }
   }

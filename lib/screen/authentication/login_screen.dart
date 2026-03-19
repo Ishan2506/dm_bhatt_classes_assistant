@@ -7,7 +7,7 @@ import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_home_screen.dart';
 
 import 'package:dm_bhatt_classes_new/screen/authentication/forgot_password_phone_screen.dart';
-import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
+
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -202,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   if (!mounted) return;
                                   Navigator.pushAndRemoveUntil(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                                  MaterialPageRoute(builder: (context) => const LoginScreen(role: 'Admin')),
                                     (route) => false,
                                   );
                                   return;

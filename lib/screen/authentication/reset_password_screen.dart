@@ -1,5 +1,5 @@
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
-import 'package:dm_bhatt_classes_new/screen/authentication/welcome_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/authentication/login_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 
@@ -157,7 +157,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                              
                              Navigator.pushAndRemoveUntil(
                                context, 
-                               MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                               MaterialPageRoute(builder: (context) => const LoginScreen(role: 'Admin')),
                                (route) => false
                              );
                           } else {
