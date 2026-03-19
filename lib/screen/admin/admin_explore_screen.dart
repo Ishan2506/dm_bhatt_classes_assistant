@@ -37,7 +37,23 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
   final List<String> _categories = ["Material", "Diagram", "Phantom material", "Books", "Stationery"];
 
   String? _selectedSubject;
-  final List<String> _subjects = ["Science", "Maths", "English", "Gujarati", "Social Science", "Sanskrit", "Computer"];
+  final List<String> _subjects = [
+    "Science",
+    "Maths",
+    "English",
+    "Gujarati",
+    "Social Science",
+    "Sanskrit",
+    "Computer",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Accountancy",
+    "BA",
+    "Economics",
+    "Statistics",
+    "Secretarial Practice"
+  ];
 
   bool get _isEditing => widget.productToEdit != null;
 
