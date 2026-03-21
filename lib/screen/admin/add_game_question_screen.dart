@@ -2,9 +2,16 @@ import 'package:dm_bhatt_classes_new/custom_widgets/custom_app_bar.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
+import 'package:excel/excel.dart' hide Border, BorderStyle;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:universal_html/html.dart' as html;
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class AddGameQuestionScreen extends StatefulWidget {
@@ -29,6 +36,11 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
   
   String _difficulty = 'Medium';
   bool _isLoading = false;
+
+  String? _selectedFileName;
+  PlatformFile? _pickedFile;
+  bool _isImporting = false;
+  String _importMode = 'Manual'; // 'Manual' or 'Bulk'
 
   List<String> _gameTypes = []; // Dynamic
 
@@ -190,6 +202,271 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
     );
   }
 
+  Future<void> _pickFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx', 'xls'],
+        withData: kIsWeb,
+      );
+
+      if (result != null && mounted) {
+        setState(() {
+          _selectedFileName = result.files.single.name;
+          _pickedFile = result.files.single;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+         CustomToast.showError(context, "Error picking file: $e");
+      }
+    }
+  }
+
+  Future<void> _uploadBulkFile() async {
+    if (_pickedFile == null) {
+      CustomToast.showError(context, "Please select a file");
+      return;
+    }
+
+    CustomLoader.show(context);
+
+    try {
+      List<int> fileBytes;
+      if (kIsWeb) {
+        if (_pickedFile!.bytes != null) {
+          fileBytes = _pickedFile!.bytes!;
+        } else {
+          throw Exception("File data not found");
+        }
+      } else {
+        fileBytes = await File(_pickedFile!.path!).readAsBytes();
+      }
+
+      final response = await ApiService.importGameQuestions(
+        bytes: fileBytes, 
+        filename: _pickedFile!.name,
+        gameType: _selectedGameType
+      );
+      
+      if (mounted) {
+        CustomLoader.hide(context);
+
+        if (response.statusCode == 200) {
+           final body = jsonDecode(response.body);
+           final results = body['results'];
+           
+           setState(() {
+             _selectedFileName = null;
+             _pickedFile = null;
+           });
+           
+           if (results['success'] > 0) {
+              CustomToast.showSuccess(context, "Imported: ${results['success']}, Failed: ${results['failed']}");
+              if (_filterGameType != null) {
+                _fetchQuestions(_filterGameType);
+              }
+           } else {
+              CustomToast.showError(context, "Import Failed. 0 questions added. Failed: ${results['failed']}");
+           }
+        } else {
+           CustomToast.showError(context, "Failed: ${response.body}");
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomLoader.hide(context);
+        CustomToast.showError(context, "Error: $e");
+      }
+    }
+  }
+
+  Future<void> _downloadTemplate() async {
+    if (_selectedGameType == null) {
+      CustomToast.showError(context, "Please select a game type first");
+      return;
+    }
+
+    var excel = Excel.createExcel();
+    Sheet sheetObject = excel['Sheet1'];
+
+    List<String> headers = [];
+    List<CellValue> exampleRow = [];
+
+    switch (_selectedGameType) {
+      // 1. MCQ Category (Standard MCQ, Speed Math, etc.)
+      case 'Speed Math':
+      case 'Grammar Guardian':
+      case 'GK Quiz':
+      case 'Spelling Master':
+      case 'Capital City Quest':
+      case 'Flag Explorer':
+      case 'Stroop Effect Challenge':
+      case 'Memory Match':
+      case 'Spot The Difference':
+      case 'Code Breaker':
+      case 'Number Mastermind':
+      case 'Mental Math Speedrun':
+      case 'Sequence Memory':
+        headers = ["Question Text", "Option 1", "Option 2", "Option 3", "Option 4", "Correct Answer", "Difficulty"];
+        exampleRow = [
+          TextCellValue(_selectedGameType == 'Speed Math' ? "5 + 3 = ?" : "Example Question"),
+          TextCellValue("Option 1"),
+          TextCellValue("Option 2"),
+          TextCellValue("Option 3"),
+          TextCellValue("Option 4"),
+          TextCellValue("Option 1"),
+          TextCellValue("Easy")
+        ];
+        break;
+
+      case 'Emoji Decoder':
+        headers = ["Emojis", "Correct Phrase", "Hint", "Difficulty"];
+        exampleRow = [
+          TextCellValue("🍎🥧"),
+          TextCellValue("Apple Pie"),
+          TextCellValue("A type of dessert"),
+          TextCellValue("Medium")
+        ];
+        break;
+
+      case 'Fact or Fiction':
+        headers = ["Statement", "Fact or Fiction", "Explanation Fact", "Difficulty"];
+        exampleRow = [
+          TextCellValue("The sun rises in the west."),
+          TextCellValue("Fiction"),
+          TextCellValue("The sun rises in the east."),
+          TextCellValue("Easy")
+        ];
+        break;
+
+      case 'Odd One Out':
+        headers = ["Option 1", "Option 2", "Option 3", "Option 4", "The Odd One", "Reason", "Difficulty"];
+        exampleRow = [
+          TextCellValue("Apple"),
+          TextCellValue("Banana"),
+          TextCellValue("Carrot"),
+          TextCellValue("Mango"),
+          TextCellValue("Carrot"),
+          TextCellValue("It's a vegetable, others are fruits"),
+          TextCellValue("Easy")
+        ];
+        break;
+
+      case 'Word Scramble':
+        headers = ["Correct Word", "Scrambled Word (Optional)", "Difficulty"];
+        exampleRow = [
+          TextCellValue("FLUTTER"),
+          TextCellValue("LTTEUFR"),
+          TextCellValue("Medium")
+        ];
+        break;
+        
+      case 'Sentence Builder':
+        headers = ["Correct Sentence", "Difficulty"];
+        exampleRow = [
+          TextCellValue("The quick brown fox jumps over the lazy dog."),
+          TextCellValue("Hard")
+        ];
+        break;
+
+      // 7. Short Answer Category
+      case 'Math Riddles':
+      case 'Number Series':
+      case 'Magic Square':
+      case 'Algebra Balancer':
+      case 'Syllable Scramble':
+      case 'Proverb Completer':
+      case 'Direction Sense':
+      case 'Logic Gates Quest':
+        headers = ["Question Text", "Correct Answer", "Hint", "Difficulty"];
+        exampleRow = [
+          TextCellValue("What has keys but can't open locks?"),
+          TextCellValue("A piano"),
+          TextCellValue("It's a musical instrument"),
+          TextCellValue("Medium")
+        ];
+        break;
+
+      // 9. Word Pairs
+      case 'Language Translator':
+      case 'Synonym & Antonym':
+      case 'Word Bridge':
+        headers = ["First Word", "Second Word", "Difficulty"];
+        exampleRow = [
+          TextCellValue("Hello"),
+          TextCellValue("Namaste"),
+          TextCellValue("Easy")
+        ];
+        break;
+
+      // 10. List Based
+      case 'Subject Word Search':
+      case 'Grammar Sorter':
+      case 'Word Chain':
+        headers = ["Title", "Words List (Comma separated)", "Difficulty"];
+        exampleRow = [
+          TextCellValue("Fruits Name"),
+          TextCellValue("Apple, Banana, Mango, Grapes"),
+          TextCellValue("Medium")
+        ];
+        break;
+
+      default:
+        headers = ["Question Text", "Correct Answer", "Difficulty"];
+        exampleRow = [
+          TextCellValue("Example Question"),
+          TextCellValue("Example Answer"),
+          TextCellValue("Medium")
+        ];
+    }
+
+
+    sheetObject.appendRow(headers.map((e) => TextCellValue(e)).toList());
+    sheetObject.appendRow(exampleRow);
+
+    var fileBytes = excel.encode()!;
+    String fileName = "${_selectedGameType!.replaceAll(' ', '_')}_Template.xlsx";
+
+    if (kIsWeb) {
+       final blob = html.Blob([fileBytes]);
+       final url = html.Url.createObjectUrlFromBlob(blob);
+       final anchor = html.AnchorElement(href: url)
+         ..setAttribute("download", fileName)
+         ..click();
+       html.Url.revokeObjectUrl(url);
+       if (mounted) {
+         CustomToast.showSuccess(context, "Template downloaded");
+       }
+       return;
+    }
+
+    try {
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = Directory('/storage/emulated/0/Download');
+        if (!await directory.exists()) {
+           directory = await getExternalStorageDirectory();
+        }
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+      
+      String outputFile = "${directory!.path}/$fileName";
+      File(outputFile)
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(fileBytes);
+        
+      if (mounted) {
+        CustomToast.showSuccess(context, "Template downloaded to Downloads folder");
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomToast.showError(context, "Failed to download template: $e");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -241,41 +518,82 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
 
             _buildGameTypeDropdown(),
             const SizedBox(height: 16),
-            
-            if (_selectedGameType != null) ...[
-              _buildDynamicFields(),
-              
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _difficulty,
-                decoration: InputDecoration(
-                  labelText: "Difficulty",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                items: ['Easy', 'Medium', 'Hard'].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-                onChanged: (val) => setState(() => _difficulty = val!),
-              ),
-              
+
+            if (_selectedGameType != null && _editingQuestionId == null) ...[
+              _buildImportModeToggle(),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submitQuestion,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ],
+
+            if (_selectedGameType != null) ...[
+              if (_importMode == 'Bulk' && _editingQuestionId == null) 
+                _buildBulkImportSection()
+              else ...[
+                _buildDynamicFields(),
+                
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _difficulty,
+                  decoration: InputDecoration(
+                    labelText: "Difficulty",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                    : Text(_editingQuestionId != null ? "Update Question" : "Add Question", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+                  items: ['Easy', 'Medium', 'Hard'].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                  onChanged: (val) => setState(() => _difficulty = val!),
                 ),
-              ),
+                
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submitQuestion,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: _isLoading 
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                      : Text(_editingQuestionId != null ? "Update Question" : "Add Question", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImportModeToggle() {
+    return Row(
+      children: [
+        Expanded(
+          child: ChoiceChip(
+            label: const Center(child: Text("Manual Add")),
+            selected: _importMode == 'Manual',
+            onSelected: (val) { if (val) setState(() => _importMode = 'Manual'); },
+            selectedColor: Colors.deepPurple.shade100,
+            labelStyle: GoogleFonts.poppins(
+              color: _importMode == 'Manual' ? Colors.deepPurple : Colors.black87,
+              fontWeight: _importMode == 'Manual' ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ChoiceChip(
+            label: const Center(child: Text("Bulk Import")),
+            selected: _importMode == 'Bulk',
+            onSelected: (val) { if (val) setState(() => _importMode = 'Bulk'); },
+            selectedColor: Colors.deepPurple.shade100,
+            labelStyle: GoogleFonts.poppins(
+              color: _importMode == 'Bulk' ? Colors.deepPurple : Colors.black87,
+              fontWeight: _importMode == 'Bulk' ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -801,4 +1119,69 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       validator: (val) => val == null ? "Please select a game type" : null,
     );
   }
+
+  Widget _buildBulkImportSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _downloadTemplate,
+                icon: const Icon(Icons.download, size: 18),
+                label: const Text("Download Template"),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: _pickFile,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.deepPurple.shade100, width: 1.5, style: BorderStyle.solid),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.upload_file, size: 32, color: Colors.deepPurple.shade300),
+                const SizedBox(height: 8),
+                Text(
+                  _selectedFileName ?? "Select Bulk Excel File",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: _selectedFileName != null ? Colors.black87 : Colors.grey,
+                    fontWeight: _selectedFileName != null ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_selectedFileName != null) ...[
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: _uploadBulkFile,
+            icon: const Icon(Icons.cloud_upload),
+            label: const Text("Upload & Import Questions"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }
+

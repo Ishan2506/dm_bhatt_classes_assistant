@@ -883,6 +883,27 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/games/types");
     return await http.get(uri);
   }
+
+  static Future<http.Response> importGameQuestions({required List<int> bytes, required String filename, String? gameType}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/games/import");
+    final request = http.MultipartRequest('POST', uri);
+    
+    if (gameType != null) {
+      request.fields['gameType'] = gameType;
+    }
+
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: filename,
+    );
+    request.files.add(multipartFile);
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
   
   static Future<http.Response> getDashboardStats() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
