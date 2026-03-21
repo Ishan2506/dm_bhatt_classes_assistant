@@ -680,25 +680,34 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
         // 1. Games that use Options (Standard MCQ format)
         if ([
           'Speed Math', 'Odd One Out', 'Grammar Guardian', 'GK Quiz', 
-          'Spelling Master', 'Capital City Quest', 'Flag Explorer', 
+          'Capital City Quest', 'Flag Explorer', 'Proverb Completer', 'Direction Sense',
           'Logic Gates Quest', 'Stroop Effect Challenge', 'Memory Match', 
           'Spot The Difference', 'Code Breaker', 'Number Mastermind', 
-          'Mental Math Speedrun', 'Sequence Memory'
+          'Mental Math Speedrun', 'Sequence Memory', 'Word Bridge',
+          'Synonym & Antonym', 'Language Translator'
         ].contains(_selectedGameType)) {
-           options = _optionControllers.map((c) => c.text.trim()).toList();
+           if (_selectedGameType == 'Synonym & Antonym') {
+             options = [_optionControllers[0].text.trim()];
+           } else {
+             options = _optionControllers
+                 .map((c) => c.text.trim())
+                 .where((text) => text.isNotEmpty)
+                 .toList();
+           }
         }
         
         // 2. Games that use Hints
         if ([
           'Math Riddles', 'Number Series', 'Magic Square', 'Algebra Balancer', 
           'Syllable Scramble', 'Proverb Completer', 'Direction Sense', 
-          'Word Chain', 'Sorting Sweep', 'Path Finder', 'Color Flood', 'Emoji Decoder'
+          'Word Chain', 'Sorting Sweep', 'Path Finder', 'Color Flood', 'Emoji Decoder',
+          'Language Translator'
         ].contains(_selectedGameType)) {
            meta['hint'] = _hintController.text.trim();
         }
         
         // 3. Specific Meta Fields
-        if (_selectedGameType == 'Odd One Out') {
+        if (['Odd One Out', 'Direction Sense'].contains(_selectedGameType)) {
            meta['reason'] = _reasonController.text.trim();
         }
         
@@ -790,7 +799,6 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       // Standard MCQ mapped games
       case 'GK Quiz':
       case 'Grammar Guardian':
-      case 'Spelling Master':
       case 'Capital City Quest':
       case 'Flag Explorer':
       case 'Stroop Effect Challenge':
@@ -800,23 +808,33 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       case 'Number Mastermind':
       case 'Mental Math Speedrun':
       case 'Sequence Memory':
+      case 'Word Bridge':
         return _buildStandardMCQFields();
 
       // Short Answer mapped games
       case 'Math Riddles':
       case 'Number Series':
+      case 'Spelling Master':
       case 'Magic Square':
       case 'Algebra Balancer':
       case 'Syllable Scramble':
-      case 'Proverb Completer':
-      case 'Direction Sense':
       case 'Logic Gates Quest':
         return _buildShortAnswerFields();
-
+      case 'Direction Sense':
+        return _buildDirectionSenseFields();
+      case 'Proverb Completer':
+        return _buildProverbCompleterFields();
+      
       // Word Pair mapped games
+      case 'Subject Word Search':
+        return _buildSubjectWordSearchFields();
+      case 'Grammar Sorter':
+        return _buildGrammarSorterFields();
+      case 'Capital City Quest':
+        return _buildCapitalCityQuestFields();
       case 'Language Translator':
+        return _buildLanguageTranslatorFields();
       case 'Synonym & Antonym':
-      case 'Word Bridge':
         return _buildWordPairFields();
 
       // List based games
@@ -1031,7 +1049,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
           controller: _questionController,
           decoration: const InputDecoration(labelText: "Question / Challenge Description", border: OutlineInputBorder()),
           validator: (v) => v!.isEmpty ? "Required" : null,
-          maxLines: 2,
+          maxLines: 5,
         ),
         const SizedBox(height: 12),
         TextFormField(
@@ -1054,25 +1072,238 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
       children: [
         TextFormField(
           controller: _questionController,
-          decoration: InputDecoration(
-            labelText: _selectedGameType == 'Language Translator' ? "Word in Source Language" : "First Word", 
-            border: const OutlineInputBorder()
+          decoration: const InputDecoration(
+            labelText: "First Word", 
+            border: OutlineInputBorder()
           ),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        if (_selectedGameType == 'Synonym & Antonym') ...[
+          // ... (existing Synonym & Antonym blocks)
+          TextFormField(
+            controller: _optionControllers[0],
+            decoration: const InputDecoration(labelText: "Second Word", border: OutlineInputBorder()),
+            validator: (v) => v!.isEmpty ? "Required" : null,
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: ['Synonym', 'Antonym'].contains(_correctAnswerController.text) ? _correctAnswerController.text : null,
+            decoration: const InputDecoration(labelText: "Relationship", border: OutlineInputBorder()),
+            items: const [
+              DropdownMenuItem(value: "Synonym", child: Text("Synonym")),
+              DropdownMenuItem(value: "Antonym", child: Text("Antonym")),
+            ],
+            onChanged: (val) {
+              setState(() => _correctAnswerController.text = val!);
+            },
+            validator: (v) => v == null ? "Required" : null,
+          ),
+        ] else ...[
+          TextFormField(
+            controller: _correctAnswerController,
+            decoration: const InputDecoration(
+              labelText: "Second Word (Match)", 
+              border: OutlineInputBorder()
+            ),
+            validator: (v) => v!.isEmpty ? "Required" : null,
+          ),
+        ],
+      ],
+    );
+  }
+
+  // 9.5 Language Translator: Source (Q), Target (A), Options, Lang Name (Hint)
+  Widget _buildLanguageTranslatorFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(labelText: "Word in Source Language", border: OutlineInputBorder()),
           validator: (v) => v!.isEmpty ? "Required" : null,
         ),
         const SizedBox(height: 12),
         TextFormField(
            controller: _correctAnswerController,
-           decoration: InputDecoration(
-             labelText: _selectedGameType == 'Language Translator' ? "Word in Target Language" : "Second Word (Synonym/Antonym/Match)", 
-             border: const OutlineInputBorder()
-           ),
+           decoration: const InputDecoration(labelText: "Word in Target Language", border: OutlineInputBorder()),
            validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _hintController,
+          decoration: const InputDecoration(labelText: "Target Language Name (e.g. Hindi, Spanish)", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 16),
+        const Text("Options (Include correct answer):"),
+        for (int i = 0; i < 4; i++)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: TextFormField(
+              controller: _optionControllers[i],
+              decoration: InputDecoration(labelText: "Option ${i + 1}", border: const OutlineInputBorder()),
+              validator: (v) => v!.isEmpty ? "Required" : null,
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 9.6 Subject Word Search: Title (Q), Words (A)
+  Widget _buildSubjectWordSearchFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(labelText: "Title / Instruction", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _correctAnswerController,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            labelText: "Words List (Comma separated)", 
+            hintText: "e.g. EARTH, OCEAN, MOUNTAIN",
+            border: OutlineInputBorder()
+          ),
+          validator: (v) => v!.isEmpty ? "Required" : null,
         ),
       ],
     );
   }
 
+  // 9.7 Grammar Sorter: Word (Q), Category (A)
+  Widget _buildGrammarSorterFields() {
+    List<String> categories = ['Noun', 'Verb', 'Adjective'];
+    if (_correctAnswerController.text.isEmpty) {
+        _correctAnswerController.text = categories[0];
+    }
+    
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(labelText: "Word", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: categories.contains(_correctAnswerController.text) ? _correctAnswerController.text : categories[0],
+          decoration: const InputDecoration(labelText: "Category", border: OutlineInputBorder()),
+          items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+          onChanged: (v) => setState(() => _correctAnswerController.text = v!),
+        ),
+      ],
+    );
+  }
+
+  // 9.8 Capital City Quest: Region (Q), Capital (A), Options (Meta)
+  Widget _buildCapitalCityQuestFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(labelText: "Region (State / Country)", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _correctAnswerController,
+          decoration: const InputDecoration(labelText: "Correct Capital City", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        const Text("Options (Optional - if left blank, other capitals will be used):"),
+        for (int i = 0; i < 4; i++)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: TextFormField(
+              controller: _optionControllers[i],
+              decoration: InputDecoration(labelText: "Option ${i + 1}", border: const OutlineInputBorder()),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 9.9 Proverb Completer: Proverb with [BLANK] (Q), Missing Word (A), Options (Meta)
+  Widget _buildProverbCompleterFields() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(
+            labelText: "Proverb with [BLANK]", 
+            hintText: "e.g. A blessing in [BLANK].",
+            border: OutlineInputBorder()
+          ),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _correctAnswerController,
+          decoration: const InputDecoration(labelText: "Missing Word (Answer)", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _hintController,
+          decoration: const InputDecoration(labelText: "Hint (Optional)", border: OutlineInputBorder()),
+        ),
+        const SizedBox(height: 12),
+        const Text("Options (Optional - if left blank, other words will be used):"),
+        for (int i = 0; i < 4; i++)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: TextFormField(
+              controller: _optionControllers[i],
+              decoration: InputDecoration(labelText: "Option ${i + 1}", border: const OutlineInputBorder()),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 9.10 Direction Sense: Scenario (Q), Question (Meta), Answer (A), Options (Meta)
+  Widget _buildDirectionSenseFields() {
+    if (_reasonController.text.isEmpty) {
+        _reasonController.text = "In which direction is he/she facing now?";
+    }
+    return Column(
+      children: [
+        TextFormField(
+          controller: _questionController,
+          decoration: const InputDecoration(labelText: "Movement Scenario", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+          maxLines: 3,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _reasonController,
+          decoration: const InputDecoration(labelText: "Question Text (Optional)", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _correctAnswerController,
+          decoration: const InputDecoration(labelText: "Correct Answer (Direction)", border: OutlineInputBorder()),
+          validator: (v) => v!.isEmpty ? "Required" : null,
+        ),
+        const SizedBox(height: 12),
+        const Text("Options (Optional - North, South, East, West will be used by default):"),
+        for (int i = 0; i < 4; i++)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: TextFormField(
+              controller: _optionControllers[i],
+              decoration: InputDecoration(labelText: "Option ${i + 1}", border: const OutlineInputBorder()),
+            ),
+          ),
+      ],
+    );
+  }
+ 
   // 10. List Based: Title (Q), CSV List (Reason)
   Widget _buildListFields() {
     return Column(
