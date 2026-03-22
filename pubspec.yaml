@@ -41,6 +41,14 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1   # ✅ only version here
+
+flutter_launcher_icons:              # ✅ move config OUTSIDE
+  android: true
+  ios: true
+  image_path: "assets/ic_launcher.png"
+  remove_alpha_ios: true
+  background_color_ios: "#ffffff"
 
 flutter:
   generate: true
