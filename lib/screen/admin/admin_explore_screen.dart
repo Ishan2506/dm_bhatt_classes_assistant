@@ -493,10 +493,8 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
                     shadowColor: Colors.blue.shade200,
                   ),
                   child: _isLoading 
-                      ? const SizedBox(
-                          height: 24, 
-                          width: 24, 
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                      ? const Center(
+                          child: CustomLoader(size: 24),
                         )
                       : Text(
                           _isEditing ? "Update Product" : "Add Product",

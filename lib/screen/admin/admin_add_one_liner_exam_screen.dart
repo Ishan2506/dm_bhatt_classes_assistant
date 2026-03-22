@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_one_liner_exam_history_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
@@ -119,7 +120,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
           title: Text("Edit One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           actions: [
             if (_isSaving)
-              const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
+              const Padding(padding: EdgeInsets.all(8), child: CustomLoader(size: 32))
             else
               IconButton(icon: const Icon(Icons.check), onPressed: _saveExam),
           ],
@@ -135,7 +136,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
           title: Text("One Liner Exam", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           actions: [
             if (_isSaving)
-              const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
+              const Padding(padding: EdgeInsets.all(8), child: CustomLoader(size: 32))
             else
               IconButton(icon: const Icon(Icons.check), onPressed: _saveExam),
           ],

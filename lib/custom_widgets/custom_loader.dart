@@ -2,47 +2,57 @@ import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 import 'package:flutter/material.dart';
 
 class CustomLoader extends StatelessWidget {
-  const CustomLoader({super.key});
+  final double? size;
+  const CustomLoader({super.key, this.size});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 100, // Slightly larger for better visibility
-        height: 100,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 15,
-              spreadRadius: 2,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Logo
-            Image.asset(
-              imgLoaderBot, // Using App Logo
-              width: 50,
-              height: 50,
-              fit: BoxFit.contain,
-            ),
-            // Loader Ring
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: CircularProgressIndicator(
-                strokeWidth: 4,
-                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), // App Theme Color
+    final double finalSize = size ?? 100.0;
+    final double iconSize = (finalSize / 100.0) * 50.0;
+    final double padding = (finalSize / 100.0) * 16.0;
+
+    return Container(
+      width: size == null ? MediaQuery.of(context).size.width : null,
+      height: size == null ? MediaQuery.of(context).size.height : null,
+      color: size == null ? Colors.black.withOpacity(0.05) : Colors.transparent, // Subtle dimming for full-screen
+      child: Center(
+        child: Container(
+          width: finalSize,
+          height: finalSize,
+          padding: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 15 * (finalSize / 100.0),
+                spreadRadius: 2 * (finalSize / 100.0),
+                offset: Offset(0, 4 * (finalSize / 100.0)),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Logo
+              Image.asset(
+                imgLoaderBot, // Using App Logo
+                width: iconSize,
+                height: iconSize,
+                fit: BoxFit.contain,
+              ),
+              // Loader Ring
+              SizedBox(
+                width: finalSize,
+                height: finalSize,
+                child: CircularProgressIndicator(
+                  strokeWidth: 4 * (finalSize / 100.0),
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), // App Theme Color
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

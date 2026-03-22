@@ -1,5 +1,6 @@
 import 'package:dm_bhatt_classes_new/utils/app_sizes.dart';
 import 'package:flutter/material.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 
 class CustomFilledButton extends StatelessWidget {
   final String label;
@@ -39,11 +40,7 @@ class CustomFilledButton extends StatelessWidget {
 
   Widget _buildChild(BuildContext context) {
     if (isLoading) {
-      return SizedBox(
-        height: S.s24,
-        width: S.s24,
-        child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-      );
+      return const CustomLoader(size: S.s24);
     }
     return Text(
       label,

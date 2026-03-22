@@ -455,7 +455,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               ],
             ),
           ),
-          if (_isLoading) const Center(child: CustomLoader()),
+          if (_isLoading) Center(child: CustomLoader()),
         ],
       ),
     );
@@ -724,7 +724,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
 
   Widget _buildHistoryView() {
     if (_isHistoryLoading && _materialsHistory.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CustomLoader());
     }
     if (_materialsHistory.isEmpty) {
       return Center(child: Text("No history found", style: GoogleFonts.poppins(color: Colors.grey)));

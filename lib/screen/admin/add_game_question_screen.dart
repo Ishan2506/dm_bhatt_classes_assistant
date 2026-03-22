@@ -553,7 +553,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isLoading 
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                      ? const CustomLoader(size: 24) 
                       : Text(_editingQuestionId != null ? "Update Question" : "Add Question", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
@@ -1328,7 +1328,7 @@ class _AddGameQuestionScreenState extends State<AddGameQuestionScreen> with Sing
 
   Widget _buildGameTypeDropdown() {
     if (_gameTypes.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CustomLoader());
     }
     return DropdownButtonFormField<String>(
       value: _selectedGameType,

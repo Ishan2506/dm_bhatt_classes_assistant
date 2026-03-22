@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_one_liner_exam_screen.dart';
 
@@ -87,7 +88,7 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
           _buildSearchAndFilterHeader(),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CustomLoader())
                 : _getFilteredExams().isEmpty
                     ? const Center(child: Text("No exams found"))
                     : ListView.builder(

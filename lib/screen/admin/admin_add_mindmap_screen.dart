@@ -194,7 +194,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
           ),
           actions: [
             if (_isSaving)
-              const Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: Colors.white))
+              const Padding(padding: EdgeInsets.all(8), child: CustomLoader(size: 32))
             else
               IconButton(icon: const Icon(Icons.check), onPressed: _saveMindMap),
           ],
@@ -230,7 +230,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
             
             // History Tab
             _isLoadingHistory
-                ? const Center(child: CustomLoader())
+            ? const Center(child: CustomLoader())
                 : _mindMaps.isEmpty
                     ? Center(child: Text("No mind maps found", style: GoogleFonts.poppins(color: Colors.grey)))
                     : ListView.builder(

@@ -495,7 +495,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
           children: [
             // Tab 1: Create New (Stepper)
             _isLoading && _allTests.isEmpty 
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(child: CustomLoader())
             : Form(
               key: _formKey,
               child: Stepper(
@@ -542,7 +542,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                             minimumSize: const Size(120, 45),
                           ),
                           child: _isLoading 
-                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                             ? const CustomLoader(size: 20)
                              : Text(
                                  _currentStep == 1 
                                    ? (_isManualEntry ? (_isEditing ? "Update Test" : "Create Test") : "Process PDF") 
