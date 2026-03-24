@@ -43,7 +43,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
 
   final List<String> _standards = ["6", "7", "8", "9", "10", "11", "12"];
   final List<String> _mediums = ["English", "Gujarati"];
-  final List<String> _streams = ["Science", "Commerce", "General"];
+  final List<String> _streams = ["Science", "Commerce"];
   final List<String> _subjects = ['Math', 'Science', 'English', 'Account', 'Statistics', 'Economics', 'BA'];
 
   List<dynamic> _allTests = [];
@@ -444,7 +444,15 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
             
             DropdownButtonFormField<String>(
               value: _selectedCreateSubject,
-              items: (_selectedCreateBoard == null || _selectedCreateStd == null ? <String>[] : AcademicConstants.subjects["$_selectedCreateBoard-$_selectedCreateStd"] ?? <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+              items: (() {
+                if (_selectedCreateBoard == null || _selectedCreateStd == null) return <String>[];
+                String key = "$_selectedCreateBoard-$_selectedCreateStd";
+                if (_selectedCreateStd == "11" || _selectedCreateStd == "12") {
+                  if (_selectedCreateStream == null) return <String>[];
+                  key += "-$_selectedCreateStream";
+                }
+                return AcademicConstants.subjects[key] ?? <String>[];
+              }()).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
               onChanged: (val) => setState(() => _selectedCreateSubject = val),
               decoration: _inputDecoration("Subject", Icons.subject),
               style: GoogleFonts.poppins(color: Colors.black87),

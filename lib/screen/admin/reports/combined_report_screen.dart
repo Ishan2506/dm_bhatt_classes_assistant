@@ -153,7 +153,7 @@ class _CombinedReportScreenState extends State<CombinedReportScreen> {
             _buildSmallDropdown("Medium", _selectedMedium, AcademicConstants.mediums, (v) => setState(() { _selectedMedium = v; _fetchData(); })),
             const SizedBox(width: 8),
             if (_selectedStd == "11" || _selectedStd == "12")
-              _buildSmallDropdown("Stream", _selectedStream, ["Science", "Commerce", "General"], (v) => setState(() { _selectedStream = v; _fetchData(); })),
+              _buildSmallDropdown("Stream", _selectedStream, ["Science", "Commerce"], (v) => setState(() { _selectedStream = v; _fetchData(); })),
             IconButton(
               icon: const Icon(Icons.clear_all, color: Colors.red),
               onPressed: () => setState(() {

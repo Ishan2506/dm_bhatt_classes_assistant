@@ -31,7 +31,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
   String? _selectedMedium;
   String? _selectedStream;
   String? _selectedSubject;
-  final List<String> _streams = ["Science", "Commerce", "General"];
+  final List<String> _streams = ["Science", "Commerce"];
 
   // PDF Upload
   PlatformFile? _pickedPdf;
@@ -618,7 +618,15 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                         // Subject Dropdown
                         DropdownButtonFormField<String>(
                           value: _selectedSubject,
-                          items: (_selectedBoard == null || _selectedStandard == null ? <String>[] : AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"] ?? <String>[]).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
+                          items: (() {
+                            if (_selectedBoard == null || _selectedStandard == null) return <String>[];
+                            String key = "$_selectedBoard-$_selectedStandard";
+                            if (_selectedStandard == "11" || _selectedStandard == "12") {
+                              if (_selectedStream == null) return <String>[];
+                              key += "-$_selectedStream";
+                            }
+                            return AcademicConstants.subjects[key] ?? <String>[];
+                          }()).map((s) => DropdownMenuItem<String>(value: s, child: Text(s))).toList(),
                           onChanged: (val) => setState(() => _selectedSubject = val),
                           decoration: _inputDecoration("Subject", Icons.subject),
                           style: GoogleFonts.poppins(color: Colors.black87),

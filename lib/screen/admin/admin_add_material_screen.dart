@@ -68,7 +68,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
 
   String? _editingMaterialId;
 
-  final List<String> _streams = ["None", "Science", "General"];
+  final List<String> _streams = ["Science", "Commerce"];
   final List<String> _pastYears = List.generate(10, (index) => (DateTime.now().year - 1 - index).toString());
   final List<String> _allYears = List.generate(10, (index) => (DateTime.now().year - index).toString());
   final List<String> _units = List.generate(20, (index) => (index + 1).toString());
@@ -496,7 +496,15 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           ],
           _buildDropdown("Medium", Icons.language, _selectedMediumBi, AcademicConstants.mediums, (val) => setState(() => _selectedMediumBi = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectBi, (_selectedBoardBi == null || _selectedStdBi == null) ? [] : AcademicConstants.subjects["$_selectedBoardBi-$_selectedStdBi"] ?? [], (val) => setState(() => _selectedSubjectBi = val)),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectBi, (() {
+            if (_selectedBoardBi == null || _selectedStdBi == null) return <String>[];
+            String key = "$_selectedBoardBi-$_selectedStdBi";
+            if (_selectedStdBi == "11" || _selectedStdBi == "12") {
+              if (_selectedStreamBi == null || _selectedStreamBi == "None") return <String>[];
+              key += "-$_selectedStreamBi";
+            }
+            return AcademicConstants.subjects[key] ?? <String>[];
+          }()), (val) => setState(() => _selectedSubjectBi = val)),
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearBi, _pastYears, (val) => setState(() => _selectedYearBi = val)),
           const SizedBox(height: 24),
@@ -543,7 +551,15 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           ],
           _buildDropdown("Medium", Icons.language, _selectedMediumSi, AcademicConstants.mediums, (val) => setState(() => _selectedMediumSi = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectSi, (_selectedBoardSi == null || _selectedStdSi == null) ? [] : AcademicConstants.subjects["$_selectedBoardSi-$_selectedStdSi"] ?? [], (val) => setState(() => _selectedSubjectSi = val)),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectSi, (() {
+            if (_selectedBoardSi == null || _selectedStdSi == null) return <String>[];
+            String key = "$_selectedBoardSi-$_selectedStdSi";
+            if (_selectedStdSi == "11" || _selectedStdSi == "12") {
+              if (_selectedStreamSi == null || _selectedStreamSi == "None") return <String>[];
+              key += "-$_selectedStreamSi";
+            }
+            return AcademicConstants.subjects[key] ?? <String>[];
+          }()), (val) => setState(() => _selectedSubjectSi = val)),
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearSi, _pastYears, (val) => setState(() => _selectedYearSi = val)),
           const SizedBox(height: 16),
@@ -592,7 +608,15 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           ],
           _buildDropdown("Medium", Icons.language, _selectedMediumNi, AcademicConstants.mediums, (val) => setState(() => _selectedMediumNi = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectNi, (_selectedBoardNi == null || _selectedStdNi == null) ? [] : AcademicConstants.subjects["$_selectedBoardNi-$_selectedStdNi"] ?? [], (val) => setState(() => _selectedSubjectNi = val)),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectNi, (() {
+            if (_selectedBoardNi == null || _selectedStdNi == null) return <String>[];
+            String key = "$_selectedBoardNi-$_selectedStdNi";
+            if (_selectedStdNi == "11" || _selectedStdNi == "12") {
+              if (_selectedStreamNi == null || _selectedStreamNi == "None") return <String>[];
+              key += "-$_selectedStreamNi";
+            }
+            return AcademicConstants.subjects[key] ?? <String>[];
+          }()), (val) => setState(() => _selectedSubjectNi = val)),
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearNi, _allYears, (val) => setState(() => _selectedYearNi = val)),
           const SizedBox(height: 24),
@@ -639,7 +663,15 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           ],
           _buildDropdown("Medium", Icons.language, _selectedMediumIm, AcademicConstants.mediums, (val) => setState(() => _selectedMediumIm = val)),
           const SizedBox(height: 16),
-          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectIm, (_selectedBoardIm == null || _selectedStdIm == null) ? [] : AcademicConstants.subjects["$_selectedBoardIm-$_selectedStdIm"] ?? [], (val) => setState(() => _selectedSubjectIm = val)),
+          _buildDropdown("Subject", Icons.book_outlined, _selectedSubjectIm, (() {
+            if (_selectedBoardIm == null || _selectedStdIm == null) return <String>[];
+            String key = "$_selectedBoardIm-$_selectedStdIm";
+            if (_selectedStdIm == "11" || _selectedStdIm == "12") {
+              if (_selectedStreamIm == null || _selectedStreamIm == "None") return <String>[];
+              key += "-$_selectedStreamIm";
+            }
+            return AcademicConstants.subjects[key] ?? <String>[];
+          }()), (val) => setState(() => _selectedSubjectIm = val)),
           const SizedBox(height: 16),
           _buildDropdown("Unit", Icons.list_alt, _selectedUnitIm, _units, (val) => setState(() => _selectedUnitIm = val)),
           const SizedBox(height: 16),

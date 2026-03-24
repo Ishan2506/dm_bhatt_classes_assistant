@@ -237,7 +237,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
               DropdownButtonFormField<String>(
                 value: _selectedStream,
                 decoration: InputDecoration(labelText: "Stream", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                items: ["Science", "Commerce", "General"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: ["Science", "Commerce"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (val) => setState(() => _selectedStream = val),
               ),
               const SizedBox(height: 16),
@@ -245,7 +245,15 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
             DropdownButtonFormField<String>(
               value: _selectedSubject,
               decoration: InputDecoration(labelText: "Subject", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-              items: (_selectedBoard == null || _selectedStd == null ? <String>[] : AcademicConstants.subjects["$_selectedBoard-$_selectedStd"] ?? <String>[]).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
+              items: (() {
+                if (_selectedBoard == null || _selectedStd == null) return <String>[];
+                String key = "$_selectedBoard-$_selectedStd";
+                if (_selectedStd == "11" || _selectedStd == "12") {
+                  if (_selectedStream == null) return <String>[];
+                  key += "-$_selectedStream";
+                }
+                return AcademicConstants.subjects[key] ?? <String>[];
+              }()).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
               onChanged: (val) => setState(() => _selectedSubject = val),
             ),
             const SizedBox(height: 16),

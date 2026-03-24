@@ -49,7 +49,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   final ImagePicker _picker = ImagePicker();
 
   // Data Lists
-  final List<String> _streams = ["Science", "Commerce", "General"];
+  final List<String> _streams = ["Science", "Commerce"];
   
   final Map<String, List<String>> _stateCityMap = {
     "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],

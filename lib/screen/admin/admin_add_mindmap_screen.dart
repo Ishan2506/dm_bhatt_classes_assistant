@@ -118,7 +118,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
       var stds = _selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? [];
       if (!stds.contains(_selectedStd)) _selectedStd = null;
       
-      var streams = ["Science", "Commerce", "General"];
+      var streams = ["Science", "Commerce"];
       _selectedStream = item['stream'] == 'None' || item['stream'] == '-' ? null : item['stream'];
       if (_selectedStream != null && !streams.contains(_selectedStream)) _selectedStream = null;
       
@@ -335,7 +335,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.school),
                 ),
-                items: ["Science", "Commerce", "General"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                items: ["Science", "Commerce"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (val) => setState(() => _selectedStream = val),
               ),
               const SizedBox(height: 16),
@@ -347,7 +347,15 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.book),
               ),
-              items: (_selectedBoard == null || _selectedStd == null ? <String>[] : AcademicConstants.subjects["$_selectedBoard-$_selectedStd"] ?? <String>[]).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
+              items: (() {
+                if (_selectedBoard == null || _selectedStd == null) return <String>[];
+                String key = "$_selectedBoard-$_selectedStd";
+                if (_selectedStd == "11" || _selectedStd == "12") {
+                  if (_selectedStream == null) return <String>[];
+                  key += "-$_selectedStream";
+                }
+                return AcademicConstants.subjects[key] ?? <String>[];
+              }()).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
               onChanged: (val) => setState(() => _selectedSubject = val),
             ),
             const SizedBox(height: 16),

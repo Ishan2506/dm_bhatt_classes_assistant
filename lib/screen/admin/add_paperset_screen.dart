@@ -30,9 +30,9 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
 
   String? _selectedBoard;
   String? _selectedStandard;
-  String? _selectedStream = 'None'; // Default
+  String? _selectedStream; // Default
 
-  final List<String> _streams = ["None", "Science", "General"];
+  final List<String> _streams = ["Science", "Commerce"];
 
   // Real Data
   List<dynamic> _paperSets = [];
@@ -344,7 +344,15 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                       label: "Subject",
                       icon: Icons.book_outlined,
                       value: _selectedSubject,
-                      items: (_selectedBoard == null || _selectedStandard == null) ? [] : AcademicConstants.subjects["$_selectedBoard-$_selectedStandard"] ?? [],
+                      items: (() {
+                        if (_selectedBoard == null || _selectedStandard == null) return <String>[];
+                        String key = "$_selectedBoard-$_selectedStandard";
+                        if (_selectedStandard == "11" || _selectedStandard == "12") {
+                          if (_selectedStream == null || _selectedStream == "None") return <String>[];
+                          key += "-$_selectedStream";
+                        }
+                        return AcademicConstants.subjects[key] ?? <String>[];
+                      }()),
                       onChanged: (val) {
                         setState(() {
                           _selectedSubject = val;

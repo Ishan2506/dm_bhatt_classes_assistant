@@ -18,7 +18,7 @@ class _FiveMinTestHistoryScreenState extends State<FiveMinTestHistoryScreen> {
   String? _selectedMedium;
   String? _selectedStream;
 
-  final List<String> _streams = ["Science", "Commerce", "General"];
+  final List<String> _streams = ["Science", "Commerce"];
 
   // Mock Data
   final List<Map<String, dynamic>> _allTests = [
@@ -28,7 +28,7 @@ class _FiveMinTestHistoryScreenState extends State<FiveMinTestHistoryScreen> {
       "unit": "Algebra Basics",
       "std": "10",
       "medium": "English",
-      "stream": "General",
+      "stream": "Commerce",
       "date": "28 Jan 2024"
     },
     {
@@ -46,7 +46,7 @@ class _FiveMinTestHistoryScreenState extends State<FiveMinTestHistoryScreen> {
       "unit": "Kavita 1",
       "std": "9",
       "medium": "Gujarati",
-      "stream": "General",
+      "stream": "Commerce",
       "date": "30 Jan 2024"
     },
   ];

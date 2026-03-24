@@ -445,7 +445,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                       }),
                       const SizedBox(height: 16),
                       if (_selectedStandard == "11" || _selectedStandard == "12") ...[
-                        _buildDropdown("Stream", _selectedStream, ["Science", "Commerce", "General"], (val) => setState(() {
+                        _buildDropdown("Stream", _selectedStream, ["Science", "Commerce"], (val) => setState(() {
                            _selectedStream = val;
                            _selectedSubject = null;
                         })),
