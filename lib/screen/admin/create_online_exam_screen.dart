@@ -60,7 +60,8 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
 
   String? _filterBoard;
   String? _filterStandard;
-  String? _filterSubject;
+  String? _filterMedium;
+  String? _filterStream;
 
   @override
   void initState() {
@@ -250,9 +251,10 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
 
       final matchesBoard = _filterBoard == null || exam['board'] == _filterBoard;
       final matchesStandard = _filterStandard == null || exam['std'] == _filterStandard;
-      final matchesSubject = _filterSubject == null || exam['subject'] == _filterSubject;
+      final matchesMedium = _filterMedium == null || exam['medium'] == _filterMedium;
+      final matchesStream = _filterStream == null || exam['stream'] == _filterStream;
 
-      return matchesSearch && matchesBoard && matchesStandard && matchesSubject;
+      return matchesSearch && matchesBoard && matchesStandard && matchesMedium && matchesStream;
     }).toList();
   }
 
@@ -277,48 +279,74 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildSmallDropdown("Board", _filterBoard, AcademicConstants.boards, (val) => setState(() => _filterBoard = val)),
-                const SizedBox(width: 8),
-                _buildSmallDropdown("Std", _filterStandard, AcademicConstants.standards["GSEB"] ?? [], (val) => setState(() => _filterStandard = val)),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.filter_alt_off_outlined, color: Colors.grey),
-                  onPressed: () => setState(() {
-                    _filterBoard = null;
-                    _filterStandard = null;
-                    _filterSubject = null;
-                  }),
-                  tooltip: "Clear Filters",
-                ),
-              ],
-            ),
+          // Filters Row 1
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilterDropdown("Board", _filterBoard, AcademicConstants.boards, (val) => setState(() {
+                  _filterBoard = val;
+                  _filterStandard = null;
+                })),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildFilterDropdown("Std", _filterStandard, _filterBoard == null ? [] : AcademicConstants.standards[_filterBoard!] ?? [], (val) => setState(() => _filterStandard = val)),
+              ),
+            ],
           ),
+          const SizedBox(height: 12),
+          // Filters Row 2
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilterDropdown("Medium", _filterMedium, AcademicConstants.mediums, (val) => setState(() => _filterMedium = val)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildFilterDropdown("Stream", _filterStream, ["Science", "Commerce"], (val) => setState(() => _filterStream = val)),
+              ),
+            ],
+          ),
+          if (_filterBoard != null || _filterStandard != null || _filterMedium != null || _filterStream != null || _searchController.text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: TextButton.icon(
+                onPressed: () => setState(() {
+                  _filterBoard = null;
+                  _filterStandard = null;
+                  _filterMedium = null;
+                  _filterStream = null;
+                  _searchController.clear();
+                }),
+                icon: const Icon(Icons.filter_list_off, size: 16),
+                label: Text("Clear All Filters", style: GoogleFonts.poppins(fontSize: 12)),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildSmallDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
+  Widget _buildFilterDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
       ),
-      child: DropdownButton<String>(
-        value: value,
-        hint: Text(hint, style: GoogleFonts.poppins(fontSize: 12)),
-        underline: Container(),
-        icon: const Icon(Icons.arrow_drop_down, size: 20),
-        items: [
-          DropdownMenuItem(value: null, child: Text("All $hint", style: GoogleFonts.poppins(fontSize: 12))),
-          ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 12)))),
-        ],
-        onChanged: onChanged,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          hint: Text(hint, style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey)),
+          value: value,
+          icon: const Icon(Icons.arrow_drop_down, size: 20),
+          items: [
+            DropdownMenuItem(value: null, child: Text("All $hint", style: GoogleFonts.poppins(fontSize: 14))),
+            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))),
+          ],
+          onChanged: onChanged,
+        ),
       ),
     );
   }
@@ -462,6 +490,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                       }(), (val) => setState(() => _selectedSubject = val)),
                       const SizedBox(height: 16),
                       _buildDropdown("Medium", _selectedMedium, AcademicConstants.mediums, (val) => setState(() => _selectedMedium = val)),
+                       const SizedBox(height: 16),
                       _buildDropdown("Marks", _selectedMarks, AcademicConstants.marks, (val) => setState(() => _selectedMarks = val)),
                       const SizedBox(height: 16),
                       TextField(

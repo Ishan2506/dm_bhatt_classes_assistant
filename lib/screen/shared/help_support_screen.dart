@@ -24,7 +24,7 @@ class HelpSupportScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "How to use DM Bhatt Admin App?",
+              "How to use Padhaku Admin App?",
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -55,30 +55,89 @@ class HelpSupportScreen extends StatelessWidget {
               primaryColor,
             ),
             const SizedBox(height: 16),
-             _buildExpansionTile(
+            _buildExpansionTile(
               context,
-              "How to Mark Attendance?",
-              Icons.check_circle_outline,
+              "How to create an Online Exam?",
+              Icons.quiz_outlined,
               [
-                "1. Navigate to the **Attendance** tab.",
-                "2. Select the appropriate **Batch** or **Stream**.",
-                "3. You will see a list of students.",
-                "4. Tap on 'P' for Present or 'A' for Absent.",
-                "5. Tap **Submit** to finalize the attendance for the day."
+                "1. Go to the **More** tab and select an Exam type (Regular, One-Liner, or 5-Min Quiz).",
+                "2. Select the **Add Exam** tab at the top of the screen.",
+                "3. Fill in the header details (Board, Standard, Medium, Marks, Title).",
+                "4. Scroll down to add the Questions and their Correct Answers.",
+                "5. Tap the **Save** (checkmark) icon at the top right to validate and publish."
               ],
               primaryColor,
             ),
-             const SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildExpansionTile(
               context,
-              "How to Update Paperset Details?",
-              Icons.description_outlined,
+              "How to manage Study Materials?",
+              Icons.menu_book_outlined,
               [
-                "1. Go to the **Paperset** section.",
-                "2. Select the specific exam or test paper.",
-                "3. Tap on the **Update Marks** or **Edit Details** button.",
-                "4. Enter the obtained marks for each student.",
-                "5. Review and click **Save** to publish the results."
+                "1. Tap on the **Material** section from the bottom navigation.",
+                "2. Use the Board/Standard filters to open a specific folder.",
+                "3. Tap the **Add Material** button or the floating plus icon.",
+                "4. Select the file, provide a Title and Subject, then confirm the upload.",
+                "5. Students in that Standard will immediately see the new document."
+              ],
+              primaryColor,
+            ),
+            const SizedBox(height: 16),
+            _buildExpansionTile(
+              context,
+              "How to generate Student Redeem Codes?",
+              Icons.qr_code_2_outlined,
+              [
+                "1. Navigate to the **More** tab and open **Redeem Code**.",
+                "2. Pick your target audience (Specific Board/Standard or Individual Student).",
+                "3. Enter the exact **Points Value** to be embedded in the code.",
+                "4. Tap **Generate PDF** to instantly compile a printable sheet of QR codes.",
+                "5. Print and hand the physical codes to students to scan in their app."
+              ],
+              primaryColor,
+            ),
+            const SizedBox(height: 16),
+            _buildExpansionTile(
+              context,
+              "How to manage Leaderboards and Gifts?",
+              Icons.workspace_premium_outlined,
+              [
+                "1. Under the **More** section, tap the **Leaderboard** tool.",
+                "2. Select the Std and Medium to filter the current top students.",
+                "3. Students are ranked automatically based on accumulated points.",
+                "4. To mark a student as rewarded, tap the **Give Gift** toggle on their card.",
+                "5. The toggle will turn green (**Gifted**) to permanently track the reward state."
+              ],
+              primaryColor,
+            ),
+            const SizedBox(height: 16),
+            _buildExpansionTile(
+              context,
+              "How to analyze Exam Reports?",
+              Icons.analytics_outlined,
+              [
+                "1. Open the **More** tab and expand the **Reports** section.",
+                "2. Choose the specific exam type report (e.g., One-Liner Report).",
+                "3. Use the dynamic **Exam Title** dropdown to instantly isolate a single test.",
+                "4. To export, tap the **Download** icon at the top right.",
+                "5. The system will generate an Excel (.xlsx) file containing all student scores."
+              ],
+              primaryColor,
+            ),
+            const SizedBox(height: 16),
+            _buildExpansionTile(
+              context,
+              "How are Student Reward Points calculated?",
+              Icons.calculate_outlined,
+              [
+                "**1. Exam Scores:** Students earn 1 Reward Point for every 10 Marks successfully scored in an exam (e.g., 50 Marks = 5 Points).",
+                "**2. Refer & Earn (App Sharing):** Students unlock massive bonuses by inviting friends using their Referral Code.",
+                "   - 1st Invited Friend = 500 Points",
+                "   - 2nd Invited Friend = 1,000 Points",
+                "   - 3rd Invited Friend = 1,500 Points",
+                "   - 4th Invited Friend = 2,000 Points",
+                "   - 5th Invited Friend (Max Limit) = 2,500 Points",
+                "**3. Redemption:** Students can spend these points to discount Premium App Plans, or Administrators can manually reward high-scoring students via the Leaderboard.",
               ],
               primaryColor,
             ),

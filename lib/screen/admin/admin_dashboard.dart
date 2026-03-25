@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_standard_details_screen.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -12,12 +13,15 @@ class AdminDashboard extends StatefulWidget {
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
+enum ChartType { pie, bar }
+
 class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   int _totalSales = 0;
   List<Map<String, dynamic>> _subjectSales = [];
   List<Map<String, dynamic>> _standardSales = [];
   late TabController _tabController;
+  ChartType _chartType = ChartType.pie;
 
   @override
   void initState() {
@@ -72,16 +76,20 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   }
 
   Color _getSubjectColor(String? subject) {
-    switch (subject?.toLowerCase()) {
-      case 'science': return Colors.blue;
-      case 'maths': return Colors.green;
-      case 'english': return Colors.orange;
-      case 'gujarati': return Colors.purple;
-      case 'social science': return Colors.brown;
-      case 'hindi': return Colors.red;
-      case 'sanskrit': return Colors.teal;
-      default: return Colors.blueGrey;
-    }
+    final subjects = ["maths", "science", "english", "gujarati", "social science", "hindi", "sanskrit", "computer"];
+    final colors = [
+      Colors.green, 
+      Colors.lightGreen, 
+      Colors.lime, 
+      Colors.teal, 
+      Colors.cyan, 
+      Colors.lightBlue, 
+      Colors.blue,
+      Colors.indigo
+    ];
+    int index = subjects.indexOf(subject?.toLowerCase() ?? "");
+    if (index != -1) return colors[index % colors.length];
+    return colors[(subject?.hashCode ?? 0).abs() % colors.length];
   }
 
   Color _getStandardColor(String? standard) {
@@ -122,15 +130,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.primary.withOpacity(0.9),
-                      colorScheme.primary,
-                      colorScheme.secondary,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
@@ -266,7 +266,39 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text("Comparison", style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 15)),
-                  Icon(Icons.bar_chart_rounded, color: colorScheme.primary.withOpacity(0.5)),
+                  PopupMenuButton<ChartType>(
+                    icon: Icon(
+                      _chartType == ChartType.pie ? Icons.pie_chart_rounded : Icons.bar_chart_rounded,
+                      color: colorScheme.primary.withOpacity(0.8),
+                    ),
+                    onSelected: (ChartType result) {
+                      setState(() {
+                        _chartType = result;
+                      });
+                    },
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<ChartType>>[
+                      PopupMenuItem<ChartType>(
+                        value: ChartType.pie,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.pie_chart_rounded, size: 20),
+                            const SizedBox(width: 8),
+                            Text('Pie Chart', style: GoogleFonts.poppins()),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<ChartType>(
+                        value: ChartType.bar,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.bar_chart_rounded, size: 20),
+                            const SizedBox(width: 8),
+                            Text('Bar Chart', style: GoogleFonts.poppins()),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -277,39 +309,125 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
                       child: Text("No data available", style: GoogleFonts.poppins(color: Colors.grey))
                     )
                   )
-                : SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: stats.map((item) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                : Column(
+                    children: [
+                      SizedBox(
+                        height: 200,
+                        child: _chartType == ChartType.pie 
+                        ? PieChart(
+                            PieChartData(
+                              sectionsSpace: 2,
+                              centerSpaceRadius: 40,
+                              sections: stats.map((item) {
+                                final percentage = item['percentage'] as double;
+                                final isLarge = percentage > 0.05;
+                                return PieChartSectionData(
+                                  color: item['color'],
+                                  value: percentage,
+                                  title: isLarge ? "${(percentage * 100).toStringAsFixed(1)}%" : "",
+                                  radius: 50,
+                                  titleStyle: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          )
+                        : BarChart(
+                            BarChartData(
+                              alignment: BarChartAlignment.spaceAround,
+                              maxY: 1.0,
+                              barTouchData: BarTouchData(
+                                enabled: true,
+                                touchTooltipData: BarTouchTooltipData(
+                                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                    final subject = stats[group.x.toInt()][labelKey];
+                                    final sales = stats[group.x.toInt()]['sales'];
+                                    return BarTooltipItem(
+                                      '$subject\n₹$sales',
+                                      GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+                                    );
+                                  },
+                                ),
+                              ),
+                              titlesData: FlTitlesData(
+                                show: true,
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) {
+                                      if (value.toInt() >= stats.length) return const SizedBox.shrink();
+                                      final item = stats[value.toInt()];
+                                      String labelStr = item[labelKey].toString();
+                                      if (labelStr.length > 5) {
+                                        labelStr = labelStr.substring(0, 5) + "..";
+                                      }
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Text(
+                                          labelStr,
+                                          style: GoogleFonts.poppins(fontSize: 10, color: colorScheme.onSurfaceVariant),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              ),
+                              gridData: const FlGridData(show: false),
+                              borderData: FlBorderData(show: false),
+                              barGroups: stats.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final item = entry.value;
+                                return BarChartGroupData(
+                                  x: index,
+                                  barRods: [
+                                    BarChartRodData(
+                                      toY: item['percentage'] as double,
+                                      color: item['color'],
+                                      width: 20,
+                                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(6)),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                      ),
+                      const SizedBox(height: 24),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.center,
+                        children: stats.map((item) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Tooltip(
-                                 message: "₹${item['sales']}",
-                                 child: AnimatedContainer(
-                                   duration: const Duration(milliseconds: 500),
-                                   width: 30,
-                                   height: 150.0 * (item['percentage'] as double),
-                                   decoration: BoxDecoration(
-                                     color: item['color'],
-                                     borderRadius: BorderRadius.circular(8),
-                                   ),
-                                 ),
-                               ),
-                              const SizedBox(height: 8),
+                              Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: item['color'],
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
                               Text(
-                                item[labelKey], 
-                                style: GoogleFonts.poppins(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                                item[labelKey],
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ),
             ],
           ),

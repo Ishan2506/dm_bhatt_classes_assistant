@@ -6,6 +6,8 @@ import 'package:dm_bhatt_classes_new/screen/admin/reports/student_performance_re
 import 'package:dm_bhatt_classes_new/screen/admin/reports/regular_exam_report_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/reports/five_min_quiz_report_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/reports/one_liner_report_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/reports/refer_and_earn_report_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/reports/upgrade_plan_report_screen.dart';
 
 class AdminReportsScreen extends StatelessWidget {
   const AdminReportsScreen({super.key});
@@ -68,6 +70,22 @@ class AdminReportsScreen extends StatelessWidget {
               icon: Icons.format_list_numbered_rounded,
               color: Colors.teal,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const OneLinerReportScreen())),
+            ),
+            _buildReportCard(
+              context,
+              title: "Refer & Earn Report",
+              subtitle: "Track recent student referrals and points",
+              icon: Icons.group_add_rounded,
+              color: Colors.indigo,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ReferAndEarnReportScreen())),
+            ),
+            _buildReportCard(
+              context,
+              title: "Upgrade Plan Report",
+              subtitle: "Monitor recent premium account upgrades",
+              icon: Icons.workspace_premium_rounded,
+              color: Colors.amber.shade700,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const UpgradePlanReportScreen())),
             ),
           ],
         ),

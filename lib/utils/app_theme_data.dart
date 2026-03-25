@@ -59,8 +59,8 @@ class MaterialTheme {
   static ColorScheme lightScheme() {
     return const ColorScheme(
       brightness: Brightness.light,
-      primary: Color(0xff445e91),
-      surfaceTint: Color(0xff445e91),
+      primary: Color(0xFF0D47A1), // Matches DMBhattStudentFrontend
+      surfaceTint: Color(0xFF0D47A1),
       onPrimary: Color(0xffffffff),
       primaryContainer: Color(0xffd8e2ff),
       onPrimaryContainer: Color(0xff2b4678),

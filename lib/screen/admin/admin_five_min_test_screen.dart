@@ -36,6 +36,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   List<Map<String, dynamic>> _questions = [];
 
   // --- History Filters & Data ---
+  final TextEditingController _searchController = TextEditingController();
   String? _selectedFilterBoard;
   String? _selectedFilterStandard;
   String? _selectedFilterMedium;
@@ -61,6 +62,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
     _titleController.dispose();
     _unitController.dispose();
     _overviewController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -521,11 +523,17 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   // --- Tab 2: History List ---
   Widget _buildHistoryTab() {
     final filtered = _allTests.where((test) {
+      final query = _searchController.text.toLowerCase();
+      final title = (test['title'] ?? "").toString().toLowerCase();
+      final subject = (test['subject'] ?? "").toString().toLowerCase();
+      final unit = (test['unit'] ?? "").toString().toLowerCase();
+      final matchesSearch = title.contains(query) || subject.contains(query) || unit.contains(query);
+
       final matchBoard = _selectedFilterBoard == null || test['board'] == _selectedFilterBoard;
       final matchStd = _selectedFilterStandard == null || test['std'] == _selectedFilterStandard;
       final matchMedium = _selectedFilterMedium == null || test['medium'] == _selectedFilterMedium;
       final matchStream = _selectedFilterStream == null || test['stream'] == _selectedFilterStream;
-      return matchBoard && matchStd && matchMedium && matchStream;
+      return matchesSearch && matchBoard && matchStd && matchMedium && matchStream;
     }).toList();
 
     return Column(
@@ -537,7 +545,26 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text("Filters", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.grey.shade700)),
+              TextField(
+                controller: _searchController,
+                onChanged: (val) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: "Search by Title or Subject...",
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty 
+                      ? IconButton(
+                          icon: const Icon(Icons.clear), 
+                          onPressed: () => setState(() => _searchController.clear()))
+                      : null,
+                ),
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -565,6 +592,21 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                   ),
                 ],
               ),
+              if (_selectedFilterBoard != null || _selectedFilterStandard != null || _selectedFilterMedium != null || _selectedFilterStream != null || _searchController.text.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: TextButton.icon(
+                    onPressed: () => setState(() {
+                      _selectedFilterBoard = null;
+                      _selectedFilterStandard = null;
+                      _selectedFilterMedium = null;
+                      _selectedFilterStream = null;
+                      _searchController.clear();
+                    }),
+                    icon: const Icon(Icons.filter_list_off, size: 16),
+                    label: Text("Clear All Filters", style: GoogleFonts.poppins(fontSize: 12)),
+                  ),
+                ),
             ],
           ),
         ),

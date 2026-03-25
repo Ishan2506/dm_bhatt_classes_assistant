@@ -26,15 +26,15 @@ class ValidationUtils {
   /// - At least one capital letter
   /// - At least one digit
   /// - At least one special character
-  static String? validatePasswordForToast(String? value, dynamic l10n) {
+  static String? validatePasswordForToast(String? value) {
     if (value == null || value.isEmpty) {
-      return l10n.pleaseEnterPassword;
+      return "Please enter a password";
     }
 
     final trimmed = value.trim();
 
     if (trimmed.length < 6) {
-      return l10n.passwordLengthError;
+      return "Password must be at least 6 characters";
     }
 
     // Requirements: 1 Capital, 1 Digit, 1 Special
@@ -43,14 +43,14 @@ class ValidationUtils {
     bool hasSpecial = trimmed.contains(RegExp(r'[!@#\$&*~%^()_+=|{}:;<>?,./\-]'));
 
     if (!hasCapital || !hasDigit || !hasSpecial) {
-      return l10n.passwordComplexityError;
+      return "Password must contain at least 1 letter, 1 number, and 1 special character";
     }
 
     return null;
   }
 
   /// Explicitly returns null to disable field-level red error messages
-  static String? noFieldError(String? value, dynamic l10n) {
+  static String? noFieldError(String? value) {
     return null;
   }
 }

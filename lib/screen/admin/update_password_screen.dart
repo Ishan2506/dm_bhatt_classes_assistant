@@ -4,7 +4,6 @@ import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
-import 'package:dm_bhatt_classes_new/l10n/app_localizations.dart';
 import 'package:dm_bhatt_classes_new/utils/validation_utils.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,12 +29,11 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: CustomAppBar(
-        title: l10n.updatePassword,
+        title: "Update Password",
         centerTitle: true,
       ),
       body: Stack(
@@ -60,7 +58,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                     hint: "New Password",
                     isVisible: _isNewVisible,
                     onVisibilityChanged: () => setState(() => _isNewVisible = !_isNewVisible),
-                    validator: (val) => ValidationUtils.noFieldError(val, l10n),
+                    validator: (val) => ValidationUtils.noFieldError(val),
                   ),
                   const SizedBox(height: 16),
                   _buildPasswordField(
@@ -82,7 +80,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                       onPressed: _isLoading ? null : () async {
                         if (_formKey.currentState!.validate()) {
                           // Password Complexity Validation
-                          final passwordError = ValidationUtils.validatePasswordForToast(_newPasswordController.text, l10n);
+                          final passwordError = ValidationUtils.validatePasswordForToast(_newPasswordController.text);
                           if (passwordError != null) {
                             CustomToast.showError(context, passwordError);
                             return;
@@ -124,7 +122,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
                       child: Text(
-                        l10n.updatePassword,
+                        "Update Password",
                         style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: colorScheme.onPrimary),
                       ),
                     ),

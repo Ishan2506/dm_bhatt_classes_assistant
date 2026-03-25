@@ -11,8 +11,6 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  flutter_localizations:
-    sdk: flutter
   google_fonts: ^6.3.3
   connectivity_plus: ^6.0.3
 
@@ -35,6 +33,9 @@ dependencies:
   open_filex: ^4.7.0
   pdf: ^3.11.3
   syncfusion_flutter_pdf: ^32.2.5
+  screenshot: ^3.0.0
+  share_plus: ^12.0.1
+  fl_chart: ^1.2.0
 
 
 dev_dependencies:
@@ -51,7 +52,6 @@ flutter_launcher_icons:              # ✅ move config OUTSIDE
   background_color_ios: "#ffffff"
 
 flutter:
-  generate: true
   uses-material-design: true
   assets:
     - assets/app_icons/

@@ -5,6 +5,7 @@ import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_one_liner_exam_screen.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 
 class AdminOneLinerExamHistoryScreen extends StatefulWidget {
   const AdminOneLinerExamHistoryScreen({super.key});
@@ -21,6 +22,8 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
   // Filters
   String? _filterBoard;
   String? _filterStandard;
+  String? _filterMedium;
+  String? _filterStream;
 
   @override
   void initState() {
@@ -79,10 +82,6 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: Text("One Liner History", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        elevation: 0,
-      ),
       body: Column(
         children: [
           _buildSearchAndFilterHeader(),
@@ -159,8 +158,10 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
       
       final matchesBoard = _filterBoard == null || exam['board'] == _filterBoard;
       final matchesStd = _filterStandard == null || exam['std'] == _filterStandard;
+      final matchesMedium = _filterMedium == null || exam['medium'] == _filterMedium;
+      final matchesStream = _filterStream == null || exam['stream'] == _filterStream;
 
-      return matchesSearch && matchesBoard && matchesStd;
+      return matchesSearch && matchesBoard && matchesStd && matchesMedium && matchesStream;
     }).toList();
   }
 
@@ -201,14 +202,14 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
             ),
           ),
           const SizedBox(height: 12),
-          // Filters Row
+          // Filters Row 1
           Row(
             children: [
               Expanded(
-                child: _buildSmallDropdown(
+                child: _buildDropdown(
                   "Board", 
                   _filterBoard, 
-                  ["GSEB", "CBSE"], 
+                  AcademicConstants.boards, 
                   (val) => setState(() {
                     _filterBoard = val;
                     _filterStandard = null;
@@ -217,22 +218,47 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildSmallDropdown(
+                child: _buildDropdown(
                   "Std", 
                   _filterStandard, 
-                  _filterBoard == "GSEB" ? ["6", "7", "8", "9", "10", "11", "12"] : ["6", "7", "8", "9", "10", "11", "12"], 
+                  _filterBoard == null ? [] : AcademicConstants.standards[_filterBoard!] ?? [], 
                   (val) => setState(() => _filterStandard = val)
                 ),
               ),
             ],
           ),
-          if (_filterBoard != null || _filterStandard != null || _searchController.text.isNotEmpty)
+          const SizedBox(height: 12),
+          // Filters Row 2
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  "Medium", 
+                  _filterMedium, 
+                  AcademicConstants.mediums, 
+                  (val) => setState(() => _filterMedium = val)
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDropdown(
+                  "Stream", 
+                  _filterStream, 
+                  ["Science", "Commerce"], 
+                  (val) => setState(() => _filterStream = val)
+                ),
+              ),
+            ],
+          ),
+          if (_filterBoard != null || _filterStandard != null || _filterMedium != null || _filterStream != null || _searchController.text.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: TextButton.icon(
                 onPressed: () => setState(() {
                   _filterBoard = null;
                   _filterStandard = null;
+                  _filterMedium = null;
+                  _filterStream = null;
                   _searchController.clear();
                 }),
                 icon: const Icon(Icons.filter_list_off, size: 16),
@@ -244,22 +270,23 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
     );
   }
 
-  Widget _buildSmallDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
+  Widget _buildDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.purple.shade50.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           isExpanded: true,
+          hint: Text(hint, style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey)),
           value: value,
-          hint: Text(hint, style: GoogleFonts.poppins(fontSize: 12, color: Colors.purple.shade900)),
-          style: GoogleFonts.poppins(fontSize: 12, color: Colors.purple.shade900, fontWeight: FontWeight.bold),
+          icon: const Icon(Icons.arrow_drop_down, size: 20),
           items: [
-            DropdownMenuItem<String>(value: null, child: Text("All $hint", style: const TextStyle(fontWeight: FontWeight.normal))),
-            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e))),
+            DropdownMenuItem(value: null, child: Text("All $hint", style: GoogleFonts.poppins(fontSize: 14))),
+            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))),
           ],
           onChanged: onChanged,
         ),
