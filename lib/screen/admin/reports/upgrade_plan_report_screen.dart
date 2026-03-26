@@ -1,7 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:excel/excel.dart' hide Border;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_app_bar.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 
 class UpgradePlanReportScreen extends StatefulWidget {
   const UpgradePlanReportScreen({super.key});
@@ -11,16 +20,28 @@ class UpgradePlanReportScreen extends StatefulWidget {
 }
 
 class _UpgradePlanReportScreenState extends State<UpgradePlanReportScreen> {
+  bool _isLoading = false;
+  List<dynamic> _allData = [];
+  List<dynamic> _reportData = [];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  // Filter States
   String? _selectedBoard;
   String? _selectedStd;
   String? _selectedMedium;
   String? _selectedStream;
 
-  // Mock Report State
-  late List<Map<String, dynamic>> _allData;
-  late List<Map<String, dynamic>> _reportData;
-  bool _isLoading = false;
-  final TextEditingController _searchController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+    _fetchData();
+  }
 
   @override
   void dispose() {
@@ -28,381 +49,320 @@ class _UpgradePlanReportScreenState extends State<UpgradePlanReportScreen> {
     super.dispose();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _generateMockData();
-  }
+  Future<void> _fetchData() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await ApiService.getUpgradePlanReports(
+        board: _selectedBoard,
+        std: _selectedStd,
+        medium: _selectedMedium,
+        stream: _selectedStream,
+      );
 
-  void _generateMockData() {
-    _allData = [
-      {
-        "student": "Aakash Patel",
-        "plan": "Class 12th Science",
-        "date": "2026-03-24",
-        "amount": "₹999",
-      },
-      {
-        "student": "Ravi Kumar",
-        "plan": "Class 11th Commerce",
-        "date": "2026-03-22",
-        "amount": "₹1,499",
-      },
-      {
-        "student": "Sneha Joshi",
-        "plan": "Class 10th Board Package",
-        "date": "2026-03-15",
-        "amount": "₹899",
-      },
-    ];
-    _reportData = List.from(_allData);
-  }
-
-  void _applyFilters() {
-    if (_selectedBoard == null || _selectedStd == null || _selectedMedium == null) {
-      CustomToast.showError(context, "Please select at least Board, Std, and Medium to fetch the report.");
-      return;
-    }
-    
-    setState(() {
-      _isLoading = true;
-    });
-
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (mounted) {
+      if (res.statusCode == 200) {
         setState(() {
-          final query = _searchController.text.trim().toLowerCase();
-          if (query.isNotEmpty) {
-            _reportData = _allData.where((r) => 
-                r['student'].toString().toLowerCase().contains(query)
-            ).toList();
-          } else {
-            _reportData = List.from(_allData)..shuffle();
-          }
-          _isLoading = false;
+          _allData = jsonDecode(res.body);
+          _reportData = List.from(_allData);
         });
-        CustomToast.showSuccess(context, "Upgrade Plan Report updated.");
+      } else {
+        CustomToast.showError(context, "Failed to load report");
       }
-    });
+    } catch (e) {
+      CustomToast.showError(context, "Error: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _exportToExcel() async {
+    if (_allData.isEmpty) return;
+
+    var excel = Excel.createExcel();
+    Sheet sheetObject = excel["Upgrade Plan"];
+    excel.delete('Sheet1');
+
+    sheetObject.appendRow([
+      TextCellValue('Student Name'),
+      TextCellValue('Upgraded Plan'),
+      TextCellValue('Date'),
+      TextCellValue('Amount Paid'),
+    ]);
+
+    for (var row in _allData) {
+      sheetObject.appendRow([
+        TextCellValue(row['student']?.toString() ?? ''),
+        TextCellValue(row['plan']?.toString() ?? ''),
+        TextCellValue(row['date']?.toString() ?? ''),
+        TextCellValue(row['amount']?.toString() ?? ''),
+      ]);
+    }
+
+    var fileBytes = excel.save();
+    if (fileBytes != null) {
+      final directory = await getTemporaryDirectory();
+      final timestamp = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+      final file = File('${directory.path}/Upgrade_Plan_Report_$timestamp.xlsx');
+      await file.writeAsBytes(fileBytes);
+      await OpenFilex.open(file.path);
+      CustomToast.showSuccess(context, "Exported!");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
-      appBar: AppBar(
-        title: Text(
-          "Upgrade Plan Report",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF0D47A1),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+      appBar: CustomAppBar(
+        title: "Upgrade Plan Report",
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _allData.isEmpty ? null : _exportToExcel,
+            tooltip: "Export to Excel",
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchData,
+            tooltip: "Refresh Data",
+          ),
+        ],
       ),
       body: Column(
         children: [
-          _buildFilterHeader(),
+          _buildSearchAndFilterHeader(),
           Expanded(
-            child: _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : _buildReportList(),
+            child: _isLoading
+                ? const Center(child: CustomLoader())
+                : _reportData.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: _reportData.length,
+                        itemBuilder: (context, index) => _buildReportCard(_reportData[index]),
+                      ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterHeader() {
+  Widget _buildSearchAndFilterHeader() {
     return Container(
-      color: Colors.white,
       padding: const EdgeInsets.all(16),
+      color: Colors.white,
       child: Column(
         children: [
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: "Search by student name...",
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(30),
+                borderSide: BorderSide.none,
+              ),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => _searchController.clear(),
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _buildFilterDropdown("Board", AcademicConstants.boards, _selectedBoard, (val) {
-                  setState(() => _selectedBoard = val);
+                child: _buildFilterDropdown("Board", _selectedBoard, AcademicConstants.boards, (val) {
+                  setState(() {
+                    _selectedBoard = val;
+                    _selectedStd = null;
+                    _fetchData();
+                  });
                 }),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
-                child: _buildFilterDropdown("Std", _selectedBoard != null ? (AcademicConstants.standards[_selectedBoard!] ?? []) : [], _selectedStd, (val) {
+                child: _buildFilterDropdown(
+                  "Std",
+                  _selectedStd,
+                  _selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? [],
+                  (val) {
+                    setState(() {
+                      _selectedStd = val;
+                      _fetchData();
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilterDropdown("Medium", _selectedMedium, AcademicConstants.mediums, (val) {
                   setState(() {
-                    _selectedStd = val;
-                    if (val != "11" && val != "12") _selectedStream = null;
+                    _selectedMedium = val;
+                    _fetchData();
+                  });
+                }),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildFilterDropdown("Stream", _selectedStream, ["Science", "Commerce", "None"], (val) {
+                  setState(() {
+                    _selectedStream = val;
+                    _fetchData();
                   });
                 }),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildFilterDropdown("Medium", AcademicConstants.mediums, _selectedMedium, (val) {
-                  setState(() => _selectedMedium = val);
-                }),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: (_selectedStd == "11" || _selectedStd == "12")
-                    ? _buildFilterDropdown("Stream", ["Science", "Commerce", "Arts"], _selectedStream, (val) {
-                        setState(() => _selectedStream = val);
-                      })
-                    : const SizedBox(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (val) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: "Search by Student Name",
-                hintStyle: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 13),
-                border: InputBorder.none,
-                prefixIcon: Icon(Icons.search, color: Colors.blue.shade900, size: 20),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                          });
-                        },
-                      )
-                    : null,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: _applyFilters,
-              icon: const Icon(Icons.search, color: Colors.white),
-              label: Text("Fetch Report", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0D47A1),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          if (_selectedBoard != null || _selectedStd != null || _selectedMedium != null || _selectedStream != null || _searchController.text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _selectedBoard = null;
+                    _selectedStd = null;
+                    _selectedMedium = null;
+                    _selectedStream = null;
+                    _searchController.clear();
+                    _fetchData();
+                  });
+                },
+                icon: const Icon(Icons.filter_list_off, size: 16),
+                label: Text("Clear All Filters", style: GoogleFonts.poppins(fontSize: 12)),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterDropdown(String hint, List<String> items, String? value, ValueChanged<String?> onChanged) {
+  Widget _buildFilterDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          hint: Text(hint, style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 13)),
-          value: value,
           isExpanded: true,
-          icon: Icon(Icons.keyboard_arrow_down, color: Colors.blue.shade900),
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500)),
-            );
-          }).toList(),
+          hint: Text(hint, style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey)),
+          value: value,
+          icon: const Icon(Icons.arrow_drop_down, size: 20),
+          items: [
+            DropdownMenuItem(value: null, child: Text("All $hint", style: GoogleFonts.poppins(fontSize: 14))),
+            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))),
+          ],
           onChanged: onChanged,
         ),
       ),
     );
   }
 
-  Widget _buildReportList() {
-    if (_reportData.isEmpty) {
-      return Center(
-        child: Text("No upgrade records found for this criteria.", 
-          style: GoogleFonts.poppins(color: Colors.grey.shade600)),
-      );
+  Widget _buildReportCard(dynamic row) {
+    if (_searchQuery.isNotEmpty) {
+      final nameStr = row['student'].toString().toLowerCase();
+      if (!nameStr.contains(_searchQuery.toLowerCase())) {
+        return const SizedBox.shrink();
+      }
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      itemCount: _reportData.length,
-      itemBuilder: (context, index) {
-        final record = _reportData[index];
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.amber.shade700.withOpacity(0.08),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-            border: Border.all(color: Colors.amber.shade700.withOpacity(0.2), width: 1),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                _showUpgradeDetailView(context, record);
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade700.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.workspace_premium_rounded, color: Colors.amber.shade700, size: 24),
-                ),
-                const SizedBox(width: 16),
-                
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        record['student'],
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
+                        "Student Name",
+                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
                       ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              record['plan'],
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade700,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "on ${record['date']}",
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade600,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        row['student'] ?? 'Unknown',
+                        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
-
-                Text(
-                  record['amount'],
-                  style: GoogleFonts.poppins(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    row['amount'] ?? '-',
+                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green.shade900),
                   ),
                 ),
               ],
             ),
-          ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Upgraded Plan",
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    Text(
+                      row['plan'] ?? 'Unknown',
+                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "Date",
+                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                    Text(
+                      row['date'] ?? '-',
+                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
-  },
-    );
   }
 
-  void _showUpgradeDetailView(BuildContext context, Map<String, dynamic> record) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 24),
-              Icon(Icons.auto_awesome_rounded, size: 64, color: Colors.amber.shade500),
-              const SizedBox(height: 16),
-              Text("Standard Upgrade Details", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              _buildDetailRow("Student Name", record['student'], Icons.person, Colors.blue),
-              _buildDetailRow("Upgraded Standard", record['plan'], Icons.school_rounded, Colors.green),
-              _buildDetailRow("Date Authorized", record['date'], Icons.calendar_today, Colors.orange),
-              _buildDetailRow("Amount Paid", record['amount'], Icons.currency_rupee_rounded, Colors.amber.shade700),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D47A1),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text("Close", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value, IconData icon, Color iconColor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: iconColor, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
-              Text(value, style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87)),
-            ],
+          Icon(Icons.upgrade_outlined, size: 64, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(
+            "No upgrade plan records found",
+            style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
           ),
         ],
       ),

@@ -1211,4 +1211,70 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/admin/dashboard/standard-stats/$standard");
     return await http.get(uri);
   }
+
+  static Future<http.Response> getReferAndEarnReports({String? board, String? std, String? medium, String? stream}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+
+    final Map<String, String> queryParams = {};
+    if (board != null) queryParams['board'] = board;
+    if (std != null) queryParams['std'] = std;
+    if (medium != null) queryParams['medium'] = medium;
+    if (stream != null) queryParams['stream'] = stream;
+
+    final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
+    final uri = Uri.parse("$baseUrl/admin/refer-earn-report$queryString");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> getUpgradePlanReports({String? board, String? std, String? medium, String? stream}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+
+    final Map<String, String> queryParams = {};
+    if (board != null) queryParams['board'] = board;
+    if (std != null) queryParams['std'] = std;
+    if (medium != null) queryParams['medium'] = medium;
+    if (stream != null) queryParams['stream'] = stream;
+
+    final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
+    final uri = Uri.parse("$baseUrl/admin/upgrade-plan-report$queryString");
+    return await http.get(uri);
+  }
+
+  // --- Redeem Code APIs ---
+
+  static Future<http.Response> generateRedeemCode({
+    required double discount,
+    String? board,
+    String? std,
+    String? medium,
+    String? stream,
+    required String createdBy,
+  }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/admin/generate-redeem-code");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "discount": discount,
+        "board": board,
+        "std": std,
+        "medium": medium,
+        "stream": stream,
+        "createdBy": createdBy,
+      }),
+    );
+  }
+
+  static Future<http.Response> getRedeemCodes() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/admin/redeem-codes");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> deleteRedeemCode(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/admin/delete-redeem-code/$id");
+    return await http.delete(uri);
+  }
 }

@@ -1,15 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
-import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
+import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 
 class GenerateRedeemCodeScreen extends StatefulWidget {
   const GenerateRedeemCodeScreen({super.key});
@@ -34,6 +34,8 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScreenshotController _screenshotController = ScreenshotController();
   String _searchQuery = "";
+  bool _isLoading = false;
+  bool _isGenerating = false;
 
   @override
   void initState() {
@@ -47,19 +49,22 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
   }
 
   Future<void> _loadHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? historyJson = prefs.getString('redeem_code_history');
-    if (historyJson != null) {
-      final List<dynamic> decodedList = jsonDecode(historyJson);
-      setState(() {
-        _history = List<Map<String, dynamic>>.from(decodedList);
-      });
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.getRedeemCodes();
+      if (response.statusCode == 200) {
+        final List<dynamic> decodedList = jsonDecode(response.body);
+        setState(() {
+          _history = List<Map<String, dynamic>>.from(decodedList);
+        });
+      } else {
+        if (mounted) CustomToast.showError(context, "Failed to load history");
+      }
+    } catch (e) {
+      if (mounted) CustomToast.showError(context, "Error loading history: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _saveHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('redeem_code_history', jsonEncode(_history));
   }
 
   @override
@@ -69,7 +74,7 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
     super.dispose();
   }
 
-  void _generateCode() {
+  Future<void> _generateCode() async {
     if (_selectedBoard == null || _selectedStd == null || _selectedMedium == null || _selectedCreator == null || _discountController.text.isEmpty) {
       CustomToast.showError(context, "Please fill all required fields");
       return;
@@ -86,34 +91,40 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
       return;
     }
 
-    // Generate a random 8-character alphanumeric code
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final rnd = Random();
-    String code = String.fromCharCodes(Iterable.generate(8, (_) => chars.codeUnitAt(rnd.nextInt(chars.length))));
+    setState(() => _isGenerating = true);
+    try {
+      final response = await ApiService.generateRedeemCode(
+        discount: discountValue.toDouble(),
+        board: _selectedBoard,
+        std: _selectedStd,
+        medium: _selectedMedium,
+        stream: _selectedStream,
+        createdBy: _selectedCreator!,
+      );
 
-    setState(() {
-      _history.insert(0, {
-        'code': code,
-        'creator': _selectedCreator,
-        'discount': _discountController.text,
-        'board': _selectedBoard,
-        'std': _selectedStd,
-        'medium': _selectedMedium,
-        'stream': _selectedStream,
-        'used': false,
-        'date': DateTime.now().toIso8601String(),
-      });
-      // Clear inputs after success
-      _selectedBoard = null;
-      _selectedStd = null;
-      _selectedMedium = null;
-      _selectedStream = null;
-      _selectedCreator = null;
-      _discountController.clear();
-    });
-
-    _saveHistory();
-    CustomToast.showSuccess(context, "Code Generated: $code");
+      if (response.statusCode == 201) {
+        if (mounted) CustomToast.showSuccess(context, "Code Generated Successfully");
+        
+        // Clear inputs after success
+        setState(() {
+          _selectedBoard = null;
+          _selectedStd = null;
+          _selectedMedium = null;
+          _selectedStream = null;
+          _selectedCreator = null;
+          _discountController.clear();
+        });
+        
+        _loadHistory(); // Refresh history
+      } else {
+        final error = jsonDecode(response.body)['message'] ?? "Failed to generate code";
+        if (mounted) CustomToast.showError(context, error);
+      }
+    } catch (e) {
+      if (mounted) CustomToast.showError(context, "Error: $e");
+    } finally {
+      if (mounted) setState(() => _isGenerating = false);
+    }
   }
 
   void _confirmDelete(Map<String, dynamic> row) {
@@ -133,13 +144,23 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
               backgroundColor: Colors.red,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              setState(() {
-                _history.remove(row);
-              });
-              _saveHistory();
-              CustomToast.showSuccess(context, "Code deleted successfully");
+              setState(() => _isLoading = true);
+              try {
+                final response = await ApiService.deleteRedeemCode(row['_id']);
+                if (response.statusCode == 200) {
+                  if (mounted) CustomToast.showSuccess(context, "Code deleted successfully");
+                  _loadHistory();
+                } else {
+                  final error = jsonDecode(response.body)['message'] ?? "Failed to delete code";
+                  if (mounted) CustomToast.showError(context, error);
+                }
+              } catch (e) {
+                if (mounted) CustomToast.showError(context, "Error: $e");
+              } finally {
+                if (mounted) setState(() => _isLoading = false);
+              }
             },
             child: Text("Delete", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -255,7 +276,22 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
             children: [
               Expanded(child: _buildDropdown("Board", _selectedBoard, AcademicConstants.boards, (v) => setState(() { _selectedBoard = v; _selectedStd = null; }))),
               const SizedBox(width: 12),
-              Expanded(child: _buildDropdown("Std", _selectedStd, _selectedBoard != null ? (AcademicConstants.standards[_selectedBoard!] ?? []) : [], (v) => setState(() => _selectedStd = v))),
+              Expanded(
+                child: _buildDropdown(
+                  "Std", 
+                  _selectedStd, 
+                  _selectedBoard != null ? (AcademicConstants.standards[_selectedBoard!] ?? []) : [], 
+                  (v) {
+                    setState(() {
+                      _selectedStd = v;
+                      // Only 11th and 12th standards have streams
+                      if (v != "11" && v != "12") {
+                        _selectedStream = null;
+                      }
+                    });
+                  }
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -263,7 +299,11 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
             children: [
               Expanded(child: _buildDropdown("Medium", _selectedMedium, AcademicConstants.mediums, (v) => setState(() => _selectedMedium = v))),
               const SizedBox(width: 12),
-              Expanded(child: _buildDropdown("Stream", _selectedStream, ["Science", "Commerce"], (v) => setState(() => _selectedStream = v))),
+              Expanded(
+                child: (_selectedStd == "11" || _selectedStd == "12")
+                    ? _buildDropdown("Stream", _selectedStream, ["Science", "Commerce"], (v) => setState(() => _selectedStream = v))
+                    : const SizedBox(),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -293,12 +333,14 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: _generateCode,
+              onPressed: _isGenerating ? null : _generateCode,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0D47A1), // Primary Theme Color
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text("Generate Code", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: _isGenerating 
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text("Generate Code", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ),
         ],
@@ -354,7 +396,9 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
           ),
         ),
         Expanded(
-          child: filtered.isEmpty
+          child: _isLoading 
+            ? const Center(child: CustomLoader())
+            : filtered.isEmpty
               ? Center(child: Text("No codes generated yet", style: GoogleFonts.poppins(color: Colors.grey)))
               : ListView.builder(
                   padding: const EdgeInsets.all(12),
@@ -420,7 +464,7 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
                                 const Spacer(),
                                 const Icon(Icons.person_outline, size: 16, color: Colors.grey),
                                 const SizedBox(width: 4),
-                                Text("By: ${row['creator']}", style: GoogleFonts.poppins(color: Colors.grey.shade700)),
+                                Text("By: ${row['createdBy'] ?? row['creator']}", style: GoogleFonts.poppins(color: Colors.grey.shade700)),
                               ],
                             ),
                             const Divider(height: 20),
@@ -438,7 +482,7 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: Text(
-                                DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(row['date'])),
+                                DateFormat('dd MMM yyyy, HH:mm').format(DateTime.parse(row['createdAt'] ?? row['date'] ?? DateTime.now().toIso8601String())),
                                 style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey),
                               ),
                             )
