@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
+import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 
 class AdminLeaderboardScreen extends StatefulWidget {
   const AdminLeaderboardScreen({super.key});
@@ -16,67 +19,62 @@ class _AdminLeaderboardScreenState extends State<AdminLeaderboardScreen> {
   String? _selectedMedium;
   String? _selectedStream;
 
-  // Mock Leaderboard State (Top 5)
-  late List<Map<String, dynamic>> _leaderboard;
+  // Leaderboard State
+  List<Map<String, dynamic>> _leaderboard = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _generateMockData();
   }
 
-  void _generateMockData() {
-    _leaderboard = [
-      {
-        "id": "1",
-        "name": "Arjun Patel",
-        "points": 5420,
-        "avatar": "https://i.pravatar.cc/150?u=arjun",
-        "isGifted": false
-      },
-      {
-        "id": "2",
-        "name": "Priya Sharma",
-        "points": 4890,
-        "avatar": "https://i.pravatar.cc/150?u=priya",
-        "isGifted": true
-      },
-      {
-        "id": "3",
-        "name": "Rohan Desai",
-        "points": 4750,
-        "avatar": "https://i.pravatar.cc/150?u=rohan",
-        "isGifted": false
-      },
-      {
-        "id": "4",
-        "name": "Neha Joshi",
-        "points": 4200,
-        "avatar": "https://i.pravatar.cc/150?u=neha",
-        "isGifted": false
-      },
-      {
-        "id": "5",
-        "name": "Dev Shah",
-        "points": 3950,
-        "avatar": "https://i.pravatar.cc/150?u=dev",
-        "isGifted": false
-      },
-    ];
-  }
 
-  void _applyFilters() {
+  Future<void> _applyFilters() async {
     if (_selectedBoard == null || _selectedStd == null || _selectedMedium == null) {
-      CustomToast.showError(context, "Please select at least Board, Std, and Medium to fetch the leaderboard.");
+      CustomToast.showError(context, "Please select Broad, Std, and Medium.");
       return;
     }
     
-    // In a real app, you'd fetch API data here based on the filters.
-    // For now, we simulate a loading/refresh state.
-    setState(() {
-      _leaderboard.shuffle(); // Just shuffle mock data to simulate a new list
-    });
-    CustomToast.showSuccess(context, "Leaderboard updated for Std $_selectedStd $_selectedMedium medium.");
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.getAdminLeaderboard(
+        board: _selectedBoard,
+        std: _selectedStd,
+        medium: _selectedMedium,
+        stream: _selectedStream,
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          _leaderboard = List<Map<String, dynamic>>.from(data);
+        });
+        if (mounted) CustomToast.showSuccess(context, "Top 5 Leaders Fetched!");
+      } else {
+        if (mounted) CustomToast.showError(context, "Failed to fetch leaderboard");
+      }
+    } catch (e) {
+      if (mounted) CustomToast.showError(context, "Error: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleGift(String userId, int index) async {
+    try {
+      final response = await ApiService.toggleStudentGiftStatus(userId);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _leaderboard[index]['isGifted'] = data['isGifted'];
+        });
+        if (mounted) CustomToast.showSuccess(context, data['message'] ?? "Status updated");
+      } else {
+        if (mounted) CustomToast.showError(context, "Failed to update gift status");
+      }
+    } catch (e) {
+      if (mounted) CustomToast.showError(context, "Error toggling status: $e");
+    }
   }
 
   Color _getRankColor(int index) {
@@ -198,6 +196,11 @@ class _AdminLeaderboardScreenState extends State<AdminLeaderboardScreen> {
   }
 
   Widget _buildLeaderboardList() {
+    if (_isLoading) return const Center(child: CustomLoader());
+    if (_leaderboard.isEmpty) {
+      return Center(child: Text("No students found for this selection.", style: GoogleFonts.poppins(color: Colors.grey)));
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       itemCount: _leaderboard.length,
@@ -205,7 +208,7 @@ class _AdminLeaderboardScreenState extends State<AdminLeaderboardScreen> {
         final student = _leaderboard[index];
         final rank = index + 1;
         final rankColor = _getRankColor(index);
-        final bool isGifted = student['isGifted'];
+        final bool isGifted = student['isGifted'] ?? false;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
@@ -251,7 +254,7 @@ class _AdminLeaderboardScreenState extends State<AdminLeaderboardScreen> {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.grey.shade200,
-                  backgroundImage: NetworkImage(student['avatar']),
+                  backgroundImage: student['avatar'] != null ? NetworkImage(ApiService.getFileUrl(student['avatar'])) : null,
                   onBackgroundImageError: (e, s) {},
                   child: student['avatar'] == null ? const Icon(Icons.person, color: Colors.grey) : null,
                 ),
@@ -291,11 +294,7 @@ class _AdminLeaderboardScreenState extends State<AdminLeaderboardScreen> {
 
                 // Gifted Toggle Button
                 InkWell(
-                  onTap: () {
-                    setState(() {
-                      _leaderboard[index]['isGifted'] = !isGifted;
-                    });
-                  },
+                  onTap: () => _toggleGift(student['_id'], index),
                   borderRadius: BorderRadius.circular(12),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),

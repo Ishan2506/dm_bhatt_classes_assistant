@@ -1277,4 +1277,30 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/admin/delete-redeem-code/$id");
     return await http.delete(uri);
   }
+
+  // --- Leaderboard APIs ---
+
+  static Future<http.Response> getAdminLeaderboard({String? board, String? std, String? medium, String? stream}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+
+    final Map<String, String> queryParams = {};
+    if (board != null) queryParams['board'] = board;
+    if (std != null) queryParams['std'] = std;
+    if (medium != null) queryParams['medium'] = medium;
+    if (stream != null && stream != 'None') queryParams['stream'] = stream;
+
+    final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
+    final uri = Uri.parse("$baseUrl/admin/leaderboard$queryString");
+    return await http.get(uri);
+  }
+
+  static Future<http.Response> toggleStudentGiftStatus(String userId) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/admin/toggle-gift-status");
+    return await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"userId": userId}),
+    );
+  }
 }
