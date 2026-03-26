@@ -74,7 +74,7 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
           _buildOptionTile(context, Icons.analytics_outlined, "Reports & Analytics", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminReportsScreen()));
           }),
-          _buildOptionTile(context, Icons.local_offer_outlined, "Generate Redeem Code", () {
+          _buildOptionTile(context, Icons.local_offer_outlined, "Generate Refer Code", () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const GenerateRedeemCodeScreen()));
           }),
           _buildOptionTile(context, Icons.emoji_events_outlined, "Leaderboard", () {

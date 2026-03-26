@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:excel/excel.dart' hide Border;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_app_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,6 +12,7 @@ import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
+import 'package:universal_html/html.dart' as html;
 
 class OneLinerReportScreen extends StatefulWidget {
   const OneLinerReportScreen({super.key});
@@ -108,13 +110,27 @@ class _OneLinerReportScreenState extends State<OneLinerReportScreen> {
       ]);
     }
 
-    var fileBytes = excel.save();
+    var fileBytes = excel.encode();
     if (fileBytes != null) {
-      final directory = await getTemporaryDirectory();
       final timestamp = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
-      final file = File('${directory.path}/OneLiner_Report_$timestamp.xlsx');
+      final fileName = "OneLiner_Report_$timestamp.xlsx";
+
+      if (kIsWeb) {
+        final blob = html.Blob([fileBytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute("download", fileName)
+          ..click();
+        html.Url.revokeObjectUrl(url);
+        CustomToast.showSuccess(context, "Exported!");
+        return;
+      }
+
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/$fileName');
       await file.writeAsBytes(fileBytes);
       await OpenFilex.open(file.path);
+      CustomToast.showSuccess(context, "Exported!");
     }
   }
 

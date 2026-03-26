@@ -245,7 +245,7 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey.shade50,
         appBar: AppBar(
-          title: Text("Generate Redeem Code", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          title: Text("Generate Refer Code", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
           elevation: 0,
           bottom: const TabBar(
             tabs: [

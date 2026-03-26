@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:excel/excel.dart' hide Border;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:universal_html/html.dart' as html;
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_app_bar.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
@@ -97,11 +99,24 @@ class _UpgradePlanReportScreenState extends State<UpgradePlanReportScreen> {
       ]);
     }
 
-    var fileBytes = excel.save();
+    var fileBytes = excel.encode();
     if (fileBytes != null) {
-      final directory = await getTemporaryDirectory();
       final timestamp = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
-      final file = File('${directory.path}/Upgrade_Plan_Report_$timestamp.xlsx');
+      final fileName = "Upgrade_Plan_Report_$timestamp.xlsx";
+
+      if (kIsWeb) {
+        final blob = html.Blob([fileBytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute("download", fileName)
+          ..click();
+        html.Url.revokeObjectUrl(url);
+        CustomToast.showSuccess(context, "Exported!");
+        return;
+      }
+
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/$fileName');
       await file.writeAsBytes(fileBytes);
       await OpenFilex.open(file.path);
       CustomToast.showSuccess(context, "Exported!");
