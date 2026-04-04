@@ -483,8 +483,10 @@ class ApiService {
       body: jsonEncode({
         "title": title,
         "subject": subject,
+        "board": board,
         "std": std,
         "medium": medium,
+        "stream": stream ?? "-",
         "unit": unit,
         "totalMarks": totalMarks,
         "questions": questions,
@@ -531,8 +533,10 @@ class ApiService {
       body: jsonEncode({
         "title": title,
         "subject": subject,
+        "board": board,
         "std": std,
         "medium": medium,
+        "stream": stream ?? "-",
         "unit": unit,
         "totalMarks": totalMarks,
         "questions": questions,

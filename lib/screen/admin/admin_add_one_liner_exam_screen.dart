@@ -201,7 +201,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
               value: _selectedBoard,
               decoration: InputDecoration(labelText: "Board", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
               items: AcademicConstants.boards.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
-              onChanged: (val) => setState(() {
+              onChanged: _id != null ? null : (val) => setState(() {
                 _selectedBoard = val;
                 _selectedStd = null;
                 _selectedSubject = null;
@@ -215,7 +215,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
                     value: _selectedStd,
                     decoration: InputDecoration(labelText: "Standard", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                     items: (_selectedBoard == null ? <String>[] : AcademicConstants.standards[_selectedBoard!] ?? <String>[]).map((std) => DropdownMenuItem(value: std, child: Text(std))).toList(),
-                    onChanged: (val) => setState(() {
+                    onChanged: _id != null ? null : (val) => setState(() {
                       _selectedStd = val;
                       _selectedSubject = null;
                     }),
@@ -227,7 +227,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
                     value: _selectedMedium,
                     decoration: InputDecoration(labelText: "Medium", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                     items: AcademicConstants.mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                    onChanged: (val) => setState(() => _selectedMedium = val),
+                    onChanged: _id != null ? null : (val) => setState(() => _selectedMedium = val),
                   ),
                 ),
               ],
@@ -238,7 +238,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
                 value: _selectedStream,
                 decoration: InputDecoration(labelText: "Stream", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                 items: ["Science", "Commerce"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (val) => setState(() => _selectedStream = val),
+                onChanged: _id != null ? null : (val) => setState(() => _selectedStream = val),
               ),
               const SizedBox(height: 16),
             ],
@@ -254,14 +254,14 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
                 }
                 return AcademicConstants.subjects[key] ?? <String>[];
               }()).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
-              onChanged: (val) => setState(() => _selectedSubject = val),
+              onChanged: _id != null ? null : (val) => setState(() => _selectedSubject = val),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _selectedMarks,
               decoration: InputDecoration(labelText: "Marks", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
               items: AcademicConstants.oneLinerMarks.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-              onChanged: (val) => setState(() => _selectedMarks = val),
+              onChanged: _id != null ? null : (val) => setState(() => _selectedMarks = val),
             ),
             const SizedBox(height: 16),
             TextField(

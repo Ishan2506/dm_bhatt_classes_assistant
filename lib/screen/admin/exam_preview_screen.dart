@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
@@ -241,15 +242,17 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                  children: [
                      _buildEditableRow(Icons.title, "Exam Title", _titleController),
                      const SizedBox(height: 12),
-                    _buildEditableRow(Icons.book, "Subject", _subjectController),
+                    _buildEditableRow(Icons.book, "Subject", _subjectController, readOnly: true),
                     const SizedBox(height: 12),
-                    _buildEditableRow(Icons.school, "Standard", _stdController),
+                    _buildEditableRow(Icons.school, "Standard", _stdController, readOnly: true),
                     const SizedBox(height: 12),
-                    _buildEditableRow(Icons.language, "Medium", _mediumController),
+                    _buildEditableRow(Icons.language, "Medium", _mediumController, readOnly: true),
                     const SizedBox(height: 12),
                     _buildEditableRow(Icons.topic, "Unit", _unitController),
                     const SizedBox(height: 12),
-                    _buildEditableRow(Icons.star, "Total Marks", _marksController, isNumber: true),
+                    _buildDropdownRow(Icons.account_balance_outlined, "Board", _examBoard, AcademicConstants.boards, null),
+                    const SizedBox(height: 12),
+                    _buildEditableRow(Icons.star, "Total Marks", _marksController, isNumber: true, readOnly: true),
                  ],
                ),
              ),
@@ -323,7 +326,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
     );
   }
 
-  Widget _buildEditableRow(IconData icon, String label, TextEditingController controller, {bool isNumber = false}) {
+  Widget _buildEditableRow(IconData icon, String label, TextEditingController controller, {bool isNumber = false, bool readOnly = false}) {
      return Row(
        children: [
           Icon(icon, size: 20, color: Colors.grey),
@@ -331,6 +334,7 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
           Expanded(
             child: TextField(
                controller: controller,
+               readOnly: readOnly,
                keyboardType: isNumber ? TextInputType.number : TextInputType.text,
                decoration: InputDecoration(
                  labelText: label,
@@ -339,6 +343,28 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                ),
                style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+     );
+  }
+
+   Widget _buildDropdownRow(IconData icon, String label, String value, List<String> items, void Function(String?)? onChanged) {
+     return Row(
+       children: [
+          Icon(icon, size: 20, color: Colors.grey),
+          const SizedBox(width: 12),
+          Expanded(
+            child: DropdownButtonFormField<String>(
+               value: value,
+               items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.w600)))).toList(),
+               onChanged: onChanged,
+               decoration: InputDecoration(
+                 labelText: label,
+                 isDense: true,
+                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+               ),
             ),
           ),
        ],
