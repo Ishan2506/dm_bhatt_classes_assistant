@@ -69,7 +69,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
   String? _editingMaterialId;
 
   final List<String> _streams = ["Science", "Commerce"];
-  final List<String> _pastYears = List.generate(10, (index) => (DateTime.now().year - 1 - index).toString());
+  final List<String> _pastYears = List.generate(10, (index) => (DateTime.now().year - index).toString());
   final List<String> _allYears = List.generate(10, (index) => (DateTime.now().year - index).toString());
   final List<String> _units = List.generate(20, (index) => (index + 1).toString());
 
