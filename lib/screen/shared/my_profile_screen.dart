@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/screen/shared/edit_profile_screen.dart';
 
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
@@ -21,8 +22,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   String _name = "User";
   String _role = "Assistant";
   String _mobile = "-";
-  String _aadhar = "-";
-  String _address = "-";
+  String _email = "-";
   bool _isLoading = true;
   File? _profileImage;
 
@@ -84,21 +84,29 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       final effectivePhone = savedPhone.isNotEmpty ? savedPhone : jwtPhone;
 
       Map<String, dynamic>? apiProfile;
-
-      // Assistant profile from API list endpoint
-      // Admin profile usually comes from savedUserData
-      // If role was Assistant (legacy), we ignore the list fetch as that API is removed
+      
+      try {
+        final response = await ApiService.getProfile();
+        if (response.statusCode == 200) {
+          final decoded = jsonDecode(response.body);
+          if (decoded['user'] != null) {
+            apiProfile = Map<String, dynamic>.from(decoded['user']);
+            if (decoded['profile'] != null) {
+              apiProfile.addAll(Map<String, dynamic>.from(decoded['profile']));
+            }
+          }
+        }
+      } catch (_) {}
 
 
       final profile = apiProfile ?? savedUserData ?? jwtPayload ?? <String, dynamic>{};
 
       setState(() {
         _assistantId = _readStringFromMap(profile, ['_id', 'id']);
-        _name = _readStringFromMap(profile, ['name', 'fullName', 'username'], fallback: _name);
+        _name = _readStringFromMap(profile, ['name', 'firstName', 'fullName', 'username'], fallback: _name);
         _role = _readStringFromMap(profile, ['role'], fallback: savedRole);
+        _email = _readStringFromMap(profile, ['email'], fallback: '-');
         _mobile = _readStringFromMap(profile, ['phone', 'mobile', 'phoneNum'], fallback: effectivePhone.isNotEmpty ? effectivePhone : '-');
-        _aadhar = _readStringFromMap(profile, ['aadharNum', 'aadharNumber', 'aadhar'], fallback: '-');
-        _address = _readStringFromMap(profile, ['address', 'location'], fallback: '-');
       });
 
       if (_mobile != '-' && _mobile.isNotEmpty) {
@@ -116,26 +124,20 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   void _navigateToEditProfile() async {
-    /*
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfileScreen(
-          assistantId: _assistantId,
           name: _name,
-          role: _role,
           mobile: _mobile,
-          aadhar: _aadhar,
-          address: _address,
+          email: _email,
         ),
       ),
     );
 
-    if (result != null && result is Map) {
+    if (result == true) {
       _loadProfileFromApi();
     }
-    */
-    CustomToast.showInfo(context, "Edit Profile feature is currently being updated.");
   }
 
   @override
@@ -200,9 +202,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
             _buildDetailItem(context, Icons.phone_outlined, "Mobile Number", _mobile),
             const SizedBox(height: 16),
-            _buildDetailItem(context, Icons.credit_card_outlined, "Aadhar Number", _aadhar),
-            const SizedBox(height: 16),
-            _buildDetailItem(context, Icons.location_on_outlined, "Address", _address),
+            _buildDetailItem(context, Icons.email_outlined, "Email Address", _email),
           ],
         ),
       ),

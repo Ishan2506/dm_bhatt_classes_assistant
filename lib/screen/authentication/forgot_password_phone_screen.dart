@@ -16,7 +16,7 @@ class ForgotPasswordPhoneScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -79,7 +79,7 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
               const SizedBox(height: 20),
               
               Text(
-                "Don't worry! It happens. Please enter the phone number associated with your account.",
+                "Don't worry! It happens. Please enter the email address associated with your account.",
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
@@ -89,14 +89,10 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Phone Number Field
+              // Email Field
               TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
-                ],
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
                 style: GoogleFonts.poppins(
                   color: Colors.black,
                   fontWeight: FontWeight.w600,
@@ -104,19 +100,19 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter phone number';
+                    return 'Please enter email address';
                   }
-                  if (value.length != 10) {
-                    return 'Phone number must be 10 digits';
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    return 'Please enter a valid email address';
                   }
                   return null;
                 },
                 decoration: InputDecoration(
-                  labelText: "Phone Number",
+                  labelText: "Email Address",
                   labelStyle: GoogleFonts.poppins(color: Colors.grey),
-                  hintText: "Enter your phone number",
+                  hintText: "Enter your email address",
                   hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
-                  prefixIcon: const Icon(Icons.phone_android_rounded, color: Colors.black54),
+                  prefixIcon: const Icon(Icons.email_outlined, color: Colors.black54),
                   filled: true,
                   fillColor: Colors.grey.shade50,
                   border: OutlineInputBorder(
@@ -144,13 +140,13 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                        CustomLoader.show(context);
-                       ApiService.forgetPassword(phone: _phoneController.text).then((response) {
+                       ApiService.forgetPassword(email: _emailController.text).then((response) {
                           if (!mounted) return;
                           CustomLoader.hide(context);
                           if (response.statusCode == 200) {
                             Navigator.push(
                               context, 
-                              MaterialPageRoute(builder: (context) => ForgotPasswordOtpScreen(phone: _phoneController.text)),
+                              MaterialPageRoute(builder: (context) => ForgotPasswordOtpScreen(email: _emailController.text)),
                             );
                           } else {
                             CustomToast.showError(context, "Failed to send OTP. User may not exist.");

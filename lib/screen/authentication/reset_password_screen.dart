@@ -9,8 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/constant/app_images.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String phone;
-  const ResetPasswordScreen({super.key, required this.phone});
+  final String email;
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -149,7 +149,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     if (_formKey.currentState!.validate()) {
                        // Perform Reset Logic (API call etc)
                        CustomLoader.show(context);
-                       ApiService.resetPassword(phone: widget.phone, newPassword: _newPasswordController.text).then((response) {
+                       ApiService.resetPassword(email: widget.email, newPassword: _newPasswordController.text).then((response) {
                           if (!mounted) return;
                           CustomLoader.hide(context);
                           if (response.statusCode == 200) {

@@ -9,8 +9,8 @@ import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 
 
 class ForgotPasswordOtpScreen extends StatefulWidget {
-  final String phone;
-  const ForgotPasswordOtpScreen({super.key, required this.phone});
+  final String email;
+  const ForgotPasswordOtpScreen({super.key, required this.email});
 
   @override
   State<ForgotPasswordOtpScreen> createState() => _ForgotPasswordOtpScreenState();
@@ -98,7 +98,7 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
               const SizedBox(height: 20),
 
             Text(
-              "We have sent the verification code to your registered phone number ending in ${widget.phone.length > 4 ? widget.phone.substring(widget.phone.length - 4) : '****'}",
+              "We have sent the verification code to your registered email address:\n${widget.email}",
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
@@ -112,7 +112,7 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
             Center(
               child: Pinput(
                 controller: _pinController,
-                length: 4,
+                length: 6,
                 defaultPinTheme: defaultPinTheme,
                 focusedPinTheme: focusedPinTheme,
                 pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
@@ -131,15 +131,15 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
               height: 56,
               child: ElevatedButton(
                 onPressed: () {
-                   if (_pinController.text.length == 4) {
+                   if (_pinController.text.length == 6) {
                      CustomLoader.show(context);
-                     ApiService.verifyOtp(phone: widget.phone, otp: _pinController.text).then((response) {
+                     ApiService.verifyOtp(email: widget.email, otp: _pinController.text).then((response) {
                         if (!mounted) return;
                         CustomLoader.hide(context);
                         if (response.statusCode == 200) {
                            Navigator.push(
                              context,
-                             MaterialPageRoute(builder: (context) => ResetPasswordScreen(phone: widget.phone)),
+                             MaterialPageRoute(builder: (context) => ResetPasswordScreen(email: widget.email)),
                            );
                         } else {
                            CustomToast.showError(context, "Invalid OTP");
@@ -150,7 +150,7 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
                      });
                    } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(content: Text("Please enter full 4-digit code")),
+                         const SnackBar(content: Text("Please enter full 6-digit code")),
                        );
                    }
                 },

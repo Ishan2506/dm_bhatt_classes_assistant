@@ -7,6 +7,7 @@ import 'package:dm_bhatt_classes_new/utils/connectivity_service.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = "http://103.212.121.139:5000/api";
@@ -38,6 +39,56 @@ class ApiService {
     return true;
   }
 
+  static Future<Map<String, String>> _getHeaders({bool isJson = true}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    
+    final Map<String, String> headers = {
+      'User-Agent': 'Flutter-App',
+    };
+
+    if (isJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    return headers;
+  }
+
+  static Future<http.Response> getProfile() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/profile");
+    return await http.get(uri, headers: await _getHeaders());
+  }
+
+  static Future<http.Response> editProfile({
+    String? firstName,
+    String? phoneNum,
+    String? email,
+    File? imageFile,
+  }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/profile");
+    final request = http.MultipartRequest('PUT', uri);
+
+    if (firstName != null) request.fields['firstName'] = firstName;
+    if (phoneNum != null) request.fields['phoneNum'] = phoneNum;
+    if (email != null) request.fields['email'] = email;
+
+    if (imageFile != null) {
+      final multipartFile = await http.MultipartFile.fromPath('photo', imageFile.path);
+      request.files.add(multipartFile);
+    }
+
+    request.headers.addAll(await _getHeaders(isJson: false));
+
+    final streamResponse = await request.send();
+    return await http.Response.fromStream(streamResponse);
+  }
+
   static Future<http.Response> addExploreProduct({
     required String name,
     required String description,
@@ -67,6 +118,8 @@ class ApiService {
       filename: file.name,
     );
     request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -110,6 +163,8 @@ class ApiService {
       );
       request.files.add(multipartFile);
     }
+    
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -118,7 +173,7 @@ class ApiService {
   static Future<http.Response> deleteExploreProduct(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/explore/delete/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   static Future<http.Response> loginUser({
@@ -185,6 +240,8 @@ class ApiService {
       request.files.add(multipartFile);
     }
 
+    request.headers.addAll(await _getHeaders(isJson: false));
+
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
   }
@@ -235,6 +292,8 @@ class ApiService {
       request.files.add(multipartFile);
     }
 
+    request.headers.addAll(await _getHeaders(isJson: false));
+
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
   }
@@ -242,7 +301,7 @@ class ApiService {
   static Future<http.Response> deleteStudent(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/delete-student/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
 
@@ -260,7 +319,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/paperset/create");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         'examName': examName,
         'date': date,
@@ -284,7 +343,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/paperset/update-status/$id");
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         'status': status,
         'performedBy': performedBy, 
@@ -322,7 +381,7 @@ class ApiService {
     };
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode(body),
     );
   }
@@ -330,12 +389,12 @@ class ApiService {
   static Future<http.Response> deletePaperSet(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/delete-paperset/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
 
   static Future<http.Response> forgetPassword({
-    required String phone,
+    required String email,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/auth/forget-password");
@@ -346,14 +405,14 @@ class ApiService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'phoneNum': phone,
+        'email': email,
       }),
     );
     return response;
   }
 
   static Future<http.Response> verifyOtp({
-    required String phone,
+    required String email,
     required String otp,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -365,7 +424,7 @@ class ApiService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'phoneNum': phone,
+        'email': email,
         'otp': otp,
       }),
     );
@@ -373,7 +432,7 @@ class ApiService {
   }
 
   static Future<http.Response> resetPassword({
-    required String phone,
+    required String email,
     required String newPassword,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -385,7 +444,7 @@ class ApiService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'phoneNum': phone,
+        'email': email,
         'newPassword': newPassword,
       }),
     );
@@ -425,6 +484,8 @@ class ApiService {
     );
     request.files.add(multipartFile);
 
+    request.headers.addAll(await _getHeaders(isJson: false));
+
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
   }
@@ -441,6 +502,8 @@ class ApiService {
       filename: file.name,
     );
     request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -459,6 +522,8 @@ class ApiService {
       filename: filename,
     );
     request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -479,7 +544,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/exam/create");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "title": title,
         "subject": subject,
@@ -529,7 +594,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/exam/update/$id");
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "title": title,
         "subject": subject,
@@ -547,7 +612,7 @@ class ApiService {
   static Future<http.Response> deleteExam(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/delete/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   // --- 5 Min Test APIs ---
@@ -567,7 +632,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/fiveMinTest/create");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "title": title,
         "board": board,
@@ -604,7 +669,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/fiveMinTest/update/$id");
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "title": title,
         "board": board,
@@ -622,7 +687,7 @@ class ApiService {
   static Future<http.Response> deleteFiveMinTest(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/delete/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   static Future<http.Response> uploadFiveMinTestPdf({required List<int> bytes, required String filename}) async {
@@ -636,6 +701,8 @@ class ApiService {
       filename: filename,
     );
     request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -657,7 +724,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/topRanker/create");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "studentName": studentName,
         "percentage": percentage,
@@ -692,7 +759,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/topRanker/update/$id");
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "studentName": studentName,
         "percentage": percentage,
@@ -709,7 +776,7 @@ class ApiService {
   static Future<http.Response> deleteTopRanker(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/delete/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   // --- Event APIs ---
@@ -748,6 +815,8 @@ class ApiService {
           request.files.add(multipartFile);
       }
     }
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamedResponse = await request.send();
     return await http.Response.fromStream(streamedResponse);
@@ -808,6 +877,8 @@ class ApiService {
       }
     }
 
+    request.headers.addAll(await _getHeaders(isJson: false));
+
     final streamedResponse = await request.send();
     return await http.Response.fromStream(streamedResponse);
   }
@@ -815,7 +886,7 @@ class ApiService {
   static Future<http.Response> deleteEvent(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/event/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   // --- Game APIs ---
@@ -832,7 +903,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/games/add");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "gameType": gameType,
         "questionText": questionText,
@@ -871,7 +942,7 @@ class ApiService {
     };
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode(body),
     );
   }
@@ -879,7 +950,7 @@ class ApiService {
   static Future<http.Response> deleteGameQuestion(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/delete/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   static Future<http.Response> getGameTypes() async {
@@ -903,6 +974,8 @@ class ApiService {
       filename: filename,
     );
     request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -952,7 +1025,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/mindmap/add");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode(data),
     );
   }
@@ -962,7 +1035,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/mindmap/$id");
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode(data),
     );
   }
@@ -976,7 +1049,7 @@ class ApiService {
   static Future<http.Response> deleteMindMap(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   // --- One Liner Exam APIs ---
@@ -986,7 +1059,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/onelinerexam/add");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode(data),
     );
   }
@@ -1000,7 +1073,7 @@ class ApiService {
   static Future<http.Response> deleteOneLinerExam(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   static Future<http.Response> updateOneLinerExam(String id, Map<String, dynamic> data) async {
@@ -1008,7 +1081,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/onelinerexam/$id");
     return await http.put(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode(data),
     );
   }
@@ -1045,6 +1118,8 @@ class ApiService {
     );
     request.files.add(multipartFile);
 
+    request.headers.addAll(await _getHeaders(isJson: false));
+
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
   }
@@ -1080,6 +1155,8 @@ class ApiService {
       filename: file.name,
     );
     request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -1119,6 +1196,8 @@ class ApiService {
     );
     request.files.add(multipartFile);
 
+    request.headers.addAll(await _getHeaders(isJson: false));
+
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
   }
@@ -1152,6 +1231,8 @@ class ApiService {
       filename: file.name,
     );
     request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
@@ -1194,6 +1275,8 @@ class ApiService {
       request.files.add(multipartFile);
     }
 
+    request.headers.addAll(await _getHeaders(isJson: false));
+
     final streamResponse = await request.send();
     return await http.Response.fromStream(streamResponse);
   }
@@ -1208,7 +1291,7 @@ class ApiService {
   static Future<http.Response> deleteMaterial(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/delete/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
   static Future<http.Response> getStandardDetailedStats(String standard) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -1258,7 +1341,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/admin/generate-redeem-code");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({
         "discount": discount,
         "board": board,
@@ -1279,7 +1362,7 @@ class ApiService {
   static Future<http.Response> deleteRedeemCode(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/delete-redeem-code/$id");
-    return await http.delete(uri);
+    return await http.delete(uri, headers: await _getHeaders());
   }
 
   // --- Leaderboard APIs ---
@@ -1303,7 +1386,7 @@ class ApiService {
     final uri = Uri.parse("$baseUrl/admin/toggle-gift-status");
     return await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: await _getHeaders(),
       body: jsonEncode({"userId": userId}),
     );
   }
