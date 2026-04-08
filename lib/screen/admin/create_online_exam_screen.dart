@@ -214,7 +214,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
            MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
              parsedQuestions: questions,
              title: _titleController.text,
-             subject: _selectedSubject ?? "General",
+             subject: _selectedSubject ?? "Commerce",
              board: _selectedBoard ?? "GSEB",
              std: _selectedStandard ?? "",
              medium: _selectedMedium ?? "",
@@ -398,7 +398,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                        MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
                          parsedQuestions: const [],
                          title: _titleController.text,
-                         subject: _selectedSubject ?? "General",
+                         subject: _selectedSubject ?? "Commerce",
                          board: _selectedBoard ?? "GSEB",
                          std: _selectedStandard ?? "",
                          medium: _selectedMedium ?? "",

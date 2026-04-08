@@ -2,12 +2,17 @@ import 'package:dm_bhatt_classes_new/constant/app_constant.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/splash_screen.dart';
 import 'package:dm_bhatt_classes_new/utils/app_theme_data.dart';
 import 'package:dm_bhatt_classes_new/utils/app_theme_extensions.dart'; // Import extension
+import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 import 'package:flutter/material.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Pre-load all academic constants dynamically from the database
+  await AcademicConstants.loadFromServer();
+  
   runApp(const MyApp());
 }
 
