@@ -144,8 +144,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
     }
   }
 
-  void _editPaperSet(int index) {
-    final item = _paperSets[index];
+  void _editPaperSet(Map<String, dynamic> item) {
     setState(() {
       _isEditing = true;
       _editingId = item['_id'];
@@ -177,8 +176,7 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
     _tabController.animateTo(0);
   }
 
-  void _confirmDelete(int index) {
-      final item = _paperSets[index];
+  void _confirmDelete(Map<String, dynamic> item) {
       final String id = item['_id'];
       
       showDialog(
@@ -493,11 +491,11 @@ class _AddPapersetScreenState extends State<AddPapersetScreen> with SingleTicker
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _editPaperSet(index),
+                          onPressed: () => _editPaperSet(item),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(index),
+                          onPressed: () => _confirmDelete(item),
                         ),
                       ],
                     ),

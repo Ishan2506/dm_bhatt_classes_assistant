@@ -27,11 +27,6 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
   // History State
   List<dynamic> _mindMaps = [];
   bool _isLoadingHistory = true;
-  final TextEditingController _searchController = TextEditingController();
-  String? _selectedFilterBoard;
-  String? _selectedFilterStandard;
-  String? _selectedFilterMedium;
-  String? _selectedFilterStream;
 
   @override
   void initState() {
@@ -112,21 +107,6 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
         'children': <Map<String, dynamic>>[]
       };
     });
-  }
-
-  List<dynamic> _getFilteredMindMaps() {
-    return _mindMaps.where((item) {
-      final query = _searchController.text.toLowerCase();
-      final title = (item['title'] ?? "").toString().toLowerCase();
-      final subject = (item['subject'] ?? "").toString().toLowerCase();
-      final matchesSearch = title.contains(query) || subject.contains(query);
-
-      final matchBoard = _selectedFilterBoard == null || item['board'] == _selectedFilterBoard;
-      final matchStd = _selectedFilterStandard == null || item['std'] == _selectedFilterStandard;
-      final matchMedium = _selectedFilterMedium == null || item['medium'] == _selectedFilterMedium;
-      final matchStream = _selectedFilterStream == null || item['stream'] == _selectedFilterStream;
-      return matchesSearch && matchBoard && matchStd && matchMedium && matchStream;
-    }).toList();
   }
 
   void _editMindMap(BuildContext context, Map<String, dynamic> item) {
@@ -371,74 +351,59 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
             ),
             
             // History Tab
-            Column(
-              children: [
-                _buildHistorySearchHeader(),
-                Expanded(
-                  child: _isLoadingHistory
-                  ? const Center(child: CustomLoader())
-                      : _getFilteredMindMaps().isEmpty
-                          ? Center(child: Text("No mind maps found", style: GoogleFonts.poppins(color: Colors.grey)))
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _getFilteredMindMaps().length,
-                              itemBuilder: (context, index) {
-                                final item = _getFilteredMindMaps()[index];
-                                final String id = item['_id'];
-                                
-                                String displayDate = "--";
-                                if (item['createdAt'] != null) {
-                                   displayDate = item['createdAt'].toString().split('T')[0];
-                                }
+            _isLoadingHistory
+            ? const Center(child: CustomLoader())
+                : _mindMaps.isEmpty
+                    ? Center(child: Text("No mind maps found", style: GoogleFonts.poppins(color: Colors.grey)))
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _mindMaps.length,
+                        itemBuilder: (context, index) {
+                          final item = _mindMaps[index];
+                          final String id = item['_id'];
+                          
+                          String displayDate = "--";
+                          if (item['createdAt'] != null) {
+                             displayDate = item['createdAt'].toString().split('T')[0];
+                          }
 
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  elevation: 2,
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.all(16),
-                                    leading: CircleAvatar(
-                                      backgroundColor: Colors.indigo.shade100,
-                                      child: const Icon(Icons.account_tree, color: Colors.indigo),
-                                    ),
-                                    title: Text(item['title'] ?? 'Untitled', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(height: 4),
-                                        Text("Subject: ${item['subject'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
-                                        Text("Standard: ${item['std'] ?? 'N/A'} ${item['stream'] ?? ''}", style: TextStyle(color: Colors.grey.shade700)),
-                                        Text("Medium: ${item['medium'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
-                                        Text("Date: $displayDate", style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                      ],
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.content_copy, color: Colors.green),
-                                          tooltip: "Copy / Clone",
-                                          onPressed: () => _showCopyDialog(context, item),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.edit, color: Colors.blue),
-                                          tooltip: "Edit",
-                                          onPressed: () => _editMindMap(context, item),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red),
-                                          tooltip: "Delete",
-                                          onPressed: () => _deleteMindMap(id),
-                                        ),
-                                      ],
-                                    ),
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 2,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(16),
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.indigo.shade100,
+                                child: const Icon(Icons.account_tree, color: Colors.indigo),
+                              ),
+                              title: Text(item['title'] ?? 'Untitled', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text("Subject: ${item['subject'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
+                                  Text("Standard: ${item['std'] ?? 'N/A'} ${item['stream'] ?? ''}", style: TextStyle(color: Colors.grey.shade700)),
+                                  Text("Medium: ${item['medium'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
+                                  Text("Date: $displayDate", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.content_copy, color: Colors.green),
+                                    tooltip: "Copy / Clone",
+                                    onPressed: () => _showCopyDialog(context, item),
                                   ),
-                                );
-                              },
+                                  IconButton(icon: const Icon(Icons.edit, color: Colors.blue), tooltip: "Edit", onPressed: () => _editMindMap(context, item)),
+                                  IconButton(icon: const Icon(Icons.delete, color: Colors.red), tooltip: "Delete", onPressed: () => _deleteMindMap(id)),
+                                ],
+                              ),
                             ),
-                ),
-              ],
-            ),
+                          );
+                        },
+                      ),
           ],
         ),
       ),
@@ -612,72 +577,4 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
     );
   }
 
-  Widget _buildHistorySearchHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            onChanged: (val) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: "Search by Title or Subject...",
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildHistoryFilterDropdown("Board", _selectedFilterBoard, AcademicConstants.boards, (val) => setState(() {
-                           _selectedFilterBoard = val;
-                           _selectedFilterStandard = null;
-                         })),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildHistoryFilterDropdown(
-                  "Std", 
-                  _selectedFilterStandard, 
-                  _selectedFilterBoard == null 
-                      ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
-                      : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], 
-                  (val) => setState(() => _selectedFilterStandard = val)
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildHistoryFilterDropdown("Medium", _selectedFilterMedium, AcademicConstants.mediums, (val) => setState(() => _selectedFilterMedium = val)),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryFilterDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.indigo.shade50,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          value: value,
-          hint: Text(hint, style: const TextStyle(fontSize: 12)),
-          items: [
-            DropdownMenuItem(value: null, child: Text("All $hint")),
-            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 12)))),
-          ],
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
 }
