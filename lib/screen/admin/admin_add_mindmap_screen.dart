@@ -15,6 +15,7 @@ class AdminAddMindMapScreen extends StatefulWidget {
 
 class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
   String? _selectedBoard;
+  String? _selectedMedium;
   String? _selectedStd;
   String? _selectedSubject;
   String? _selectedStream;
@@ -95,6 +96,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
     setState(() {
       _editingMindMapId = null;
       _selectedBoard = null;
+      _selectedMedium = null;
       _selectedStd = null;
       _selectedSubject = null;
       _selectedStream = null;
@@ -111,8 +113,10 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
     setState(() {
       _editingMindMapId = item['_id'];
       _selectedBoard = item['board'];
+      _selectedMedium = item['medium'];
       
       if (!AcademicConstants.boards.contains(_selectedBoard)) _selectedBoard = null;
+      if (!AcademicConstants.mediums.contains(_selectedMedium)) _selectedMedium = null;
       
       _selectedStd = item['std'];
       var stds = _selectedBoard == null ? [] : AcademicConstants.standards[_selectedBoard!] ?? [];
@@ -137,9 +141,9 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
   }
 
   Future<void> _saveMindMap() async {
-    if (_selectedBoard == null || _selectedStd == null || _selectedSubject == null || _unitController.text.isEmpty || 
+    if (_selectedBoard == null || _selectedMedium == null || _selectedStd == null || _selectedSubject == null || _unitController.text.isEmpty || 
         _titleController.text.isEmpty) {
-      CustomToast.showError(context, "All fields (Board, Standard, Subject, Unit, Title) are required");
+      CustomToast.showError(context, "All fields (Board, Medium, Standard, Subject, Unit, Title) are required");
       return;
     }
 
@@ -152,6 +156,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
     try {
       final payload = {
         'board': _selectedBoard,
+        'medium': _selectedMedium,
         'subject': _selectedSubject,
         'unit': _unitController.text,
         'title': _titleController.text,
@@ -262,6 +267,7 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
                                   const SizedBox(height: 4),
                                   Text("Subject: ${item['subject'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
                                   Text("Standard: ${item['std'] ?? 'N/A'} ${item['stream'] ?? ''}", style: TextStyle(color: Colors.grey.shade700)),
+                                  Text("Medium: ${item['medium'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
                                   Text("Date: $displayDate", style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
@@ -311,6 +317,17 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
                 _selectedStd = null;
                 _selectedSubject = null;
               }),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedMedium,
+              decoration: InputDecoration(
+                labelText: "Medium",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.language),
+              ),
+              items: AcademicConstants.mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+              onChanged: (val) => setState(() => _selectedMedium = val),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
