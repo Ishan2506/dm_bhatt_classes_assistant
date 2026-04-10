@@ -27,6 +27,11 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
   // History State
   List<dynamic> _mindMaps = [];
   bool _isLoadingHistory = true;
+  final TextEditingController _searchController = TextEditingController();
+  String? _selectedFilterBoard;
+  String? _selectedFilterStandard;
+  String? _selectedFilterMedium;
+  String? _selectedFilterStream;
 
   @override
   void initState() {
@@ -109,6 +114,21 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
     });
   }
 
+  List<dynamic> _getFilteredMindMaps() {
+    return _mindMaps.where((item) {
+      final query = _searchController.text.toLowerCase();
+      final title = (item['title'] ?? "").toString().toLowerCase();
+      final subject = (item['subject'] ?? "").toString().toLowerCase();
+      final matchesSearch = title.contains(query) || subject.contains(query);
+
+      final matchBoard = _selectedFilterBoard == null || item['board'] == _selectedFilterBoard;
+      final matchStd = _selectedFilterStandard == null || item['std'] == _selectedFilterStandard;
+      final matchMedium = _selectedFilterMedium == null || item['medium'] == _selectedFilterMedium;
+      final matchStream = _selectedFilterStream == null || item['stream'] == _selectedFilterStream;
+      return matchesSearch && matchBoard && matchStd && matchMedium && matchStream;
+    }).toList();
+  }
+
   void _editMindMap(BuildContext context, Map<String, dynamic> item) {
     setState(() {
       _editingMindMapId = item['_id'];
@@ -140,6 +160,123 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
     DefaultTabController.of(context).animateTo(0);
   }
 
+  void _showCopyDialog(BuildContext context, Map<String, dynamic> item) {
+    String? dialogBoard = item['board'];
+    String? dialogMedium = item['medium'];
+    String? dialogStd = item['std'];
+    String? dialogStream = item['stream'] == 'None' || item['stream'] == '-' ? null : item['stream'];
+    String? dialogSubject = item['subject'];
+    TextEditingController dialogUnit = TextEditingController(text: item['unit'] ?? '');
+    TextEditingController dialogTitle = TextEditingController(text: (item['title'] ?? '') + " - Copy");
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (stateContext, setDialogState) {
+            return AlertDialog(
+              title: Text("Clone Mind Map Details", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: dialogBoard,
+                      decoration: const InputDecoration(labelText: "Board", prefixIcon: Icon(Icons.school)),
+                      items: AcademicConstants.boards.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                      onChanged: (val) => setDialogState(() {
+                        dialogBoard = val;
+                        dialogStd = null;
+                        dialogSubject = null;
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: dialogMedium,
+                      decoration: const InputDecoration(labelText: "Medium", prefixIcon: Icon(Icons.language)),
+                      items: AcademicConstants.mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                      onChanged: (val) => setDialogState(() => dialogMedium = val),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: dialogStd,
+                      decoration: const InputDecoration(labelText: "Standard", prefixIcon: Icon(Icons.grade)),
+                      items: (dialogBoard == null ? <String>[] : AcademicConstants.standards[dialogBoard!] ?? <String>[]).map((std) => DropdownMenuItem(value: std, child: Text(std))).toList(),
+                      onChanged: (val) => setDialogState(() {
+                        dialogStd = val;
+                        dialogSubject = null;
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    if (dialogStd == "11" || dialogStd == "12") ...[
+                      DropdownButtonFormField<String>(
+                        value: dialogStream,
+                        decoration: const InputDecoration(labelText: "Stream", prefixIcon: Icon(Icons.school)),
+                        items: ["Science", "Commerce"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                        onChanged: (val) => setDialogState(() => dialogStream = val),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    DropdownButtonFormField<String>(
+                      value: dialogSubject,
+                      decoration: const InputDecoration(labelText: "Subject", prefixIcon: Icon(Icons.book)),
+                      items: (() {
+                        if (dialogBoard == null || dialogStd == null) return <String>[];
+                        String key = "$dialogBoard-$dialogStd";
+                        if (dialogStd == "11" || dialogStd == "12") {
+                          if (dialogStream == null) return <String>[];
+                          key += "-$dialogStream";
+                        }
+                        return AcademicConstants.subjects[key] ?? <String>[];
+                      }()).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
+                      onChanged: (val) => setDialogState(() => dialogSubject = val),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dialogUnit,
+                      decoration: const InputDecoration(labelText: "Unit / Topic", prefixIcon: Icon(Icons.topic)),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dialogTitle,
+                      decoration: const InputDecoration(labelText: "Mind Map Title", prefixIcon: Icon(Icons.title)),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                ElevatedButton(
+                  onPressed: () {
+                    if (dialogBoard == null || dialogMedium == null || dialogStd == null || dialogSubject == null || dialogUnit.text.isEmpty || dialogTitle.text.isEmpty) {
+                      CustomToast.showError(dialogContext, "Please fill all fields");
+                      return;
+                    }
+                    Navigator.pop(dialogContext);
+                    setState(() {
+                      _editingMindMapId = null;
+                      _selectedBoard = dialogBoard;
+                      _selectedMedium = dialogMedium;
+                      _selectedStd = dialogStd;
+                      _selectedStream = dialogStream;
+                      _selectedSubject = dialogSubject;
+                      _unitController.text = dialogUnit.text;
+                      _titleController.text = dialogTitle.text;
+                      _mindMapData = jsonDecode(jsonEncode(item['data'])); // Deep copy
+                    });
+                    DefaultTabController.of(context).animateTo(0);
+                    CustomToast.showSuccess(context, "Mind Map structure copied! Review and save.");
+                  },
+                  child: const Text("Copy & Edit Tree"),
+                )
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  
   Future<void> _saveMindMap() async {
     if (_selectedBoard == null || _selectedMedium == null || _selectedStd == null || _selectedSubject == null || _unitController.text.isEmpty || 
         _titleController.text.isEmpty) {
@@ -234,62 +371,74 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
             ),
             
             // History Tab
-            _isLoadingHistory
-            ? const Center(child: CustomLoader())
-                : _mindMaps.isEmpty
-                    ? Center(child: Text("No mind maps found", style: GoogleFonts.poppins(color: Colors.grey)))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _mindMaps.length,
-                        itemBuilder: (context, index) {
-                          final item = _mindMaps[index];
-                          final String id = item['_id'];
-                          
-                          String displayDate = "--";
-                          if (item['createdAt'] != null) {
-                             displayDate = item['createdAt'].toString().split('T')[0];
-                          }
+            Column(
+              children: [
+                _buildHistorySearchHeader(),
+                Expanded(
+                  child: _isLoadingHistory
+                  ? const Center(child: CustomLoader())
+                      : _getFilteredMindMaps().isEmpty
+                          ? Center(child: Text("No mind maps found", style: GoogleFonts.poppins(color: Colors.grey)))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _getFilteredMindMaps().length,
+                              itemBuilder: (context, index) {
+                                final item = _getFilteredMindMaps()[index];
+                                final String id = item['_id'];
+                                
+                                String displayDate = "--";
+                                if (item['createdAt'] != null) {
+                                   displayDate = item['createdAt'].toString().split('T')[0];
+                                }
 
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 2,
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.all(16),
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.indigo.shade100,
-                                child: const Icon(Icons.account_tree, color: Colors.indigo),
-                              ),
-                              title: Text(item['title'] ?? 'Untitled', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text("Subject: ${item['subject'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
-                                  Text("Standard: ${item['std'] ?? 'N/A'} ${item['stream'] ?? ''}", style: TextStyle(color: Colors.grey.shade700)),
-                                  Text("Medium: ${item['medium'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
-                                  Text("Date: $displayDate", style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                ],
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.blue),
-                                    tooltip: "Edit",
-                                    onPressed: () => _editMindMap(context, item),
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 2,
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(16),
+                                    leading: CircleAvatar(
+                                      backgroundColor: Colors.indigo.shade100,
+                                      child: const Icon(Icons.account_tree, color: Colors.indigo),
+                                    ),
+                                    title: Text(item['title'] ?? 'Untitled', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 4),
+                                        Text("Subject: ${item['subject'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
+                                        Text("Standard: ${item['std'] ?? 'N/A'} ${item['stream'] ?? ''}", style: TextStyle(color: Colors.grey.shade700)),
+                                        Text("Medium: ${item['medium'] ?? 'N/A'}", style: TextStyle(color: Colors.grey.shade700)),
+                                        Text("Date: $displayDate", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.content_copy, color: Colors.green),
+                                          tooltip: "Copy / Clone",
+                                          onPressed: () => _showCopyDialog(context, item),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                          tooltip: "Edit",
+                                          onPressed: () => _editMindMap(context, item),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          tooltip: "Delete",
+                                          onPressed: () => _deleteMindMap(id),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    tooltip: "Delete",
-                                    onPressed: () => _deleteMindMap(id),
-                                  ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -459,6 +608,75 @@ class _AdminAddMindMapScreenState extends State<AdminAddMindMapScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHistorySearchHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.white,
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: (val) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: "Search by Title or Subject...",
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildHistoryFilterDropdown("Board", _selectedFilterBoard, AcademicConstants.boards, (val) => setState(() {
+                           _selectedFilterBoard = val;
+                           _selectedFilterStandard = null;
+                         })),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildHistoryFilterDropdown(
+                  "Std", 
+                  _selectedFilterStandard, 
+                  _selectedFilterBoard == null 
+                      ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
+                      : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], 
+                  (val) => setState(() => _selectedFilterStandard = val)
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildHistoryFilterDropdown("Medium", _selectedFilterMedium, AcademicConstants.mediums, (val) => setState(() => _selectedFilterMedium = val)),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryFilterDropdown(String hint, String? value, List<String> items, Function(String?) onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.indigo.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: value,
+          hint: Text(hint, style: const TextStyle(fontSize: 12)),
+          items: [
+            DropdownMenuItem(value: null, child: Text("All $hint")),
+            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 12)))),
+          ],
+          onChanged: onChanged,
+        ),
       ),
     );
   }

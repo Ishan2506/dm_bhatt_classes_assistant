@@ -575,9 +575,16 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                     })),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDropdown("Standard", _selectedFilterStandard, _selectedFilterBoard == null ? <String>[] : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], (val) => setState(() => _selectedFilterStandard = val)),
-                  ),
+              Expanded(
+                child: _buildDropdown(
+                  "Standard", 
+                  _selectedFilterStandard, 
+                  _selectedFilterBoard == null 
+                      ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
+                      : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], 
+                  (val) => setState(() => _selectedFilterStandard = val)
+                ),
+              ),
                 ],
               ),
               const SizedBox(height: 12),

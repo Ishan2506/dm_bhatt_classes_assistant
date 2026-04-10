@@ -148,6 +148,142 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
     }
   }
 
+  Future<void> _showCopyDialog(BuildContext context, Map<String, dynamic> item) async {
+    String? dialogBoard = item['board'];
+    String? dialogMedium = item['medium'];
+    String? dialogStd = item['std'];
+    String? dialogStream = item['stream'] == 'None' || item['stream'] == '-' ? null : item['stream'];
+    String? dialogSubject = item['subject'];
+    String? dialogMarks = item['totalMarks']?.toString();
+    TextEditingController dialogUnit = TextEditingController(text: item['unit'] ?? '');
+    TextEditingController dialogTitle = TextEditingController(text: (item['title'] ?? '') + " - Copy");
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (stateContext, setDialogState) {
+            return AlertDialog(
+              title: Text("Clone Exam Details", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildDialogDropdown("Board", dialogBoard, AcademicConstants.boards, (val) => setDialogState(() {
+                      dialogBoard = val;
+                      dialogStd = null;
+                      dialogSubject = null;
+                    })),
+                    const SizedBox(height: 12),
+                    _buildDialogDropdown("Medium", dialogMedium, AcademicConstants.mediums, (val) => setDialogState(() => dialogMedium = val)),
+                    const SizedBox(height: 12),
+                    _buildDialogDropdown("Standard", dialogStd, (dialogBoard == null ? [] : AcademicConstants.standards[dialogBoard!] ?? []), (val) => setDialogState(() {
+                      dialogStd = val;
+                      dialogSubject = null;
+                    })),
+                    const SizedBox(height: 12),
+                    if (dialogStd == "11" || dialogStd == "12") ...[
+                      _buildDialogDropdown("Stream", dialogStream, ["Science", "Commerce"], (val) => setDialogState(() {
+                         dialogStream = val;
+                         dialogSubject = null;
+                      })),
+                      const SizedBox(height: 12),
+                    ],
+                    _buildDialogDropdown("Subject", dialogSubject, (() {
+                      if (dialogBoard == null || dialogStd == null) return <String>[];
+                      String key = "$dialogBoard-$dialogStd";
+                      if (dialogStd == "11" || dialogStd == "12") {
+                        if (dialogStream == null) return <String>[];
+                        key += "-$dialogStream";
+                      }
+                      return AcademicConstants.subjects[key] ?? <String>[];
+                    }()), (val) => setDialogState(() => dialogSubject = val)),
+                    const SizedBox(height: 12),
+                    _buildDialogDropdown("Marks", dialogMarks, AcademicConstants.marks, (val) => setDialogState(() => dialogMarks = val)),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dialogUnit,
+                      decoration: InputDecoration(labelText: "Unit / Topic", prefixIcon: const Icon(Icons.topic), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: dialogTitle,
+                      decoration: InputDecoration(labelText: "Exam Title", prefixIcon: const Icon(Icons.title), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Cancel")),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (dialogBoard == null || dialogMedium == null || dialogStd == null || dialogSubject == null || dialogMarks == null || dialogUnit.text.isEmpty || dialogTitle.text.isEmpty) {
+                      CustomToast.showError(dialogContext, "Please fill all fields");
+                      return;
+                    }
+
+                    Navigator.pop(dialogContext);
+                    CustomLoader.show(context);
+
+                    try {
+                      // Fetch the full exam details (including questions)
+                      final response = await ApiService.getExamById(item['_id']);
+                      CustomLoader.hide(context);
+
+                      if (response.statusCode == 200) {
+                        final fullExam = jsonDecode(response.body);
+                        final List<dynamic> questions = fullExam['questions'] ?? [];
+
+                        if (!context.mounted) return;
+
+                        // Navigate to Review screen directly with old questions and new metadata
+                        Navigator.push(
+                          context, 
+                          MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
+                            parsedQuestions: questions,
+                            title: dialogTitle.text,
+                            subject: dialogSubject!,
+                            board: dialogBoard!,
+                            std: dialogStd!,
+                            medium: dialogMedium!,
+                            stream: dialogStream,
+                            unit: dialogUnit.text,
+                            totalMarks: dialogMarks!, 
+                          ))
+                        );
+                        CustomToast.showSuccess(context, "Exam cloned! Review questions and save.");
+                      } else {
+                        CustomToast.showError(context, "Failed to fetch original questions");
+                      }
+                    } catch (e) {
+                      CustomLoader.hide(context);
+                      CustomToast.showError(context, "Error: $e");
+                    }
+                  },
+                  child: const Text("Clone & Review"),
+                )
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogDropdown(String label, String? value, List<String> items, Function(String?) onChanged) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(label == "Board" ? Icons.school : label == "Medium" ? Icons.language : label == "Standard" ? Icons.grade : label == "Subject" ? Icons.book : Icons.numbers),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+      ),
+      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
+      onChanged: onChanged,
+    );
+  }
+
   Future<void> _uploadAndProcessPdf() async {
     if (_pickedPdf == null) return;
 
@@ -290,7 +426,14 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildFilterDropdown("Std", _filterStandard, _filterBoard == null ? [] : AcademicConstants.standards[_filterBoard!] ?? [], (val) => setState(() => _filterStandard = val)),
+              child: _buildFilterDropdown(
+                "Std", 
+                _filterStandard, 
+                _filterBoard == null 
+                    ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
+                    : AcademicConstants.standards[_filterBoard!] ?? <String>[], 
+                (val) => setState(() => _filterStandard = val)
+              ),
               ),
             ],
           ),
@@ -646,6 +789,11 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.content_copy, color: Colors.green),
+                                          tooltip: "Copy / Clone",
+                                          onPressed: () => _showCopyDialog(context, exam),
+                                        ),
                                         IconButton(
                                           icon: const Icon(Icons.edit, color: Colors.blue),
                                           onPressed: () {

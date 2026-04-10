@@ -221,7 +221,9 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
                 child: _buildDropdown(
                   "Std", 
                   _filterStandard, 
-                  _filterBoard == null ? [] : AcademicConstants.standards[_filterBoard!] ?? [], 
+                  _filterBoard == null 
+                    ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
+                    : AcademicConstants.standards[_filterBoard!] ?? <String>[], 
                   (val) => setState(() => _filterStandard = val)
                 ),
               ),

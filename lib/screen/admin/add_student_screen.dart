@@ -187,8 +187,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
       }
   }
   
-  void _editStudent(int index) {
-     final item = _students[index];
+  void _editStudent(Map<String, dynamic> item) {
      setState(() {
        _isEditing = true;
        _editingId = item['_id']; // MongoDB ID
@@ -206,16 +205,16 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
        _selectedState = item['state'];
        _selectedCity = item['city'] != null && _selectedState != null && _stateCityMap[_selectedState!] != null && _stateCityMap[_selectedState!]!.contains(item['city']) ? item['city'] : null;
        
-       // Note: Image handling would require showing network image if available, skipped for brevity in form setup.
-       // Password remains empty for security, user enters only if changing.
+       // Image and Password resets
+       _imageFile = null; 
+       _passwordController.clear();
      });
      _tabController.animateTo(0); // Switch to "Create New" tab form
   }
 
-  void _confirmDelete(int index) {
+  void _confirmDelete(Map<String, dynamic> item) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final item = _students[index];
     final String id = item['_id'];
 
     showDialog(
@@ -584,11 +583,11 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _editStudent(index),
+                          onPressed: () => _editStudent(item),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(index),
+                          onPressed: () => _confirmDelete(item),
                         ),
                       ],
                     ),
@@ -675,7 +674,9 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                 child: _buildSmallDropdown(
                   "Std", 
                   _filterStandard, 
-                  _filterBoard == null ? [] : AcademicConstants.standards[_filterBoard!] ?? [], 
+                  _filterBoard == null 
+                    ? (AcademicConstants.standards.values.isNotEmpty ? AcademicConstants.standards.values.first : [])
+                    : AcademicConstants.standards[_filterBoard!] ?? [], 
                   (val) => setState(() => _filterStandard = val)
                 ),
               ),
