@@ -8,6 +8,7 @@ import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dm_bhatt_classes_new/screen/authentication/login_screen.dart';
 
 class ApiService {
   static const String baseUrl = "http://103.212.121.139:5000/api";
@@ -26,6 +27,28 @@ class ApiService {
     }
     
     return url;
+  }
+
+
+  static http.Response _handleSession(http.Response response) {
+    if (response.statusCode == 401) {
+      debugPrint("Session expired (401). Redirecting to LoginScreen.");
+      
+      SharedPreferences.getInstance().then((prefs) {
+        final role = prefs.getString('user_role') ?? 'Admin';
+        prefs.remove('auth_token');
+
+        if (navigatorKey.currentState != null) {
+          Future.delayed(const Duration(milliseconds: 100), () {
+            navigatorKey.currentState?.pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => LoginScreen(role: role)),
+              (route) => false,
+            );
+          });
+        }
+      });
+    }
+    return response;
   }
 
   static Future<bool> _checkConnectivity() async {
@@ -61,7 +84,7 @@ class ApiService {
   static Future<http.Response> getProfile() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/profile");
-    return await http.get(uri, headers: await _getHeaders());
+    return _handleSession(await http.get(uri, headers: await _getHeaders()));
   }
 
   static Future<http.Response> editProfile({
@@ -86,7 +109,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> addExploreProduct({
@@ -122,13 +145,13 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> getExploreProducts() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/explore/all");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> editExploreProduct({
@@ -167,13 +190,13 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> deleteExploreProduct(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/explore/delete/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   static Future<http.Response> loginUser({
@@ -243,13 +266,13 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> getAllStudents() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/all-students");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> editStudent({
@@ -295,13 +318,13 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> deleteStudent(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/delete-student/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
 
@@ -317,7 +340,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/create");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -329,32 +352,32 @@ class ApiService {
         'standard': standard,
         'stream': stream,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> getAllPaperSets() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/all");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> updatePaperSetStatus(String id, String status, {String performedBy = 'Admin'}) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/update-status/$id");
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
         'status': status,
         'performedBy': performedBy, 
       }),
-    );
+    ));
   }
 
   static Future<http.Response> getPaperSetLogs() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/logs");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> editPaperSet({
@@ -379,17 +402,17 @@ class ApiService {
       if (standard != null) 'std': standard, // Backend expects 'std' or 'standard'? Controller checks 'std'.
       if (stream != null) 'stream': stream,
     };
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode(body),
-    );
+    ));
   }
 
   static Future<http.Response> deletePaperSet(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/paperset/delete-paperset/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
 
@@ -487,7 +510,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> uploadImage({required PlatformFile file}) async {
@@ -506,7 +529,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   // --- Exam APIs ---
@@ -526,7 +549,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> createExam({
@@ -542,7 +565,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/create");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -556,7 +579,7 @@ class ApiService {
         "totalMarks": totalMarks,
         "questions": questions,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> getAllExams({String? board, String? std, String? medium, String? stream, String? subject}) async {
@@ -569,13 +592,13 @@ class ApiService {
     if (subject != null) queryParams['subject'] = subject;
 
     final uri = Uri.parse("$baseUrl/exam/all").replace(queryParameters: queryParams);
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> getExamById(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/$id");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> updateExam({
@@ -592,7 +615,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/update/$id");
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -606,13 +629,13 @@ class ApiService {
         "totalMarks": totalMarks,
         "questions": questions,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> deleteExam(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/exam/delete/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   // --- 5 Min Test APIs ---
@@ -630,7 +653,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/create");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -644,13 +667,13 @@ class ApiService {
         "overview": overview,
         "questions": questions,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> getAllFiveMinTests() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/all");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> updateFiveMinTest({
@@ -667,7 +690,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/update/$id");
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -681,13 +704,13 @@ class ApiService {
         "overview": overview,
         "questions": questions,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> deleteFiveMinTest(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/fiveMinTest/delete/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   static Future<http.Response> uploadFiveMinTestPdf({required List<int> bytes, required String filename}) async {
@@ -705,7 +728,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   // --- Top Ranker APIs ---
@@ -722,7 +745,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/create");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -735,13 +758,13 @@ class ApiService {
         "stream": stream ?? "-",
         "photo": photo,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> getAllTopRankers() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/all");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> updateTopRanker({
@@ -757,7 +780,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/update/$id");
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -770,13 +793,13 @@ class ApiService {
         "stream": stream ?? "-",
         "photo": photo,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> deleteTopRanker(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/topRanker/delete/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   // --- Event APIs ---
@@ -819,13 +842,13 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamedResponse = await request.send();
-    return await http.Response.fromStream(streamedResponse);
+    return _handleSession(await http.Response.fromStream(streamedResponse));
   }
 
   static Future<http.Response> getAllEvents() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/event/all");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> updateEvent({
@@ -880,13 +903,13 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamedResponse = await request.send();
-    return await http.Response.fromStream(streamedResponse);
+    return _handleSession(await http.Response.fromStream(streamedResponse));
   }
 
   static Future<http.Response> deleteEvent(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/event/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   // --- Game APIs ---
@@ -901,7 +924,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/add");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -912,13 +935,13 @@ class ApiService {
         "difficulty": difficulty,
         "meta": meta ?? {},
       }),
-    );
+    ));
   }
 
   static Future<http.Response> getGameQuestions(String gameType) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/$gameType");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> editGameQuestion({
@@ -940,23 +963,23 @@ class ApiService {
       if (difficulty != null) "difficulty": difficulty,
       if (meta != null) "meta": meta,
     };
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode(body),
-    );
+    ));
   }
 
   static Future<http.Response> deleteGameQuestion(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/delete/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   static Future<http.Response> getGameTypes() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/games/types");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> importGameQuestions({required List<int> bytes, required String filename, String? gameType}) async {
@@ -978,14 +1001,14 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   
   static Future<http.Response> getDashboardStats() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/dashboard-stats");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> getExamReports({String? type, String? board, String? std, String? medium, String? stream, String? studentId}) async {
@@ -1001,7 +1024,7 @@ class ApiService {
 
     final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
     final uri = Uri.parse("$baseUrl/admin/exam-reports$queryString");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> getStudentReports({String? board, String? std, String? medium, String? stream}) async {
@@ -1015,7 +1038,7 @@ class ApiService {
 
     final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
     final uri = Uri.parse("$baseUrl/admin/student-reports$queryString");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   // --- Mind Map APIs ---
@@ -1023,33 +1046,33 @@ class ApiService {
   static Future<http.Response> createMindMap(Map<String, dynamic> data) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/add");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode(data),
-    );
+    ));
   }
 
   static Future<http.Response> updateMindMap(String id, Map<String, dynamic> data) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/$id");
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode(data),
-    );
+    ));
   }
 
   static Future<http.Response> getAllMindMaps() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/all");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> deleteMindMap(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/mindmap/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   // --- One Liner Exam APIs ---
@@ -1057,33 +1080,33 @@ class ApiService {
   static Future<http.Response> createOneLinerExam(Map<String, dynamic> data) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/add");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode(data),
-    );
+    ));
   }
 
   static Future<http.Response> getAllOneLinerExams() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/all");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> deleteOneLinerExam(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   static Future<http.Response> updateOneLinerExam(String id, Map<String, dynamic> data) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/onelinerexam/$id");
-    return await http.put(
+    return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode(data),
-    );
+    ));
   }
 
   // --- Material APIs ---
@@ -1121,7 +1144,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> uploadSchoolPaper({
@@ -1159,7 +1182,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> uploadImageMaterial({
@@ -1199,7 +1222,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> uploadNotes({
@@ -1235,7 +1258,7 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> updateMaterial({
@@ -1278,25 +1301,25 @@ class ApiService {
     request.headers.addAll(await _getHeaders(isJson: false));
 
     final streamResponse = await request.send();
-    return await http.Response.fromStream(streamResponse);
+    return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
   static Future<http.Response> getAllMaterials({String? type}) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final queryParams = type != null ? "?type=$type" : "";
     final uri = Uri.parse("$baseUrl/material/all$queryParams");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> deleteMaterial(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/material/delete/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
   static Future<http.Response> getStandardDetailedStats(String standard) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/dashboard/standard-stats/$standard");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> getReferAndEarnReports({String? board, String? std, String? medium, String? stream}) async {
@@ -1310,7 +1333,7 @@ class ApiService {
 
     final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
     final uri = Uri.parse("$baseUrl/admin/refer-earn-report$queryString");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> getUpgradePlanReports({String? board, String? std, String? medium, String? stream}) async {
@@ -1324,7 +1347,7 @@ class ApiService {
 
     final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
     final uri = Uri.parse("$baseUrl/admin/upgrade-plan-report$queryString");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   // --- Redeem Code APIs ---
@@ -1339,7 +1362,7 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/generate-redeem-code");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({
@@ -1350,19 +1373,19 @@ class ApiService {
         "stream": stream,
         "createdBy": createdBy,
       }),
-    );
+    ));
   }
 
   static Future<http.Response> getRedeemCodes() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/redeem-codes");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> deleteRedeemCode(String id) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/delete-redeem-code/$id");
-    return await http.delete(uri, headers: await _getHeaders());
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
   }
 
   // --- Leaderboard APIs ---
@@ -1378,16 +1401,16 @@ class ApiService {
 
     final queryString = queryParams.isNotEmpty ? "?${Uri(queryParameters: queryParams).query}" : "";
     final uri = Uri.parse("$baseUrl/admin/leaderboard$queryString");
-    return await http.get(uri);
+    return _handleSession(await http.get(uri));
   }
 
   static Future<http.Response> toggleStudentGiftStatus(String userId) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/toggle-gift-status");
-    return await http.post(
+    return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
       body: jsonEncode({"userId": userId}),
-    );
+    ));
   }
 }
