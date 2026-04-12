@@ -23,47 +23,17 @@
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="dm_bhatt_classes_new">
+  <meta name="apple-mobile-web-app-title" content="dm_bhatt_tutions">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>dm_bhatt_classes_new</title>
+  <title>dm_bhatt_tutions</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
-  <script>
-    // Disable right click
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    
-    // Disable keyboard shortcuts
-    document.addEventListener('keydown', e => {
-      if (
-        e.keyCode === 123 || // F12
-        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || // Ctrl+Shift+I/J/C
-        (e.ctrlKey && e.keyCode === 85) // Ctrl+U
-      ) {
-        e.preventDefault();
-      }
-    });
-
-    // Continuous debugger loop
-    setInterval(() => {
-      (function() {
-        try {
-          (function b(i) {
-            if (("" + i / i).length !== 1 || i % 20 === 0) {
-              (function() {}).constructor("debugger")();
-            } else {
-              debugger;
-            }
-            b(++i);
-          })(0);
-        } catch (e) {}
-      })();
-    }, 1000);
-  </script>
+  
 </body>
 </html>
