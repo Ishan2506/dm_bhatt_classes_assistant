@@ -5,8 +5,12 @@ import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:universal_html/html.dart' as html;
 
 class AdminAddMaterialScreen extends StatefulWidget {
   const AdminAddMaterialScreen({super.key});
@@ -182,6 +186,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: type == 'image' ? FileType.image : FileType.custom,
       allowedExtensions: type == 'image' ? null : ['pdf'],
+      withData: kIsWeb,
     );
 
     if (result != null) {
@@ -421,6 +426,53 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     });
   }
 
+  void _previewFile(PlatformFile? localFile, String? existingUrl) async {
+    try {
+      if (localFile != null) {
+        if (kIsWeb) {
+          if (localFile.path != null && localFile.path!.startsWith('blob:')) {
+            html.window.open(localFile.path!, '_blank');
+          } else if (localFile.bytes != null) {
+            final blob = html.Blob([localFile.bytes!]);
+            final url = html.Url.createObjectUrlFromBlob(blob);
+            html.window.open(url, '_blank');
+          } else {
+             if (mounted) CustomToast.showError(context, "Cannot preview file on web: No data available.");
+          }
+        } else if (localFile.path != null) {
+          final result = await OpenFilex.open(localFile.path!);
+          if (result.type != ResultType.done) {
+            if (mounted) {
+              if (result.type == ResultType.noAppToOpen) {
+                CustomToast.showError(context, "No app found to open this file.");
+              } else {
+                CustomToast.showError(context, "Could not open file: ${result.message}");
+              }
+            }
+          }
+        } else {
+          if (mounted) CustomToast.showError(context, "No file path available to open.");
+        }
+      } else if (existingUrl != null) {
+        final fullUrl = ApiService.getFileUrl(existingUrl);
+        if (fullUrl.isNotEmpty) {
+          final uri = Uri.parse(fullUrl);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            if (mounted) {
+              CustomToast.showError(context, "Could not open URL preview.");
+            }
+          }
+        }
+      } else {
+        if (mounted) CustomToast.showError(context, "No file available to preview.");
+      }
+    } catch (e) {
+      if (mounted) CustomToast.showError(context, "Error previewing file: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -508,7 +560,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearBi, _pastYears, (val) => setState(() => _selectedYearBi = val)),
           const SizedBox(height: 24),
-          _buildFilePicker("PDF File", _boardPdfFile?.name, () => _pickFile('board'), existingFileUrl: _existingBoardFileUrl),
+          _buildFilePicker("PDF File", _boardPdfFile, () => _pickFile('board'), existingFileUrl: _existingBoardFileUrl),
           const SizedBox(height: 32),
           _buildSubmitButton(_editingMaterialId != null ? "Update Board Paper" : "Upload Board Paper", _submitBoardPaper),
         ],
@@ -565,7 +617,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildTextField(_schoolNameController, "School Name", Icons.school),
           const SizedBox(height: 24),
-          _buildFilePicker("PDF File", _schoolPdfFile?.name, () => _pickFile('school'), existingFileUrl: _existingSchoolFileUrl),
+          _buildFilePicker("PDF File", _schoolPdfFile, () => _pickFile('school'), existingFileUrl: _existingSchoolFileUrl),
           const SizedBox(height: 32),
           _buildSubmitButton(_editingMaterialId != null ? "Update School Paper" : "Upload School Paper", _submitSchoolPaper),
         ],
@@ -620,7 +672,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearNi, _allYears, (val) => setState(() => _selectedYearNi = val)),
           const SizedBox(height: 24),
-          _buildFilePicker("PDF File", _notesPdfFile?.name, () => _pickFile('notes'), existingFileUrl: _existingNotesFileUrl),
+          _buildFilePicker("PDF File", _notesPdfFile, () => _pickFile('notes'), existingFileUrl: _existingNotesFileUrl),
           const SizedBox(height: 32),
           _buildSubmitButton(_editingMaterialId != null ? "Update Notes" : "Upload Notes", _submitNotes),
         ],
@@ -677,7 +729,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           const SizedBox(height: 16),
           _buildDropdown("Year", Icons.calendar_today, _selectedYearIm, _allYears, (val) => setState(() => _selectedYearIm = val)),
           const SizedBox(height: 24),
-          _buildFilePicker("Image File", _imageFile?.name, () => _pickFile('image'), isImage: true, existingFileUrl: _existingImageFileUrl),
+          _buildFilePicker("Image File", _imageFile, () => _pickFile('image'), isImage: true, existingFileUrl: _existingImageFileUrl),
           const SizedBox(height: 32),
           _buildSubmitButton(_editingMaterialId != null ? "Update Image Material" : "Upload Image Material", _submitImageMaterial),
         ],
@@ -711,11 +763,13 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     );
   }
 
-  Widget _buildFilePicker(String label, String? fileName, VoidCallback onTap, {bool isImage = false, String? existingFileUrl}) {
-    String? displayFileName = fileName;
+  Widget _buildFilePicker(String label, PlatformFile? file, VoidCallback onTap, {bool isImage = false, String? existingFileUrl}) {
+    String? displayFileName = file?.name;
     if (displayFileName == null && existingFileUrl != null) {
       displayFileName = "${existingFileUrl.split('/').last}";
     }
+
+    bool hasFile = file != null || existingFileUrl != null;
 
     return InkWell(
       onTap: onTap,
@@ -730,8 +784,23 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
             Icon(isImage ? Icons.image : Icons.picture_as_pdf, color: Colors.blue.shade900),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(displayFileName ?? "Select $label", style: GoogleFonts.poppins(color: displayFileName == null ? Colors.grey : Colors.black)),
+              child: Text(
+                displayFileName ?? "Select $label", 
+                style: GoogleFonts.poppins(color: displayFileName == null ? Colors.grey : Colors.black),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            if (hasFile) ...[
+              IconButton(
+                onPressed: () => _previewFile(file, existingFileUrl),
+                icon: const Icon(Icons.visibility_outlined, color: Colors.blue),
+                tooltip: "Preview File",
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 12),
+            ],
             const Icon(Icons.upload_file, color: Colors.grey),
           ],
         ),

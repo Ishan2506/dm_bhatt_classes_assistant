@@ -18,7 +18,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   equatable: ^2.0.8
   pinput: ^6.0.1
-  url_launcher: ^6.1.14
+  url_launcher: ^6.3.2
   image_picker: ^1.2.1
   file_picker: ^10.3.8
   http: ^1.6.0
