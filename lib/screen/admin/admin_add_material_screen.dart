@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
@@ -9,8 +10,8 @@ import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:dm_bhatt_classes_new/screen/shared/pdf_viewer_screen.dart';
 
 class AdminAddMaterialScreen extends StatefulWidget {
   const AdminAddMaterialScreen({super.key});
@@ -430,6 +431,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     try {
       if (localFile != null) {
         if (kIsWeb) {
+          // Web: open blob URL in new tab
           if (localFile.path != null && localFile.path!.startsWith('blob:')) {
             html.window.open(localFile.path!, '_blank');
           } else if (localFile.bytes != null) {
@@ -437,39 +439,65 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
             final url = html.Url.createObjectUrlFromBlob(blob);
             html.window.open(url, '_blank');
           } else {
-             if (mounted) CustomToast.showError(context, "Cannot preview file on web: No data available.");
-          }
-        } else if (localFile.path != null) {
-          final result = await OpenFilex.open(localFile.path!);
-          if (result.type != ResultType.done) {
-            if (mounted) {
-              if (result.type == ResultType.noAppToOpen) {
-                CustomToast.showError(context, "No app found to open this file.");
-              } else {
-                CustomToast.showError(context, "Could not open file: ${result.message}");
-              }
-            }
+            if (mounted) CustomToast.showError(context, "Cannot preview file on web: No data available.");
           }
         } else {
-          if (mounted) CustomToast.showError(context, "No file path available to open.");
-        }
-      } else if (existingUrl != null) {
-        final fullUrl = ApiService.getFileUrl(existingUrl);
-        if (fullUrl.isNotEmpty) {
-          final uri = Uri.parse(fullUrl);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          // Mobile: open in-app PDF viewer using local file bytes
+          final bytes = localFile.bytes ?? (localFile.path != null
+              ? await _readFileBytes(localFile.path!)
+              : null);
+          if (bytes != null && mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PdfViewerScreen(
+                  url: localFile.path ?? '',
+                  title: localFile.name,
+                  localBytes: bytes,
+                ),
+              ),
+            );
           } else {
-            if (mounted) {
-              CustomToast.showError(context, "Could not open URL preview.");
+            // Fallback: try to open with device app
+            if (localFile.path != null) {
+              final result = await OpenFilex.open(localFile.path!);
+              if (result.type != ResultType.done && mounted) {
+                CustomToast.showError(context, "Could not open file.");
+              }
+            } else {
+              if (mounted) CustomToast.showError(context, "No file data available to preview.");
             }
           }
+        }
+      } else if (existingUrl != null) {
+        // Existing server file: open in-app PDF viewer
+        final fullUrl = ApiService.getFileUrl(existingUrl);
+        if (fullUrl.isNotEmpty && mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PdfViewerScreen(
+                url: fullUrl,
+                title: existingUrl.split('/').last,
+              ),
+            ),
+          );
+        } else {
+          if (mounted) CustomToast.showError(context, "Invalid file URL.");
         }
       } else {
         if (mounted) CustomToast.showError(context, "No file available to preview.");
       }
     } catch (e) {
       if (mounted) CustomToast.showError(context, "Error previewing file: $e");
+    }
+  }
+
+  Future<Uint8List?> _readFileBytes(String path) async {
+    try {
+      return await File(path).readAsBytes();
+    } catch (_) {
+      return null;
     }
   }
 
