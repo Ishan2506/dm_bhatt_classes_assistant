@@ -17,6 +17,7 @@ enum ChartType { pie, bar }
 
 class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
+  String? _error;
   int _totalSales = 0;
   List<Map<String, dynamic>> _subjectSales = [];
   List<Map<String, dynamic>> _standardSales = [];
@@ -66,11 +67,22 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
 
           _isLoading = false;
         });
+      } else if (response.statusCode == 403) {
+        setState(() {
+          _isLoading = false;
+          _error = "Access Denied. Super Admin only.";
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _error = "Failed to load dashboard data.";
+        });
       }
     } catch (e) {
       print("Error fetching stats: $e");
       setState(() {
         _isLoading = false;
+        _error = "An error occurred while loading stats.";
       });
     }
   }
@@ -113,6 +125,30 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
       return Scaffold(
         backgroundColor: colorScheme.surface,
         body: const Center(child: CustomLoader()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_outline, size: 64, color: colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                style: GoogleFonts.poppins(fontSize: 16, color: colorScheme.error, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _fetchStats,
+                child: const Text("Retry"),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
