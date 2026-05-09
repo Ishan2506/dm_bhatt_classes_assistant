@@ -420,7 +420,7 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
               if (imageUrl != null && imageUrl!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0),
-                  child: Image.network(imageUrl!, width: 40, height: 40, fit: BoxFit.cover),
+                  child: Image.network(ApiService.getFileUrl(imageUrl!), width: 40, height: 40, fit: BoxFit.cover),
                 ),
               ElevatedButton.icon(
                 onPressed: () async {
@@ -499,7 +499,7 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 12.0),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(q['questionImage'], height: 150, width: double.infinity, fit: BoxFit.contain),
+                              child: Image.network(ApiService.getFileUrl(q['questionImage']), height: 150, width: double.infinity, fit: BoxFit.contain),
                             ),
                           ),
                         const SizedBox(height: 12),
@@ -522,7 +522,7 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
                                     padding: const EdgeInsets.only(left: 20.0, bottom: 8.0, top: 4.0),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(4),
-                                      child: Image.network(opt['image'] as String, height: 100, fit: BoxFit.contain),
+                                      child: Image.network(ApiService.getFileUrl(opt['image'] as String), height: 100, fit: BoxFit.contain),
                                     ),
                                   ),
                               ],

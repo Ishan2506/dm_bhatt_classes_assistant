@@ -15,18 +15,18 @@ class ApiService {
 
   /// Helper to get the full URL for a file (image, pdf, etc.)
   static String getFileUrl(String? url) {
-    if (url == null || url.isEmpty) return "";
+    if (url == null || url.isEmpty || url == "null") return "";
     if (url.startsWith('http')) return url;
     
     // Remove /api from baseUrl to get the server root
     final serverRoot = baseUrl.replaceAll('/api', '');
     
-    // If it's a relative path from our server
-    if (url.startsWith('uploads/')) {
-        return "$serverRoot/$url";
-    }
+    // Normalize path (ensure no leading slash and forward slashes)
+    String path = url;
+    if (path.startsWith('/')) path = path.substring(1);
+    path = path.replaceAll('\\', '/');
     
-    return url;
+    return "$serverRoot/$path";
   }
 
 

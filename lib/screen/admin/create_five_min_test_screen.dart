@@ -1065,7 +1065,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                   padding: const EdgeInsets.only(right: 8.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: Image.network(imageUrl!, width: 30, height: 30, fit: BoxFit.cover),
+                    child: Image.network(ApiService.getFileUrl(imageUrl!), width: 30, height: 30, fit: BoxFit.cover),
                   ),
                 ),
               ElevatedButton.icon(

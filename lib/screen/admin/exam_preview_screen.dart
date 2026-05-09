@@ -297,17 +297,38 @@ class _ExamPreviewScreenState extends State<ExamPreviewScreen> {
                             )
                           ],
                         ),
+                        if (q['questionImage'] != null && q['questionImage'].toString().isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 40),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(ApiService.getFileUrl(q['questionImage']), height: 150, width: double.infinity, fit: BoxFit.contain),
+                            ),
+                          ),
                         const SizedBox(height: 12),
                         // Options
                         if (q['options'] != null)
                           ...List<dynamic>.from(q['options']).map((opt) => Padding(
                             padding: const EdgeInsets.only(bottom: 4.0, left: 40),
-                            child: Text(
-                              "${opt['key']}) ${opt['text']}", 
-                              style: TextStyle(
-                                color: opt['key'] == q['correctAnswer'] ? Colors.green.shade700 : Colors.black87,
-                                fontWeight: opt['key'] == q['correctAnswer'] ? FontWeight.bold : FontWeight.normal
-                              )
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "${opt['key']}) ${opt['text']}", 
+                                  style: TextStyle(
+                                    color: opt['key'] == q['correctAnswer'] ? Colors.green.shade700 : Colors.black87,
+                                    fontWeight: opt['key'] == q['correctAnswer'] ? FontWeight.bold : FontWeight.normal
+                                  )
+                                ),
+                                if (opt['image'] != null && opt['image'].toString().isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: Image.network(ApiService.getFileUrl(opt['image']), height: 100, fit: BoxFit.contain),
+                                    ),
+                                  ),
+                              ],
                             ),
                           )),
                          const SizedBox(height: 8),
