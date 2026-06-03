@@ -38,6 +38,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   int _currentPage = 0;
   bool _isLoading = true;
   String? _error;
+  bool _isFullScreen = false;
 
   @override
   void initState() {
@@ -132,7 +133,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     return Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
-      appBar: AppBar(
+      appBar: _isFullScreen ? null : AppBar(
         backgroundColor: Colors.blue.shade900,
         foregroundColor: Colors.white,
         title: Text(
@@ -146,6 +147,16 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(_isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen),
+            onPressed: () {
+              setState(() {
+                _isFullScreen = !_isFullScreen;
+              });
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CustomLoader())
@@ -154,46 +165,47 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               : Column(
                   children: [
                     // Page indicator
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 24),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.title,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? Colors.white
-                                    : Colors.black87,
+                    if (!_isFullScreen)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 24),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.title,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade900
-                                  .withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Page ${_currentPage + 1} / $_totalPages',
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue.shade900,
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade900
+                                    .withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Page ${_currentPage + 1} / $_totalPages',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blue.shade900,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
                     // PDF PageView
                     Expanded(
@@ -240,20 +252,27 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                                     ),
                                   ),
                                 ),
-                                // Zoom buttons
+                                // Zoom buttons & Exit fullscreen
                                 Positioned(
                                   bottom: 16,
                                   right: 16,
                                   child: Column(
                                     children: [
-                                      _zoomBtn(
-                                          Icons.add, () => _zoom(1.25)),
-                                      const SizedBox(height: 8),
-                                      _zoomBtn(Icons.remove,
-                                          () => _zoom(0.8)),
-                                      const SizedBox(height: 8),
-                                      _zoomBtn(
-                                          Icons.refresh, _resetZoom),
+                                      if (!_isFullScreen) ...[
+                                        _zoomBtn(
+                                            Icons.add, () => _zoom(1.25)),
+                                        const SizedBox(height: 8),
+                                        _zoomBtn(Icons.remove,
+                                            () => _zoom(0.8)),
+                                        const SizedBox(height: 8),
+                                        _zoomBtn(
+                                            Icons.refresh, _resetZoom),
+                                      ] else
+                                        _zoomBtn(Icons.fullscreen_exit, () {
+                                          setState(() {
+                                            _isFullScreen = false;
+                                          });
+                                        }),
                                     ],
                                   ),
                                 ),
@@ -265,68 +284,69 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                     ),
 
                     // Prev / Next navigation
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: _currentPage > 0
-                                ? () => _pageController.previousPage(
-                                      duration: const Duration(
-                                          milliseconds: 300),
-                                      curve: Curves.easeInOut,
-                                    )
-                                : null,
-                            icon: const Icon(Icons.arrow_back),
-                            label: Text(
-                              'Previous',
-                              style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600),
+                    if (!_isFullScreen)
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _currentPage > 0
+                                  ? () => _pageController.previousPage(
+                                        duration: const Duration(
+                                            milliseconds: 300),
+                                        curve: Curves.easeInOut,
+                                      )
+                                  : null,
+                              icon: const Icon(Icons.arrow_back),
+                              label: Text(
+                                'Previous',
+                                style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isDark
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade200,
+                                foregroundColor: isDark
+                                    ? Colors.white
+                                    : Colors.black87,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(12)),
+                              ),
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark
-                                  ? Colors.grey.shade800
-                                  : Colors.grey.shade200,
-                              foregroundColor: isDark
-                                  ? Colors.white
-                                  : Colors.black87,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(12)),
+                            ElevatedButton.icon(
+                              onPressed:
+                                  _currentPage < _totalPages - 1
+                                      ? () => _pageController.nextPage(
+                                            duration: const Duration(
+                                                milliseconds: 300),
+                                            curve: Curves.easeInOut,
+                                          )
+                                      : null,
+                              icon: const Icon(Icons.arrow_forward),
+                              label: Text(
+                                'Next',
+                                style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade900,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(12)),
+                              ),
                             ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed:
-                                _currentPage < _totalPages - 1
-                                    ? () => _pageController.nextPage(
-                                          duration: const Duration(
-                                              milliseconds: 300),
-                                          curve: Curves.easeInOut,
-                                        )
-                                    : null,
-                            icon: const Icon(Icons.arrow_forward),
-                            label: Text(
-                              'Next',
-                              style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade900,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
     );
