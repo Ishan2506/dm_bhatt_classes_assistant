@@ -1,41 +1,48 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-echo "🔧 Starting CI post-clone setup..."
+echo "=== Xcode Cloud Post Clone Start ==="
 
-# Navigate to root
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 
-echo "📥 Installing Flutter SDK..."
-git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
-export PATH="$PATH:$HOME/flutter/bin"
+# Install Flutter (Clean clone with single-branch and blobless filters to avoid timeouts)
+rm -rf "$HOME/flutter"
+git clone https://github.com/flutter/flutter.git --depth 1 --branch stable --single-branch --filter=blob:none "$HOME/flutter"
 
-echo "✅ Flutter installed. Version:"
+export PATH="$HOME/flutter/bin:$PATH"
+
+# Disable Swift Package Manager globally for the runner
+flutter config --no-enable-swift-package-manager
+
 flutter --version
 
-echo "🏥 Running flutter doctor..."
-flutter doctor
-
-echo "⬇️ Precaching iOS artifacts..."
+# Download Flutter iOS artifacts
 flutter precache --ios
 
-echo "📦 Installing dependencies and regenerating config..."
-flutter pub get
-
-# CRITICAL: Regenerate Generated.xcconfig with correct paths for CI
-echo "🔧 Regenerating Flutter build config..."
-cd ios
-rm -f Flutter/Generated.xcconfig
-cd ..
+# Match the local recovery steps used before archiving from Xcode.
+echo "Cleaning Flutter build outputs..."
 flutter clean
+
+echo "Resetting iOS CocoaPods state..."
+rm -rf ios/Pods ios/.symlinks ios/Flutter/Flutter.podspec
+
+# Get dependencies and regenerate Flutter's iOS configuration.
 flutter pub get
 
-echo "🍫 Installing CocoaPods..."
-HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods || echo "CocoaPods may already be installed"
+flutter build ios --config-only
 
-echo "📚 Installing project pods..."
+# Clean derived data before building
+rm -rf ~/Library/Developer/Xcode/DerivedData/* || true
+
+# Install pods after Flutter has regenerated Generated.xcconfig.
 cd ios
-pod repo update
-pod install --repo-update
 
-echo "✅ CI post-clone setup completed!"
+echo "Installing CocoaPods..."
+pod install || {
+  echo "Pod install failed, trying with repo update..."
+  pod install --repo-update
+}
+
+cd ..
+
+echo "=== Xcode Cloud Post Clone Complete ==="
