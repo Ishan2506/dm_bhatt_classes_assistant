@@ -26,6 +26,14 @@ flutter clean
 echo "Resetting iOS CocoaPods state..."
 rm -rf ios/Pods ios/.symlinks ios/Flutter/Flutter.podspec
 
+echo "Generating lib/config/secrets.dart..."
+mkdir -p lib/config
+cat <<EOF > lib/config/secrets.dart
+class Secrets {
+  static const String geminiApiKey = "${GEMINI_API_KEY:-}";
+}
+EOF
+
 # Get dependencies and regenerate Flutter's iOS configuration.
 flutter pub get
 
