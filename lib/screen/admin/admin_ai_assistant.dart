@@ -214,25 +214,29 @@ class _AdminAIAssistantScreenState extends State<AdminAIAssistantScreen> {
 
     if (_generatedPdf == null || !_generatedPdf!.existsSync()) return;
 
-    // Let user pick folder (internal or SD card)
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-
-    if (selectedDirectory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ No folder selected")),
-      );
-      return;
-    }
-
-    final newFile = File(
-        '$selectedDirectory/Generated_Question_Paper_${DateTime.now().millisecondsSinceEpoch}.pdf');
-
     try {
-      await _generatedPdf!.copy(newFile.path);
+      final bytes = await _generatedPdf!.readAsBytes();
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save PDF',
+        fileName: 'Generated_Question_Paper_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        bytes: bytes, // This lets the native OS write the file securely (fixes Android 11+ errors)
+      );
+
+      if (outputFile == null) {
+        return; // User canceled the picker
+      }
+
+      // Fallback for platforms that return a path but don't write the bytes automatically
+      final savedFile = File(outputFile);
+      if (!savedFile.existsSync() || savedFile.lengthSync() == 0) {
+        await savedFile.writeAsBytes(bytes);
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("✅ PDF saved at: ${newFile.path}"),
+          content: Text("✅ PDF saved successfully at: $outputFile"),
           duration: const Duration(seconds: 3),
         ),
       );
