@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
+import 'package:superwall_flutter/superwall.dart';
 
 // Mock Model for YouthEducation Data
 class Chapter {
@@ -371,6 +372,53 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
     }
   }
 
+  Future<void> _showSuperwallPaywall() async {
+    try {
+      await Superwall.shared.showPaywall(
+        event: 'exam_creation_premium',
+        paywallOverrides: {'paywallId': '230681'},
+      );
+      // Continue after paywall is dismissed or purchase is complete
+      if (mounted) {
+        _continueAfterPaywall();
+      }
+    } catch (e) {
+      debugPrint('Error showing paywall: $e');
+      if (mounted) {
+        CustomToast.showError(context, 'Unable to load paywall');
+      }
+    }
+  }
+
+  void _continueAfterPaywall() {
+    if (!mounted) return;
+
+    if (_isManualEntry) {
+      // Manual Entry Flow
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
+          parsedQuestions: const [],
+          title: _titleController.text,
+          subject: _selectedSubject ?? "Commerce",
+          board: _selectedBoard ?? "GSEB",
+          std: _selectedStandard ?? "",
+          medium: _selectedMedium ?? "",
+          stream: _selectedStream,
+          unit: _unitController.text,
+          totalMarks: _selectedMarks ?? "20",
+        ))
+      );
+    } else {
+      // PDF Upload Flow
+      if (_pickedPdf != null) {
+        _uploadAndProcessPdf();
+      } else {
+        CustomToast.showError(context, "Please upload a PDF");
+      }
+    }
+  }
+
   @override
   void dispose() {
     _unitController.dispose();
@@ -534,30 +582,8 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                     CustomToast.showError(context, "Please enter all details (Board, Standard, Subject, Medium, Marks, Unit and Title)");
                   }
                 } else if (_currentStep == 1) {
-                   if (_isManualEntry) {
-                     // Manual Entry Flow
-                     Navigator.push(
-                       context, 
-                       MaterialPageRoute(builder: (context) => ReviewQuestionsScreen(
-                         parsedQuestions: const [],
-                         title: _titleController.text,
-                         subject: _selectedSubject ?? "Commerce",
-                         board: _selectedBoard ?? "GSEB",
-                         std: _selectedStandard ?? "",
-                         medium: _selectedMedium ?? "",
-                         stream: _selectedStream,
-                         unit: _unitController.text,
-                         totalMarks: _selectedMarks ?? "20", 
-                       ))
-                     );
-                   } else {
-                     // PDF Upload Flow
-                     if (_pickedPdf != null) {
-                       _uploadAndProcessPdf();
-                     } else {
-                       CustomToast.showError(context, "Please upload a PDF");
-                     }
-                   }
+                   // Show paywall before processing
+                   _showSuperwallPaywall();
                 }
               },
               onStepCancel: () {
