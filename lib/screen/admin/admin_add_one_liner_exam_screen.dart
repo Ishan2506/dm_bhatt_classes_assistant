@@ -26,8 +26,8 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
   String? _id;
   bool _isSaving = false;
 
-  List<Map<String, String>> _questions = [
-    {"questionText": "", "correctAnswer": ""}
+  List<Map<String, dynamic>> _questions = [
+    {"questionText": "", "correctAnswer": "", "mark": "1"}
   ];
 
   @override
@@ -53,6 +53,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
         _questions = qList.map((q) => {
           "questionText": q['questionText']?.toString() ?? "",
           "correctAnswer": q['correctAnswer']?.toString() ?? "",
+          "mark": q['mark']?.toString() ?? "1",
         }).toList();
       }
     }
@@ -76,8 +77,13 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
     }
 
     final int expectedMarks = int.tryParse(_selectedMarks ?? "0") ?? 0;
-    if (_questions.length != expectedMarks) {
-      CustomToast.showError(context, "Please add exactly $expectedMarks questions (${_questions.length})");
+    int currentSum = 0;
+    for (var q in _questions) {
+      currentSum += int.tryParse(q['mark']?.toString() ?? "1") ?? 1;
+    }
+
+    if (currentSum != expectedMarks) {
+      CustomToast.showError(context, "Sum of question marks ($currentSum) must equal Total Marks ($expectedMarks).");
       return;
     }
 
@@ -92,7 +98,11 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
         'unit': _unitController.text,
         'title': _titleController.text,
         'totalMarks': int.tryParse(_selectedMarks!) ?? 20,
-        'questions': _questions,
+        'questions': _questions.map((q) => {
+          'questionText': q['questionText'],
+          'correctAnswer': q['correctAnswer'],
+          'mark': int.tryParse(q['mark']?.toString() ?? "1") ?? 1
+        }).toList(),
       };
 
       final response = _id != null 
@@ -170,7 +180,18 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
               Text("Questions & Answers", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo.shade900)),
               IconButton(
                 icon: const Icon(Icons.add_circle, color: Colors.green),
-                onPressed: () => setState(() => _questions.add({"questionText": "", "correctAnswer": ""})),
+                onPressed: () {
+                  final int expectedMarks = int.tryParse(_selectedMarks ?? "0") ?? 0;
+                  int currentSum = 0;
+                  for (var q in _questions) {
+                    currentSum += int.tryParse(q['mark']?.toString() ?? "1") ?? 1;
+                  }
+                  if (expectedMarks > 0 && currentSum >= expectedMarks) {
+                    CustomToast.showError(context, "Total marks ($expectedMarks) reached. Cannot add more questions.");
+                    return;
+                  }
+                  setState(() => _questions.add({"questionText": "", "correctAnswer": "", "mark": "1"}));
+                },
               ),
             ],
           ),
@@ -260,7 +281,10 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
             DropdownButtonFormField<String>(
               value: _selectedMarks,
               decoration: InputDecoration(labelText: "Marks", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-              items: AcademicConstants.oneLinerMarks.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+              items: {
+                ...AcademicConstants.oneLinerMarks,
+                if (_selectedMarks != null) _selectedMarks!
+              }.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
               onChanged: _id != null ? null : (val) => setState(() => _selectedMarks = val),
             ),
             const SizedBox(height: 16),
@@ -280,6 +304,21 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
   }
 
   Widget _buildQuestionCard(int index) {
+    final int expectedMarks = int.tryParse(_selectedMarks ?? "0") ?? 0;
+    List<String> markOptions = [];
+    if (expectedMarks > 0) {
+       for (int i = 1; i <= expectedMarks; i++) {
+         markOptions.add(i.toString());
+       }
+    } else {
+       markOptions = ["1"];
+    }
+    
+    // Ensure the current mark is valid for the dropdown
+    if (!markOptions.contains(_questions[index]['mark'])) {
+        _questions[index]['mark'] = markOptions.contains("1") ? "1" : markOptions.first;
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
@@ -287,8 +326,30 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (_questions.length > 1)
-              IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: () => setState(() => _questions.removeAt(index))),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Question ${index + 1}", style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.grey)),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 90,
+                      child: DropdownButtonFormField<String>(
+                        value: _questions[index]['mark'],
+                        decoration: const InputDecoration(labelText: "Mark", border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
+                        items: markOptions.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                        onChanged: (val) => setState(() => _questions[index]['mark'] = val),
+                      ),
+                    ),
+                    if (_questions.length > 1) ...[
+                      const SizedBox(width: 8),
+                      IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: () => setState(() => _questions.removeAt(index))),
+                    ]
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             TextFormField(
               initialValue: _questions[index]['questionText'],
               decoration: const InputDecoration(labelText: "Question", border: OutlineInputBorder()),
