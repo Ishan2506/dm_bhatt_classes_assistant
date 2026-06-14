@@ -266,15 +266,18 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
             DropdownButtonFormField<String>(
               value: _selectedSubject,
               decoration: InputDecoration(labelText: "Subject", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-              items: (() {
-                if (_selectedBoard == null || _selectedStd == null) return <String>[];
-                String key = "$_selectedBoard-$_selectedStd";
-                if (_selectedStd == "11" || _selectedStd == "12") {
-                  if (_selectedStream == null) return <String>[];
-                  key += "-$_selectedStream";
-                }
-                return AcademicConstants.subjects[key] ?? <String>[];
-              }()).map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
+              items: {
+                ...(() {
+                  if (_selectedBoard == null || _selectedStd == null) return <String>[];
+                  String key = "$_selectedBoard-$_selectedStd";
+                  if (_selectedStd == "11" || _selectedStd == "12") {
+                    if (_selectedStream == null) return <String>[];
+                    key += "-$_selectedStream";
+                  }
+                  return AcademicConstants.subjects[key] ?? <String>[];
+                }()),
+                if (_selectedSubject != null) _selectedSubject!
+              }.map((subj) => DropdownMenuItem(value: subj, child: Text(subj))).toList(),
               onChanged: _id != null ? null : (val) => setState(() => _selectedSubject = val),
             ),
             const SizedBox(height: 16),
