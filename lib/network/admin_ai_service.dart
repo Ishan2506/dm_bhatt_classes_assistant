@@ -14,19 +14,27 @@ class AdminAIService {
     apiKey: _apiKey,
   );
 
-  /// Extract only first 5 pages text
-  Future<String> _extractFirstFivePages(Uint8List bytes) async {
+  /// Extract up to 5 random pages if the document is larger than 5 pages
+  Future<String> _extractRandomFivePages(Uint8List bytes) async {
     final document = PdfDocument(inputBytes: bytes);
-
-    final int totalPages =
-        document.pages.count > 5 ? 5 : document.pages.count;
-
     final textExtractor = PdfTextExtractor(document);
-
     String extractedText = '';
 
-    for (int i = 0; i < totalPages; i++) {
-      extractedText += textExtractor.extractText(startPageIndex: i);
+    if (document.pages.count <= 5) {
+      for (int i = 0; i < document.pages.count; i++) {
+        extractedText += textExtractor.extractText(startPageIndex: i);
+      }
+    } else {
+      // Create a list of all page indices and shuffle it
+      List<int> allPages = List<int>.generate(document.pages.count, (i) => i);
+      allPages.shuffle(); 
+      // Pick the first 5 random pages and sort them back into reading order
+      List<int> selectedPages = allPages.take(5).toList();
+      selectedPages.sort();
+
+      for (int pageIndex in selectedPages) {
+        extractedText += textExtractor.extractText(startPageIndex: pageIndex);
+      }
     }
 
     document.dispose();
@@ -45,8 +53,8 @@ class AdminAIService {
   }) async {
     String extractedText = "";
     try {
-      debugPrint("Extracting first 5 pages...");
-      extractedText = await _extractFirstFivePages(fileBytes);
+      debugPrint("Extracting up to 5 random pages...");
+      extractedText = await _extractRandomFivePages(fileBytes);
     } catch (e) {
       return "ERROR: Failed to extract text from PDF: $e";
     }
