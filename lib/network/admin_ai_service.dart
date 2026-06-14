@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:dm_bhatt_classes_new/config/secrets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
@@ -41,53 +43,26 @@ class AdminAIService {
     required Uint8List fileBytes,
     required String questionType,
   }) async {
+    String extractedText = "";
     try {
       debugPrint("Extracting first 5 pages...");
-      final extractedText = await _extractFirstFivePages(fileBytes);
+      extractedText = await _extractFirstFivePages(fileBytes);
+    } catch (e) {
+      return "ERROR: Failed to extract text from PDF: $e";
+    }
 
-      final isTrueFalse =
-          questionType.toLowerCase().contains("true") ||
-              questionType.toLowerCase().contains("false");
+    final isTrueFalse =
+        questionType.toLowerCase().contains("true") ||
+            questionType.toLowerCase().contains("false");
 
-      final isFillBlanks =
-          questionType.toLowerCase().contains("fill");
+    final isFillBlanks =
+        questionType.toLowerCase().contains("fill");
 
-      final isExtractMCQ =
-          questionType.toLowerCase().contains("extract") ||
-              questionType.toLowerCase().contains("mcq");
+    final isExtractMCQ =
+        questionType.toLowerCase().contains("extract") ||
+            questionType.toLowerCase().contains("mcq");
 
-      final prompt = """
-You are an expert school question paper generator and analyzer.
-
-TASK:
-1. First, write the word "OVERVIEW:" followed by a newline.
-2. Then, write a brief summary (2-3 sentences) of the provided content.
-3. Then, write the question type header: "$questionType".
-4. Then, ${isExtractMCQ ? "EXTRACT all existing Multiple Choice Questions (MCQs) found in the content. Do NOT create new ones unless there are fewer than 5 MCQs in the document." : "generate MAXIMUM 20 questions based ONLY on the content."}
-
-${isExtractMCQ ? "If you find existing MCQs, maintain their original options (A, B, C, D) and identify the correct answer." : "Do NOT exceed 20 questions."}
-Generate questions ONLY from the provided content below.
-
-QUESTION TYPE: $questionType
-LEVEL: School Level
-LANGUAGE: Keep original document language (Gujarati/English).
-
-STRICT RULES:
-1. Plain text only.
-2. No markdown.
-3. No headings (except the word OVERVIEW: and the question type header).
-4. Do NOT repeat "Fill in the blank:" or "True/False" at the start of every question. Just start with the number and the question text.
-5. Start numbering from 01.
-${isExtractMCQ ? "6. Extract as many MCQs as available, up to 30. If no MCQs found, generate 10 new MCQs based on the content." : "6. Maximum 20 questions."}
-
-FORMAT:
-
-OVERVIEW:
-[Your summary here]
-
-$questionType
-
-${isExtractMCQ ? """
+    final formatStr = isExtractMCQ ? """
 01. [Question text]
 A. Option A
 B. Option B
@@ -118,12 +93,46 @@ B. Option B
 C. Option C
 D. Option D
 Ans. (Correct Letter)
-"""}
+""";
+
+    final prompt = """
+You are an expert school question paper generator and analyzer.
+
+TASK:
+1. First, write the word "OVERVIEW:" followed by a newline.
+2. Then, write a brief summary (2-3 sentences) of the provided content.
+3. Then, write the question type header: "$questionType".
+4. Then, ${isExtractMCQ ? "EXTRACT all existing Multiple Choice Questions (MCQs) found in the content. Do NOT create new ones unless there are fewer than 5 MCQs in the document." : "generate MAXIMUM 20 questions based ONLY on the content."}
+
+${isExtractMCQ ? "If you find existing MCQs, maintain their original options (A, B, C, D) and identify the correct answer." : "Do NOT exceed 20 questions."}
+Generate questions ONLY from the provided content below.
+
+QUESTION TYPE: $questionType
+LEVEL: School Level
+LANGUAGE: Keep original document language (Gujarati/English).
+
+STRICT RULES:
+1. Plain text only.
+2. No markdown.
+3. No headings (except the word OVERVIEW: and the question type header).
+4. Do NOT repeat "Fill in the blank:" or "True/False" at the start of every question. Just start with the number and the question text.
+5. Start numbering from 01.
+${isExtractMCQ ? "6. Extract as many MCQs as available, up to 30. If no MCQs found, generate 10 new MCQs based on the content." : "6. Maximum 20 questions."}
+
+FORMAT:
+
+OVERVIEW:
+[Your summary here]
+
+$questionType
+
+$formatStr
 
 DOCUMENT CONTENT:
 $extractedText
 """;
 
+    try {
       debugPrint("Sending limited content to AI...");
 
       final response = await _model.generateContent([
@@ -140,8 +149,34 @@ $extractedText
 
       return text;
     } catch (e) {
-      debugPrint("AI ERROR: $e");
-      return "ERROR: $e";
+      debugPrint("Gemini AI ERROR: $e");
+      debugPrint("Switching to free Fallback AI...");
+      return await _fallbackGenerateContent(prompt);
+    }
+  }
+
+  /// Free Fallback AI (No API Key required)
+  /// Used automatically when Gemini aborts the connection.
+  Future<String> _fallbackGenerateContent(String promptText) async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://text.pollinations.ai/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'messages': [
+            {'role': 'user', 'content': promptText}
+          ],
+        }),
+      ).timeout(const Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        return "ERROR: Fallback AI also failed (Status ${response.statusCode}). Please try again later.";
+      }
+    } catch (fallbackError) {
+      debugPrint("Fallback AI ERROR: $fallbackError");
+      return "ERROR: Network unstable. Both Primary and Fallback AI failed. Please check your internet and try again.";
     }
   }
 }

@@ -4,7 +4,6 @@ import 'package:dm_bhatt_classes_new/utils/app_theme_data.dart';
 import 'package:dm_bhatt_classes_new/utils/app_theme_extensions.dart'; // Import extension
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
 import 'package:flutter/material.dart';
-import 'package:superwall_flutter/superwall.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -14,9 +13,7 @@ void main() async {
   // Pre-load all academic constants dynamically from the database
   await AcademicConstants.loadFromServer();
 
-  // Initialize Superwall
-  await Superwall.configure('pk_s7jyO9iO397j9OikgfCJQ');
-
+  // Initialize App
   runApp(const MyApp());
 }
 
