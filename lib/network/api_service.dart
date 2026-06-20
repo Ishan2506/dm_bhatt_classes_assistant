@@ -1510,4 +1510,30 @@ class ApiService {
       body: jsonEncode({"userId": userId}),
     ));
   }
+
+  // --- Match Following Exam APIs ---
+
+  static Future<http.Response> createMatchFollowingExam(Map<String, dynamic> data) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/matchfollowingexam/create");
+    return _handleSession(await http.post(uri, headers: await _getHeaders(), body: jsonEncode(data)));
+  }
+
+  static Future<http.Response> getAllMatchFollowingExams() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/matchfollowingexam/all");
+    return _handleSession(await http.get(uri, headers: await _getHeaders()));
+  }
+
+  static Future<http.Response> updateMatchFollowingExam(String id, Map<String, dynamic> data) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/matchfollowingexam/update/$id");
+    return _handleSession(await http.put(uri, headers: await _getHeaders(), body: jsonEncode(data)));
+  }
+
+  static Future<http.Response> deleteMatchFollowingExam(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/matchfollowingexam/delete/$id");
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
+  }
 }

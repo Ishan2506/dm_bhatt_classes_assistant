@@ -9,6 +9,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/admin_add_material_screen.dart
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_one_liner_exam_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_mindmap_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/create_true_false_exam_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/create_match_following_exam_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -150,6 +151,18 @@ class AdminAddScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AdminAddMindMapScreen()),
+                );
+              },
+            ),
+             _buildAddCard(
+              context,
+              "Add Match Following Exam",
+              Icons.compare_arrows_outlined,
+              Colors.brown,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CreateMatchFollowingExamScreen()),
                 );
               },
             ),
