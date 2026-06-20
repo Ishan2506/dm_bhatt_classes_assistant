@@ -10,7 +10,7 @@ class AdminAIService {
   static const String _apiKey = Secrets.geminiApiKey;
 
   final GenerativeModel _model = GenerativeModel(
-    model: 'gemini-2.5-flash', // Faster model
+    model: 'gemini-1.5-flash', // Faster model
     apiKey: _apiKey,
   );
 

@@ -731,6 +731,103 @@ class ApiService {
     return _handleSession(await http.Response.fromStream(streamResponse));
   }
 
+  // --- True/False Exam APIs ---
+
+  static Future<http.Response> createTrueFalseExam({
+    required String title,
+    required String board,
+    required String std,
+    required String medium,
+    String? stream,
+    required String subject,
+    required String unit,
+    required String overview,
+    required int totalMarks,
+    required List<Map<String, dynamic>> questions,
+  }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/truefalseexam/create");
+    return _handleSession(await http.post(
+      uri,
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        "title": title,
+        "board": board,
+        "std": std,
+        "medium": medium,
+        "stream": stream ?? "-",
+        "subject": subject,
+        "unit": unit,
+        "overview": overview,
+        "totalMarks": totalMarks,
+        "questions": questions,
+      }),
+    ));
+  }
+
+  static Future<http.Response> getAllTrueFalseExams() async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/truefalseexam/all");
+    return _handleSession(await http.get(uri));
+  }
+
+  static Future<http.Response> updateTrueFalseExam({
+    required String id,
+    required String title,
+    required String board,
+    required String std,
+    required String medium,
+    String? stream,
+    required String subject,
+    required String unit,
+    required String overview,
+    required int totalMarks,
+    required List<Map<String, dynamic>> questions,
+  }) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/truefalseexam/update/$id");
+    return _handleSession(await http.put(
+      uri,
+      headers: await _getHeaders(),
+      body: jsonEncode({
+        "title": title,
+        "board": board,
+        "std": std,
+        "medium": medium,
+        "stream": stream ?? "-",
+        "subject": subject,
+        "unit": unit,
+        "overview": overview,
+        "totalMarks": totalMarks,
+        "questions": questions,
+      }),
+    ));
+  }
+
+  static Future<http.Response> deleteTrueFalseExam(String id) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/truefalseexam/delete/$id");
+    return _handleSession(await http.delete(uri, headers: await _getHeaders()));
+  }
+
+  static Future<http.Response> uploadTrueFalseExamPdf({required List<int> bytes, required String filename}) async {
+    if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
+    final uri = Uri.parse("$baseUrl/truefalseexam/upload-pdf");
+    final request = http.MultipartRequest('POST', uri);
+
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: filename,
+    );
+    request.files.add(multipartFile);
+
+    request.headers.addAll(await _getHeaders(isJson: false));
+
+    final streamResponse = await request.send();
+    return _handleSession(await http.Response.fromStream(streamResponse));
+  }
+
   // --- Top Ranker APIs ---
 
   static Future<http.Response> createTopRanker({

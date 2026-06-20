@@ -8,6 +8,7 @@ import 'package:dm_bhatt_classes_new/screen/admin/add_game_question_screen.dart'
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_material_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_one_liner_exam_screen.dart';
 import 'package:dm_bhatt_classes_new/screen/admin/admin_add_mindmap_screen.dart';
+import 'package:dm_bhatt_classes_new/screen/admin/create_true_false_exam_screen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_fonts/google_fonts.dart';
@@ -122,9 +123,21 @@ class AdminAddScreen extends StatelessWidget {
               Icons.edit_note_outlined,
               Colors.pink,
               () {
-                Navigator.push(
+               Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AdminAddOneLinerExamScreen()),
+                );
+              },
+            ),
+             _buildAddCard(
+              context,
+              "Add True/False Exam",
+              Icons.rule_outlined,
+              Colors.deepPurple,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CreateTrueFalseExamScreen()),
                 );
               },
             ),
