@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/login_screen.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:9657/api";
+  static const String baseUrl = "http://103.212.121.139:5000/api";
 
   /// Helper to get the full URL for a file (image, pdf, etc.)
   static String getFileUrl(String? url) {
