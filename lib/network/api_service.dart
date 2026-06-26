@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dm_bhatt_classes_new/screen/authentication/login_screen.dart';
 
 class ApiService {
-  static const String baseUrl = "http://103.212.121.139:5000/api";
+  static const String baseUrl = "http://localhost:9657/api";
 
   /// Helper to get the full URL for a file (image, pdf, etc.)
   static String getFileUrl(String? url) {
@@ -236,6 +236,7 @@ class ApiService {
     String? stream,
     required String state,
     required String city,
+    String? dob,
     String? address,
     String? schoolName,
     File? imageFile,
@@ -255,6 +256,7 @@ class ApiService {
     if (stream != null) request.fields['stream'] = stream;
     request.fields['state'] = state;
     request.fields['city'] = city;
+    if (dob != null && dob.isNotEmpty) request.fields['dob'] = dob;
     request.fields['address'] = address ?? "";
     request.fields['schoolName'] = schoolName ?? "";
 
@@ -288,6 +290,7 @@ class ApiService {
     String? stream,
     String? state,
     String? city,
+    String? dob,
     String? address,
     String? schoolName,
     File? imageFile,
@@ -307,6 +310,7 @@ class ApiService {
     if (stream != null) request.fields['stream'] = stream;
     if (state != null) request.fields['state'] = state;
     if (city != null) request.fields['city'] = city;
+    if (dob != null && dob.isNotEmpty) request.fields['dob'] = dob;
     if (address != null) request.fields['address'] = address;
     if (schoolName != null) request.fields['schoolName'] = schoolName;
 

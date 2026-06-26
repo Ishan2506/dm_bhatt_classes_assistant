@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
+import 'package:intl/intl.dart';
 
 class AddStudentScreen extends StatefulWidget {
   const AddStudentScreen({super.key});
@@ -44,6 +45,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
   String? _selectedStream;
   String? _selectedState;
   String? _selectedCity;
+  DateTime? _selectedDob;
 
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
@@ -134,6 +136,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                 stream: _selectedStream,
                 state: _selectedState,
                 city: _selectedCity ?? "",
+                dob: _selectedDob == null ? null : DateFormat('yyyy-MM-dd').format(_selectedDob!),
                 imageFile: _imageFile,
              );
 
@@ -163,6 +166,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                 stream: _selectedStream,
                 state: _selectedState ?? "Gujarat",
                 city: _selectedCity ?? "",
+                dob: _selectedDob == null ? null : DateFormat('yyyy-MM-dd').format(_selectedDob!),
                 imageFile: _imageFile,
               );
 
@@ -204,6 +208,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
        
        _selectedState = item['state'];
        _selectedCity = item['city'] != null && _selectedState != null && _stateCityMap[_selectedState!] != null && _stateCityMap[_selectedState!]!.contains(item['city']) ? item['city'] : null;
+       _selectedDob = _parseDob(item['dob']);
        
        // Image and Password resets
        _imageFile = null; 
@@ -311,7 +316,34 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
       _editingId = null;
       _selectedState = null;
       _selectedCity = null;
+      _selectedDob = null;
     });
+  }
+
+  Future<void> _pickDob() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDob ?? DateTime.now().subtract(const Duration(days: 365 * 12)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDob = picked;
+      });
+    }
+  }
+
+  DateTime? _parseDob(dynamic value) {
+    if (value == null || value.toString().trim().isEmpty) return null;
+
+    try {
+      if (value is DateTime) return value;
+      if (value is String) return DateTime.parse(value);
+    } catch (_) {}
+
+    return null;
   }
 
   @override
@@ -435,6 +467,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                       inputType: TextInputType.phone,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                        validator: (val) => (val != null && val.isNotEmpty && val.length != 10) ? "Invalid phone" : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    _buildDateField(
+                      hint: "Date of Birth",
+                      icon: Icons.cake_outlined,
+                      value: _selectedDob == null ? null : DateFormat('dd/MM/yyyy').format(_selectedDob!),
+                      onTap: _pickDob,
                     ),
                     const SizedBox(height: 16),
 
@@ -771,6 +811,41 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateField({
+    required String hint,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? value,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.black54),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                value ?? hint,
+                style: GoogleFonts.poppins(
+                  color: value == null ? Colors.grey : Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Icon(Icons.calendar_today_outlined, color: Colors.black54),
+          ],
         ),
       ),
     );

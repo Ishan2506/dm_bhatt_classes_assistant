@@ -123,6 +123,7 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       "Stream",
       "State",
       "City",
+      "DOB",
       "Address",
       "School Name"
     ];
