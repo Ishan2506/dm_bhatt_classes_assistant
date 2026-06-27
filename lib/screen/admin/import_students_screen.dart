@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dm_bhatt_classes_new/custom_widgets/custom_loader.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 import 'package:dm_bhatt_classes_new/network/api_service.dart';
+import 'package:dm_bhatt_classes_new/utils/states_cities_data.dart';
 import 'package:excel/excel.dart' hide Border, BorderStyle;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -40,7 +41,7 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
       }
     } catch (e) {
       if (mounted) {
-         CustomToast.showError(context, "Error picking file: $e");
+        CustomToast.showError(context, "Error picking file: $e");
       }
     }
   }
@@ -129,6 +130,17 @@ class _AdminImportStudentsScreenState extends State<AdminImportStudentsScreen> {
     ];
 
     sheetObject.appendRow(headers.map((e) => TextCellValue(e)).toList());
+
+    // Add States & Cities Reference Sheet
+    Sheet refSheet = excel['States & Cities Reference'];
+    refSheet.appendRow([TextCellValue("State"), TextCellValue("Allowed Cities")]);
+    indiaStatesCities.forEach((state, cities) {
+      refSheet.appendRow([
+        TextCellValue(state),
+        TextCellValue(cities.join(", ")),
+      ]);
+    });
+
     var fileBytes = excel.encode()!;
 
     // WEB Logic

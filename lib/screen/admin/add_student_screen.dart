@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:dm_bhatt_classes_new/utils/academic_constants.dart';
+import 'package:dm_bhatt_classes_new/utils/states_cities_data.dart';
 import 'package:intl/intl.dart';
 
 class AddStudentScreen extends StatefulWidget {
@@ -52,12 +53,6 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
 
   // Data Lists
   final List<String> _streams = ["Science", "Commerce"];
-  
-  final Map<String, List<String>> _stateCityMap = {
-    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],
-    "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
-    "Rajasthan": ["Jaipur", "Udaipur", "Jodhpur", "Kota"],
-  };
 
   // Real Data
   List<dynamic> _students = [];
@@ -207,7 +202,10 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
        _selectedStream = item['stream'] != null && _streams.contains(item['stream']) ? item['stream'] : null;
        
        _selectedState = item['state'];
-       _selectedCity = item['city'] != null && _selectedState != null && _stateCityMap[_selectedState!] != null && _stateCityMap[_selectedState!]!.contains(item['city']) ? item['city'] : null;
+       if (_selectedState != null && !indiaStatesCities.keys.contains(_selectedState)) {
+         _selectedState = null;
+       }
+       _selectedCity = item['city'] != null && _selectedState != null && indiaStatesCities[_selectedState!] != null && indiaStatesCities[_selectedState!]!.contains(item['city']) ? item['city'] : null;
        _selectedDob = _parseDob(item['dob']);
        
        // Image and Password resets
@@ -523,7 +521,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                       hint: "State",
                       icon: Icons.map_outlined,
                       value: _selectedState,
-                      items: _stateCityMap.keys.toList(),
+                      items: indiaStatesCities.keys.toList(),
                       onChanged: (val) {
                         setState(() {
                           _selectedState = val;
@@ -537,7 +535,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> with SingleTickerPr
                       hint: "City",
                       icon: Icons.location_city,
                       value: _selectedCity,
-                      items: _selectedState == null ? [] : _stateCityMap[_selectedState!] ?? [],
+                      items: _selectedState == null ? [] : indiaStatesCities[_selectedState!] ?? [],
                       onChanged: (val) => setState(() => _selectedCity = val),
                     ),
                     const SizedBox(height: 16),
