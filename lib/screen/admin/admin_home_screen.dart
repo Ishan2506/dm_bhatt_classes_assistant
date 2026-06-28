@@ -23,13 +23,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   bool _isSuperAdmin = false;
   bool _isLoadingRole = true;
 
-  final List<Widget> _allScreens = [
-    const AdminDashboard(),
-    const AdminExploreScreen(isTab: true),
-    const AdminAddScreen(),
-    const AdminMoreScreen(),
-  ];
-
   final List<String> _allTitles = [
     "Dashboard",
     "Explore",
@@ -81,8 +74,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }
 
   List<Widget> get _screens {
-    if (_isSuperAdmin) return _allScreens;
-    return _allScreens.sublist(1);
+    final List<Widget> screens = [
+      const AdminDashboard(),
+      const AdminExploreScreen(isTab: true),
+      AdminAddScreen(isSuperAdmin: _isSuperAdmin),
+      AdminMoreScreen(isSuperAdmin: _isSuperAdmin),
+    ];
+    if (_isSuperAdmin) return screens;
+    return screens.sublist(1);
   }
 
   List<String> get _titles {

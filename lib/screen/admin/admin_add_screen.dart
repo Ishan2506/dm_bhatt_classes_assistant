@@ -16,7 +16,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:dm_bhatt_classes_new/utils/custom_toast.dart';
 
 class AdminAddScreen extends StatelessWidget {
-  const AdminAddScreen({super.key});
+  final bool isSuperAdmin;
+  const AdminAddScreen({super.key, this.isSuperAdmin = false});
 
   @override
   Widget build(BuildContext context) {
@@ -31,20 +32,21 @@ class AdminAddScreen extends StatelessWidget {
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
           children: [
-            _buildAddCard(
-              context,
-              "Add Student",
-              Icons.person_add_outlined,
-              Colors.blue,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddStudentScreen(),
-                  ),
-                );
-              },
-            ),
+            if (isSuperAdmin)
+              _buildAddCard(
+                context,
+                "Add Student",
+                Icons.person_add_outlined,
+                Colors.blue,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddStudentScreen(),
+                    ),
+                  );
+                },
+              ),
 
             // _buildAddCard(
             //   context,

@@ -14,7 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AdminMoreScreen extends StatefulWidget {
-  const AdminMoreScreen({super.key});
+  final bool isSuperAdmin;
+  const AdminMoreScreen({super.key, this.isSuperAdmin = false});
 
   @override
   State<AdminMoreScreen> createState() => _AdminMoreScreenState();
@@ -68,9 +69,10 @@ class _AdminMoreScreenState extends State<AdminMoreScreen> {
           _buildOptionTile(context, Icons.help_outline, "Help & Support", () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpSupportScreen()));
           }),
-          _buildOptionTile(context, Icons.file_upload_outlined, "Import Students", () {
-             Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminImportStudentsScreen()));
-          }),
+          if (widget.isSuperAdmin)
+            _buildOptionTile(context, Icons.file_upload_outlined, "Import Students", () {
+               Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminImportStudentsScreen()));
+            }),
           _buildOptionTile(context, Icons.analytics_outlined, "Reports & Analytics", () {
              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminReportsScreen()));
           }),
