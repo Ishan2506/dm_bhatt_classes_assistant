@@ -207,7 +207,7 @@ class _GenerateRedeemCodeScreenState extends State<GenerateRedeemCodeScreen> {
               children: [
                 Image.asset('ic_launcher.png', height: 40, errorBuilder: (c, e, s) => const Icon(Icons.school, size: 40, color: Color(0xFF0D47A1))),
                 const SizedBox(width: 12),
-                Text("DM Bhatt Classes", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF0D47A1))),
+                Text("Padhaku", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF0D47A1))),
               ],
             ),
             const SizedBox(height: 24),
