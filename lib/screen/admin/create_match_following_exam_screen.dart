@@ -41,7 +41,7 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
   // Pairs Data
   late List<Map<String, dynamic>> _pairs;
   int _currentStep = 0;
-  bool _isManualEntry = false;
+  bool _isManualEntry = true;
   String? _editingId;
 
   // History Filters & Data
@@ -125,7 +125,7 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
       _pairs = List.generate(int.tryParse(_selectedMarks ?? "20") ?? 20, (index) => {
         "left": "", "right": ""});
       _currentStep = 0;
-      _isManualEntry = false;
+      _isManualEntry = true;
     });
   }
 
@@ -427,15 +427,7 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
                       CustomToast.showError(context, "Please enter all basic details");
                     }
                   } else if (_currentStep == 1) {
-                     if (_isManualEntry) {
-                        _submitTest();
-                     } else {
-                        if (_pickedPdf != null) {
-                          _uploadAndProcessPdf();
-                        } else {
-                          CustomToast.showError(context, "Please upload a PDF first");
-                        }
-                     }
+                    _submitTest();
                   }
                 },
                 onStepCancel: () {
@@ -459,7 +451,7 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
                              ? const CustomLoader(size: 20)
                              : Text(
                                  _currentStep == 1 
-                                   ? (_isManualEntry ? (_isEditing ? "Update Test" : "Create Test") : "Process PDF") 
+                                   ? (_isEditing ? "Update Test" : "Create Test") 
                                    : "Continue", 
                                  style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)
                                ),
@@ -586,76 +578,22 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
                     content: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                         // Toggle
-                         Row(
-                           children: [
-                             Expanded(
-                               child: RadioListTile<bool>(
-                                 title: Text("Upload PDF", style: GoogleFonts.poppins(fontSize: 14)),
-                                 value: false, 
-                                 groupValue: _isManualEntry, 
-                                 contentPadding: EdgeInsets.zero,
-                                 onChanged: (val) => setState(() => _isManualEntry = val!),
-                               ),
-                             ),
-                             Expanded(
-                               child: RadioListTile<bool>(
-                                 title: Text("Manual Entry", style: GoogleFonts.poppins(fontSize: 14)),
-                                 value: true, 
-                                 groupValue: _isManualEntry, 
-                                 contentPadding: EdgeInsets.zero,
-                                 onChanged: (val) => setState(() => _isManualEntry = val!),
-                               ),
-                             ),
-                           ],
-                         ),
-                         
-                         const SizedBox(height: 16),
-      
-                         if (!_isManualEntry) ...[
-                           Container(
-                             width: double.infinity,
-                             padding: const EdgeInsets.all(24),
-                             decoration: BoxDecoration(
-                               border: Border.all(color: Colors.grey.shade300),
-                               borderRadius: BorderRadius.circular(12),
-                               color: Colors.grey.shade50,
-                             ),
-                             child: Column(
-                               children: [
-                                 Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.blue.shade300),
-                                 const SizedBox(height: 16),
-                                 ElevatedButton(
-                                   onPressed: _pickPdf,
-                                   child: Text(_pickedPdf != null ? "Change PDF" : "Select PDF"),
-                                 ),
-                                 if (_pickedPdf != null) ...[
-                                   const SizedBox(height: 12),
-                                   Text("Selected: ${_pickedPdf!.name}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                                 ]
-                               ],
-                             ),
-                           ),
-                           const SizedBox(height: 12),
-                           const Text("The PDF should contain an 'Overview' section and 'Match Following' questions.", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                         ] else ...[
-                            // Manual Entry Content
-                            TextFormField(
-                              controller: _overviewController,
-                              decoration: _inputDecoration("Chapter Overview / Study Material", Icons.article).copyWith(
-                                alignLabelWithHint: true,
-                              ),
-                              maxLines: 6,
-                              validator: (v) => v!.isEmpty ? "Required" : null,
-                              style: GoogleFonts.poppins(),
-                            ),
-                            const SizedBox(height: 24),
-      
-                            _buildHeader("Pairs (${_selectedMarks ?? 20})"),
-                            const SizedBox(height: 16),
-      
-                            ...List.generate(_pairs.length, (index) => _buildPairBlock(index)),
-                         ]
+                        // Manual Entry Content
+                        TextFormField(
+                          controller: _overviewController,
+                          decoration: _inputDecoration("Chapter Overview / Study Material", Icons.article).copyWith(
+                            alignLabelWithHint: true,
+                          ),
+                          maxLines: 6,
+                          validator: (v) => v!.isEmpty ? "Required" : null,
+                          style: GoogleFonts.poppins(),
+                        ),
+                        const SizedBox(height: 24),
+  
+                        _buildHeader("Pairs (${_selectedMarks ?? 20})"),
+                        const SizedBox(height: 16),
+  
+                        ...List.generate(_pairs.length, (index) => _buildPairBlock(index)),
                       ],
                     ),
                   ),
