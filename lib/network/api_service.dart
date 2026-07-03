@@ -758,22 +758,25 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/truefalseexam/create");
+    final bodyData = {
+      "title": title,
+      "board": board,
+      "std": std,
+      "medium": medium,
+      "stream": stream ?? "-",
+      "subject": subject,
+      "unit": unit,
+      "overview": overview,
+      "totalMarks": totalMarks,
+      "orderIndex": orderIndex,
+      "questions": questions,
+    };
+    debugPrint("[API_SERVICE][createTrueFalseExam] URL: $uri");
+    debugPrint("[API_SERVICE][createTrueFalseExam] Body: ${jsonEncode(bodyData)}");
     return _handleSession(await http.post(
       uri,
       headers: await _getHeaders(),
-      body: jsonEncode({
-        "title": title,
-        "board": board,
-        "std": std,
-        "medium": medium,
-        "stream": stream ?? "-",
-        "subject": subject,
-        "unit": unit,
-        "overview": overview,
-        "totalMarks": totalMarks,
-        "orderIndex": orderIndex,
-        "questions": questions,
-      }),
+      body: jsonEncode(bodyData),
     ));
   }
 
@@ -799,22 +802,25 @@ class ApiService {
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/truefalseexam/update/$id");
+    final bodyData = {
+      "title": title,
+      "board": board,
+      "std": std,
+      "medium": medium,
+      "stream": stream ?? "-",
+      "subject": subject,
+      "unit": unit,
+      "overview": overview,
+      "totalMarks": totalMarks,
+      "orderIndex": orderIndex,
+      "questions": questions,
+    };
+    debugPrint("[API_SERVICE][updateTrueFalseExam] URL: $uri");
+    debugPrint("[API_SERVICE][updateTrueFalseExam] Body: ${jsonEncode(bodyData)}");
     return _handleSession(await http.put(
       uri,
       headers: await _getHeaders(),
-      body: jsonEncode({
-        "title": title,
-        "board": board,
-        "std": std,
-        "medium": medium,
-        "stream": stream ?? "-",
-        "subject": subject,
-        "unit": unit,
-        "overview": overview,
-        "totalMarks": totalMarks,
-        "orderIndex": orderIndex,
-        "questions": questions,
-      }),
+      body: jsonEncode(bodyData),
     ));
   }
 

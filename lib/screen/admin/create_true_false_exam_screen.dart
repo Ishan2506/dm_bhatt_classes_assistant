@@ -25,7 +25,6 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
   late TextEditingController _titleController;
   late TextEditingController _orderIndexController;
   late TextEditingController _unitController;
-  late TextEditingController _overviewController;
 
   String? _selectedBoard;
   String? _selectedStandard;
@@ -62,7 +61,6 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
     _titleController = TextEditingController(text: widget.testToEdit?['title'] ?? "");
     _orderIndexController = TextEditingController(text: (widget.testToEdit?['orderIndex'] ?? 1).toString());
     _unitController = TextEditingController(text: widget.testToEdit?['unit'] ?? "");
-    _overviewController = TextEditingController(text: widget.testToEdit?['overview'] ?? "");
     
     if (_isEditing) {
       _editingId = widget.testToEdit?['_id'];
@@ -152,7 +150,6 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
       _selectedMarks = null;
       _titleController.clear();
       _unitController.clear();
-      _overviewController.clear();
       _pickedPdf = null;
       _questions = List.generate(int.tryParse(_selectedMarks ?? "20") ?? 20, (index) => {
         "question": "", "questionImage": null, "type": "True/False", "optionA": "", "optionAImage": null, "optionB": "", "optionBImage": null, "optionC": "", "optionCImage": null, "optionD": "", "optionDImage": null, "correctAnswer": "",
@@ -173,7 +170,6 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
       _selectedMarks = test['totalMarks']?.toString();
       _titleController.text = test['title'] ?? "";
       _unitController.text = test['unit'] ?? "";
-      _overviewController.text = test['overview'] ?? "";
       
       if (test['questions'] != null) {
         _questions = List<Map<String, dynamic>>.from(
@@ -321,15 +317,10 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        final overview = body['overview'] as String? ?? "";
         final questions = body['questions'] as List? ?? [];
 
         if (mounted) {
           setState(() {
-            if (overview.isNotEmpty) {
-              _overviewController.text = overview;
-            }
-
             if (questions.isNotEmpty) {
               final List<Map<String, dynamic>> parsedQuestions = [];
               final int marks = int.tryParse(_selectedMarks ?? "20") ?? 20;
@@ -395,7 +386,6 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
     _titleController.dispose();
     _orderIndexController.dispose();
     _unitController.dispose();
-    _overviewController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -428,34 +418,66 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
           return newQ;
         }).toList();
 
-        final response = (_isEditing || _editingId != null) 
-          ? await ApiService.updateTrueFalseExam(
-              id: _editingId ?? widget.testToEdit!['_id'],
-              title: _titleController.text,
-              board: _selectedBoard!,
-              std: _selectedStandard!,
-              medium: _selectedMedium!,
-              stream: _selectedStream,
-              subject: _selectedSubject!,
-              unit: _unitController.text,
-              overview: _overviewController.text,
-              totalMarks: int.tryParse(_selectedMarks ?? "20") ?? 20,
-              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
-              questions: finalQuestions,
-            )
-          : await ApiService.createTrueFalseExam(
-              title: _titleController.text,
-              board: _selectedBoard!,
-              std: _selectedStandard!,
-              medium: _selectedMedium!,
-              stream: _selectedStream,
-              subject: _selectedSubject!,
-              unit: _unitController.text,
-              overview: _overviewController.text,
-              totalMarks: int.tryParse(_selectedMarks ?? "20") ?? 20,
-              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
-              questions: finalQuestions,
-            );
+        final responseFuture = (_isEditing || _editingId != null) 
+          ? (() {
+              final idVal = _editingId ?? widget.testToEdit!['_id'];
+              debugPrint("[TRUE_FALSE_EXAM][UPDATE] ID: $idVal");
+              debugPrint("[TRUE_FALSE_EXAM][UPDATE] Payload: " + jsonEncode({
+                "title": _titleController.text,
+                "board": _selectedBoard!,
+                "std": _selectedStandard!,
+                "medium": _selectedMedium!,
+                "stream": _selectedStream,
+                "subject": _selectedSubject!,
+                "unit": _unitController.text,
+                "totalMarks": int.tryParse(_selectedMarks ?? "20") ?? 20,
+                "orderIndex": int.tryParse(_orderIndexController.text) ?? 1,
+                "questions": finalQuestions,
+              }));
+              return ApiService.updateTrueFalseExam(
+                id: idVal,
+                title: _titleController.text,
+                board: _selectedBoard!,
+                std: _selectedStandard!,
+                medium: _selectedMedium!,
+                stream: _selectedStream,
+                subject: _selectedSubject!,
+                unit: _unitController.text,
+                overview: " ",
+                totalMarks: int.tryParse(_selectedMarks ?? "20") ?? 20,
+                orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
+                questions: finalQuestions,
+              );
+            })()
+          : (() {
+              debugPrint("[TRUE_FALSE_EXAM][CREATE] Payload: " + jsonEncode({
+                "title": _titleController.text,
+                "board": _selectedBoard!,
+                "std": _selectedStandard!,
+                "medium": _selectedMedium!,
+                "stream": _selectedStream,
+                "subject": _selectedSubject!,
+                "unit": _unitController.text,
+                "totalMarks": int.tryParse(_selectedMarks ?? "20") ?? 20,
+                "orderIndex": int.tryParse(_orderIndexController.text) ?? 1,
+                "questions": finalQuestions,
+              }));
+              return ApiService.createTrueFalseExam(
+                title: _titleController.text,
+                board: _selectedBoard!,
+                std: _selectedStandard!,
+                medium: _selectedMedium!,
+                stream: _selectedStream,
+                subject: _selectedSubject!,
+                unit: _unitController.text,
+                overview: " ",
+                totalMarks: int.tryParse(_selectedMarks ?? "20") ?? 20,
+                orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
+                questions: finalQuestions,
+              );
+            })();
+
+        final response = await responseFuture;
 
         CustomLoader.hide(context);
 
@@ -738,21 +760,8 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
                                ],
                              ),
                            ),
-                           const SizedBox(height: 12),
-                           const Text("The PDF should contain an 'Overview' section and 'True/False' questions.", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                         ] else ...[
+                           ] else ...[
                             // Manual Entry Content
-                            TextFormField(
-                              controller: _overviewController,
-                              decoration: _inputDecoration("Chapter Overview / Study Material", Icons.article).copyWith(
-                                alignLabelWithHint: true,
-                              ),
-                              maxLines: 6,
-                              validator: (v) => v!.isEmpty ? "Required" : null,
-                              style: GoogleFonts.poppins(),
-                            ),
-                            const SizedBox(height: 24),
-      
                             _buildHeader("Questions (${_selectedMarks ?? 20})"),
                             const SizedBox(height: 16),
       
