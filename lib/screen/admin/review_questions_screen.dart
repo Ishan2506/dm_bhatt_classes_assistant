@@ -17,7 +17,8 @@ class ReviewQuestionsScreen extends StatefulWidget {
   final String medium;
   final String? stream;
   final String unit;
-  final String totalMarks; // or int
+  final String totalMarks;
+  final int orderIndex;
 
   const ReviewQuestionsScreen({
     super.key,
@@ -30,6 +31,7 @@ class ReviewQuestionsScreen extends StatefulWidget {
     this.stream,
     required this.unit,
     required this.totalMarks,
+    this.orderIndex = 0,
   });
 
   @override
@@ -86,6 +88,7 @@ class _ReviewQuestionsScreenState extends State<ReviewQuestionsScreen> {
         stream: widget.stream,
         unit: widget.unit,
         totalMarks: int.tryParse(widget.totalMarks) ?? 0,
+        orderIndex: widget.orderIndex,
         questions: List<Map<String, dynamic>>.from(_questions),
       );
 

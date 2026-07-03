@@ -23,6 +23,7 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
 
   // Controllers
   late TextEditingController _titleController;
+  late TextEditingController _orderIndexController;
   late TextEditingController _unitController;
   late TextEditingController _overviewController;
 
@@ -59,6 +60,7 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _titleController = TextEditingController(text: widget.testToEdit?['title'] ?? "");
+    _orderIndexController = TextEditingController(text: (widget.testToEdit?['orderIndex'] ?? 1).toString());
     _unitController = TextEditingController(text: widget.testToEdit?['unit'] ?? "");
     _overviewController = TextEditingController(text: widget.testToEdit?['overview'] ?? "");
     
@@ -391,6 +393,7 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
   void dispose() {
     _tabController.dispose();
     _titleController.dispose();
+    _orderIndexController.dispose();
     _unitController.dispose();
     _overviewController.dispose();
     _searchController.dispose();
@@ -437,6 +440,7 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
               unit: _unitController.text,
               overview: _overviewController.text,
               totalMarks: int.tryParse(_selectedMarks ?? "20") ?? 20,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               questions: finalQuestions,
             )
           : await ApiService.createTrueFalseExam(
@@ -449,6 +453,7 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
               unit: _unitController.text,
               overview: _overviewController.text,
               totalMarks: int.tryParse(_selectedMarks ?? "20") ?? 20,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               questions: finalQuestions,
             );
 
@@ -656,6 +661,13 @@ class _CreateTrueFalseExamScreenState extends State<CreateTrueFalseExamScreen> w
                           controller: _titleController,
                           decoration: _inputDecoration("Test Title", Icons.title),
                           validator: (v) => v!.isEmpty ? "Required" : null,
+                          style: GoogleFonts.poppins(),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _orderIndexController,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration("Display Order / Chapter No.", Icons.format_list_numbered),
                           style: GoogleFonts.poppins(),
                         ),
                         const SizedBox(height: 16),

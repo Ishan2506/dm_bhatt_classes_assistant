@@ -17,6 +17,7 @@ class AdminAddOneLinerExamScreen extends StatefulWidget {
 class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _unitController = TextEditingController();
+  final TextEditingController _orderIndexController = TextEditingController(text: "1");
   String? _selectedBoard;
   String? _selectedStd;
   String? _selectedMedium;
@@ -37,6 +38,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
       _id = widget.examData!['_id'];
       _titleController.text = widget.examData!['title'] ?? "";
       _unitController.text = widget.examData!['unit'] ?? "";
+      _orderIndexController.text = (widget.examData!['orderIndex'] ?? 1).toString();
       _selectedStd = widget.examData!['std'];
       if (_selectedStd != null && _selectedStd!.endsWith("th")) {
         _selectedStd = _selectedStd!.replaceAll("th", "");
@@ -97,6 +99,7 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
         'subject': _selectedSubject,
         'unit': _unitController.text,
         'title': _titleController.text,
+        'orderIndex': int.tryParse(_orderIndexController.text) ?? 1,
         'totalMarks': int.tryParse(_selectedMarks!) ?? 20,
         'questions': _questions.map((q) => {
           'questionText': q['questionText'],
@@ -299,6 +302,16 @@ class _AdminAddOneLinerExamScreenState extends State<AdminAddOneLinerExamScreen>
             TextField(
               controller: _titleController,
               decoration: InputDecoration(labelText: "Exam Title", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _orderIndexController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Display Order / Chapter No.",
+                prefixIcon: const Icon(Icons.format_list_numbered),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ],
         ),

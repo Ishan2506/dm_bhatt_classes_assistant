@@ -51,6 +51,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   bool _isLoading = false;
   final TextEditingController _unitController = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _orderIndexController = TextEditingController(text: "1");
   final TextEditingController _searchController = TextEditingController();
   
   // Exam History Data
@@ -248,7 +249,8 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                             medium: dialogMedium!,
                             stream: dialogStream,
                             unit: dialogUnit.text,
-                            totalMarks: dialogMarks!, 
+                            totalMarks: dialogMarks!,
+                            orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
                           ))
                         );
                         CustomToast.showSuccess(context, "Exam cloned! Review questions and save.");
@@ -356,7 +358,8 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
              medium: _selectedMedium ?? "",
              stream: _selectedStream,
              unit: _unitController.text,
-             totalMarks: _selectedMarks ?? "20", 
+             totalMarks: _selectedMarks ?? "20",
+             orderIndex: int.tryParse(_orderIndexController.text) ?? 1, 
            ))
          );
 
@@ -388,6 +391,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
           stream: _selectedStream,
           unit: _unitController.text,
           totalMarks: _selectedMarks ?? "20",
+          orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
         ))
       );
     } else {
@@ -404,6 +408,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   void dispose() {
     _unitController.dispose();
     _titleController.dispose();
+    _orderIndexController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -650,6 +655,18 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                           labelText: "Exam Title",
                           labelStyle: GoogleFonts.poppins(color: Colors.grey),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _orderIndexController,
+                        keyboardType: TextInputType.number,
+                        style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
+                        decoration: InputDecoration(
+                          labelText: "Display Order / Chapter No.",
+                          labelStyle: GoogleFonts.poppins(color: Colors.grey),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          prefixIcon: const Icon(Icons.format_list_numbered, color: Colors.blue),
                         ),
                       ),
                       const SizedBox(height: 16),

@@ -25,6 +25,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
   late TextEditingController _titleController;
   late TextEditingController _unitController;
   late TextEditingController _overviewController;
+  late TextEditingController _orderIndexController;
 
   String? _selectedBoard;
   String? _selectedStandard;
@@ -60,6 +61,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
     _titleController = TextEditingController(text: widget.testToEdit?['title'] ?? "");
     _unitController = TextEditingController(text: widget.testToEdit?['unit'] ?? "");
     _overviewController = TextEditingController(text: widget.testToEdit?['overview'] ?? "");
+    _orderIndexController = TextEditingController(text: (widget.testToEdit?['orderIndex'] ?? 1).toString());
     
     if (_isEditing) {
       _editingId = widget.testToEdit?['_id'];
@@ -437,6 +439,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
               subject: _selectedSubject!,
               unit: _unitController.text,
               overview: _overviewController.text,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               questions: finalQuestions,
             )
           : await ApiService.createFiveMinTest(
@@ -448,6 +451,7 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
               subject: _selectedSubject!,
               unit: _unitController.text,
               overview: _overviewController.text,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               questions: finalQuestions,
             );
 
@@ -640,6 +644,13 @@ class _CreateFiveMinTestScreenState extends State<CreateFiveMinTestScreen> with 
                           controller: _titleController,
                           decoration: _inputDecoration("Test Title", Icons.title),
                           validator: (v) => v!.isEmpty ? "Required" : null,
+                          style: GoogleFonts.poppins(),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _orderIndexController,
+                          keyboardType: TextInputType.number,
+                          decoration: _inputDecoration("Display Order / Chapter No.", Icons.format_list_numbered),
                           style: GoogleFonts.poppins(),
                         ),
                         const SizedBox(height: 16),

@@ -565,6 +565,7 @@ class ApiService {
     String? stream,
     required String unit,
     required int totalMarks,
+    required int orderIndex,
     required List<Map<String, dynamic>> questions,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -581,6 +582,7 @@ class ApiService {
         "stream": stream ?? "-",
         "unit": unit,
         "totalMarks": totalMarks,
+        "orderIndex": orderIndex,
         "questions": questions,
       }),
     ));
@@ -653,6 +655,7 @@ class ApiService {
     required String subject,
     required String unit,
     required String overview,
+    required int orderIndex,
     required List<Map<String, dynamic>> questions,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -669,6 +672,7 @@ class ApiService {
         "subject": subject,
         "unit": unit,
         "overview": overview,
+        "orderIndex": orderIndex,
         "questions": questions,
       }),
     ));
@@ -690,6 +694,7 @@ class ApiService {
     required String subject,
     required String unit,
     required String overview,
+    required int orderIndex,
     required List<Map<String, dynamic>> questions,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -706,6 +711,7 @@ class ApiService {
         "subject": subject,
         "unit": unit,
         "overview": overview,
+        "orderIndex": orderIndex,
         "questions": questions,
       }),
     ));
@@ -747,6 +753,7 @@ class ApiService {
     required String unit,
     required String overview,
     required int totalMarks,
+    required int orderIndex,
     required List<Map<String, dynamic>> questions,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -764,6 +771,7 @@ class ApiService {
         "unit": unit,
         "overview": overview,
         "totalMarks": totalMarks,
+        "orderIndex": orderIndex,
         "questions": questions,
       }),
     ));
@@ -786,6 +794,7 @@ class ApiService {
     required String unit,
     required String overview,
     required int totalMarks,
+    required int orderIndex,
     required List<Map<String, dynamic>> questions,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -803,6 +812,7 @@ class ApiService {
         "unit": unit,
         "overview": overview,
         "totalMarks": totalMarks,
+        "orderIndex": orderIndex,
         "questions": questions,
       }),
     ));
@@ -1220,6 +1230,7 @@ class ApiService {
     String? stream,
     required String year,
     required String subject,
+    required int orderIndex,
     required PlatformFile file,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -1228,6 +1239,7 @@ class ApiService {
 
     request.fields['board'] = board;
     request.fields['title'] = title;
+    request.fields['orderIndex'] = orderIndex.toString();
     request.fields['medium'] = medium;
     request.fields['standard'] = standard;
     if (stream != null) request.fields['stream'] = stream;
@@ -1257,6 +1269,7 @@ class ApiService {
     String? stream,
     required String year,
     required String schoolName,
+    required int orderIndex,
     required PlatformFile file,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -1265,6 +1278,7 @@ class ApiService {
 
     request.fields['board'] = board;
     request.fields['title'] = title;
+    request.fields['orderIndex'] = orderIndex.toString();
     request.fields['subject'] = subject;
     request.fields['medium'] = medium;
     request.fields['standard'] = standard;
@@ -1296,6 +1310,7 @@ class ApiService {
     String? stream,
     required String year,
     String? schoolName,
+    required int orderIndex,
     required PlatformFile file,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -1304,6 +1319,7 @@ class ApiService {
 
     request.fields['board'] = board;
     request.fields['title'] = title;
+    request.fields['orderIndex'] = orderIndex.toString();
     request.fields['subject'] = subject;
     request.fields['unit'] = unit;
     request.fields['medium'] = medium;
@@ -1334,6 +1350,7 @@ class ApiService {
     String? stream,
     required String subject,
     required String year,
+    required int orderIndex,
     required PlatformFile file,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -1341,6 +1358,7 @@ class ApiService {
     final request = http.MultipartRequest('POST', uri);
 
     request.fields['title'] = title;
+    request.fields['orderIndex'] = orderIndex.toString();
     request.fields['board'] = board;
     request.fields['standard'] = standard;
     request.fields['medium'] = medium;
@@ -1373,6 +1391,7 @@ class ApiService {
     required String year,
     String? schoolName,
     String? unit,
+    required int orderIndex,
     PlatformFile? file,
   }) async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
@@ -1388,6 +1407,7 @@ class ApiService {
     request.fields['year'] = year;
     if (schoolName != null) request.fields['schoolName'] = schoolName;
     if (unit != null) request.fields['unit'] = unit;
+    request.fields['orderIndex'] = orderIndex.toString();
 
     if (file != null) {
       final bytes = file.bytes ?? await File(file.path!).readAsBytes();

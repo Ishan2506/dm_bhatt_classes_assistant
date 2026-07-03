@@ -199,6 +199,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
              subject: _selectedCreateSubject!,
              unit: _unitController.text,
              overview: _overviewController.text,
+             orderIndex: 1,
              questions: _questions
            );
            
@@ -222,6 +223,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
              subject: _selectedCreateSubject!,
              unit: _unitController.text,
              overview: _overviewController.text,
+             orderIndex: 1,
              questions: _questions
            );
 

@@ -57,6 +57,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
 
   // Image Material Fields
   final TextEditingController _imageTitleController = TextEditingController();
+  final TextEditingController _orderIndexController = TextEditingController(text: "1");
   final TextEditingController _imageSchoolNameController = TextEditingController();
   String? _selectedBoardIm;
   String? _selectedSubjectIm;
@@ -94,6 +95,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
     _schoolNameController.dispose();
     _notesTitleController.dispose();
     _imageTitleController.dispose();
+    _orderIndexController.dispose();
     _imageSchoolNameController.dispose();
     super.dispose();
   }
@@ -150,6 +152,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
           _tabController.animateTo(2);
        } else if (type == 'ImageMaterial') {
           _imageTitleController.text = item['title'] ?? "";
+          _orderIndexController.text = (item['orderIndex'] ?? 1).toString();
           _selectedBoardIm = item['board'];
           _selectedSubjectIm = item['subject'];
           _selectedMediumIm = item['medium'];
@@ -214,6 +217,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               stream: _selectedStreamBi,
               year: _selectedYearBi!,
               subject: _selectedSubjectBi!,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _boardPdfFile,
             )
           : await ApiService.uploadBoardPaper(
@@ -224,6 +228,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               stream: _selectedStreamBi,
               year: _selectedYearBi!,
               subject: _selectedSubjectBi!,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _boardPdfFile!,
             );
 
@@ -259,6 +264,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               stream: _selectedStreamSi ?? "-",
               year: _selectedYearSi!,
               schoolName: _schoolNameController.text,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _schoolPdfFile,
             )
           : await ApiService.uploadSchoolPaper(
@@ -270,6 +276,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               stream: _selectedStreamSi ?? "-",
               year: _selectedYearSi!,
               schoolName: _schoolNameController.text,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _schoolPdfFile!,
             );
 
@@ -304,6 +311,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               standard: _selectedStdNi!,
               stream: _selectedStreamNi ?? "None",
               year: _selectedYearNi!,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _notesPdfFile,
             )
           : await ApiService.uploadNotes(
@@ -314,6 +322,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               standard: _selectedStdNi!,
               stream: _selectedStreamNi ?? "None",
               year: _selectedYearNi!,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _notesPdfFile!,
             );
 
@@ -350,6 +359,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               stream: _selectedStreamIm ?? "-",
               year: _selectedYearIm!,
               schoolName: _imageSchoolNameController.text.isNotEmpty ? _imageSchoolNameController.text : null,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _imageFile,
             )
           : await ApiService.uploadImageMaterial(
@@ -362,6 +372,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               stream: _selectedStreamIm ?? "-",
               year: _selectedYearIm!,
               schoolName: _imageSchoolNameController.text.isNotEmpty ? _imageSchoolNameController.text : null,
+              orderIndex: int.tryParse(_orderIndexController.text) ?? 1,
               file: _imageFile!,
             );
 
@@ -390,6 +401,7 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
       _notesTitleController.clear();
       _imageTitleController.clear();
       _imageSchoolNameController.clear();
+      _orderIndexController.text = "1";
       _boardPdfFile = null;
       _schoolPdfFile = null;
       _notesPdfFile = null;
@@ -559,6 +571,8 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
             ),
           _buildTextField(_boardTitleController, "Paper Title", Icons.title),
           const SizedBox(height: 16),
+          _buildTextField(_orderIndexController, "Display Order / Chapter No.", Icons.format_list_numbered),
+          const SizedBox(height: 16),
           _buildDropdown("Board", Icons.school, _selectedBoardBi, AcademicConstants.boards, (val) => setState(() {
             _selectedBoardBi = val;
             _selectedStdBi = null;
@@ -613,6 +627,8 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               ],
             ),
           _buildTextField(_schoolTitleController, "Paper Title", Icons.title),
+          const SizedBox(height: 16),
+          _buildTextField(_orderIndexController, "Display Order / Chapter No.", Icons.format_list_numbered),
           const SizedBox(height: 16),
           _buildDropdown("Board", Icons.school, _selectedBoardSi, AcademicConstants.boards, (val) => setState(() {
             _selectedBoardSi = val;
@@ -671,6 +687,8 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
             ),
           _buildTextField(_notesTitleController, "Notes Title", Icons.title),
           const SizedBox(height: 16),
+          _buildTextField(_orderIndexController, "Display Order / Chapter No.", Icons.format_list_numbered),
+          const SizedBox(height: 16),
           _buildDropdown("Board", Icons.school, _selectedBoardNi, AcademicConstants.boards, (val) => setState(() {
             _selectedBoardNi = val;
             _selectedStdNi = null;
@@ -725,6 +743,8 @@ class _AdminAddMaterialScreenState extends State<AdminAddMaterialScreen> with Si
               ],
             ),
           _buildTextField(_imageTitleController, "Image Title", Icons.title),
+          const SizedBox(height: 16),
+          _buildTextField(_orderIndexController, "Display Order / Chapter No.", Icons.format_list_numbered),
           const SizedBox(height: 16),
           _buildDropdown("Board", Icons.school, _selectedBoardIm, AcademicConstants.boards, (val) => setState(() {
             _selectedBoardIm = val;
