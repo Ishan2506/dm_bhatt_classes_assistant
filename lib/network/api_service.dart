@@ -1125,7 +1125,7 @@ class ApiService {
   static Future<http.Response> getDashboardStats() async {
     if (!await _checkConnectivity()) return http.Response('{"error": "No internet connection"}', 503);
     final uri = Uri.parse("$baseUrl/admin/dashboard-stats");
-    return _handleSession(await http.get(uri));
+    return _handleSession(await http.get(uri, headers: await _getHeaders()));
   }
 
   static Future<http.Response> getExamReports({String? type, String? board, String? std, String? medium, String? stream, String? studentId}) async {

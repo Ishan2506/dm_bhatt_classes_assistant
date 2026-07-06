@@ -18,7 +18,7 @@ enum ChartType { pie, bar }
 class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   String? _error;
-  int _totalSales = 0;
+  num _totalSales = 0;
   List<Map<String, dynamic>> _subjectSales = [];
   List<Map<String, dynamic>> _standardSales = [];
   late TabController _tabController;
@@ -40,16 +40,18 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   Future<void> _fetchStats() async {
     try {
       final response = await ApiService.getDashboardStats();
+      debugPrint("AdminDashboard: getDashboardStats response status: ${response.statusCode}");
+      debugPrint("AdminDashboard: getDashboardStats response body: ${response.body}");
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _totalSales = data['totalSales'] ?? 0;
+          _totalSales = (data['totalSales'] ?? 0) as num;
           
           final List<dynamic> subjectData = data['subjectSales'] ?? [];
           _subjectSales = subjectData.map((item) {
             return {
               "subject": item['subject'] ?? "Unknown",
-              "sales": item['sales'] ?? 0,
+              "sales": (item['sales'] ?? 0) as num,
               "percentage": (item['percentage'] ?? 0).toDouble(),
               "color": _getSubjectColor(item['subject']),
             };
@@ -59,7 +61,7 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
           _standardSales = standardData.map((item) {
             return {
               "standard": item['standard'] ?? "Unknown",
-              "sales": item['sales'] ?? 0,
+              "sales": (item['sales'] ?? 0) as num,
               "percentage": (item['percentage'] ?? 0).toDouble(),
               "color": _getStandardColor(item['standard']),
             };
@@ -78,8 +80,9 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
           _error = "Failed to load dashboard data.";
         });
       }
-    } catch (e) {
-      print("Error fetching stats: $e");
+    } catch (e, stackTrace) {
+      debugPrint("Error fetching stats: $e");
+      debugPrint("Stacktrace: $stackTrace");
       setState(() {
         _isLoading = false;
         _error = "An error occurred while loading stats.";
