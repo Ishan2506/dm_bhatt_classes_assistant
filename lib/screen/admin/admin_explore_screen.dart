@@ -68,7 +68,18 @@ class _AdminExploreScreenState extends State<AdminExploreScreen> {
 
     if (_isEditing) {
       _selectedCategory = widget.productToEdit?['category'];
-      _selectedSubject = "Science"; 
+      
+      final existingSubject = widget.productToEdit?['subject']?.toString();
+      if (existingSubject != null) {
+        final matchingSubject = _subjects.firstWhere(
+          (s) => s.toLowerCase() == existingSubject.toLowerCase(),
+          orElse: () => "",
+        );
+        _selectedSubject = matchingSubject.isNotEmpty ? matchingSubject : null;
+      } else {
+        _selectedSubject = null;
+      }
+      
       _calculateDiscount();
     }
   }
