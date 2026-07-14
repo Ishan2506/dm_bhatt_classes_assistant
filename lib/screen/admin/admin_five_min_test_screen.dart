@@ -41,6 +41,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
   String? _selectedFilterStandard;
   String? _selectedFilterMedium;
   String? _selectedFilterStream;
+  String? _selectedFilterSubject;
 
   final List<String> _standards = ["6", "7", "8", "9", "10", "11", "12"];
   final List<String> _mediums = ["English", "Gujarati"];
@@ -522,6 +523,23 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
     );
   }
 
+  List<String> _getFilterSubjects(String? board, String? std, String? stream) {
+    if (board != null && std != null) {
+      String key = "$board-$std";
+      if (std == "11" || std == "12") {
+        if (stream != null) {
+          key += "-$stream";
+        }
+      }
+      return AcademicConstants.subjects[key] ?? <String>[];
+    }
+    final Set<String> allSubs = {};
+    for (var subs in AcademicConstants.subjects.values) {
+      allSubs.addAll(subs);
+    }
+    return allSubs.toList()..sort();
+  }
+
   // --- Tab 2: History List ---
   Widget _buildHistoryTab() {
     final filtered = _allTests.where((test) {
@@ -535,7 +553,8 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
       final matchStd = _selectedFilterStandard == null || test['std'] == _selectedFilterStandard;
       final matchMedium = _selectedFilterMedium == null || test['medium'] == _selectedFilterMedium;
       final matchStream = _selectedFilterStream == null || test['stream'] == _selectedFilterStream;
-      return matchesSearch && matchBoard && matchStd && matchMedium && matchStream;
+      final matchSubject = _selectedFilterSubject == null || test['subject'] == _selectedFilterSubject;
+      return matchesSearch && matchBoard && matchStd && matchMedium && matchStream && matchSubject;
     }).toList();
 
     return Column(
@@ -574,6 +593,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                     child: _buildDropdown("Board", _selectedFilterBoard, AcademicConstants.boards, (val) => setState(() {
                       _selectedFilterBoard = val;
                       _selectedFilterStandard = null;
+                      _selectedFilterSubject = null;
                     })),
                   ),
                   const SizedBox(width: 12),
@@ -584,7 +604,10 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                   _selectedFilterBoard == null 
                       ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
                       : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], 
-                  (val) => setState(() => _selectedFilterStandard = val)
+                  (val) => setState(() {
+                    _selectedFilterStandard = val;
+                    _selectedFilterSubject = null;
+                  })
                 ),
               ),
                 ],
@@ -597,11 +620,22 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildDropdown("Stream", _selectedFilterStream, _streams, (val) => setState(() => _selectedFilterStream = val)),
+                    child: _buildDropdown("Stream", _selectedFilterStream, _streams, (val) => setState(() {
+                      _selectedFilterStream = val;
+                      _selectedFilterSubject = null;
+                    })),
                   ),
                 ],
               ),
-              if (_selectedFilterBoard != null || _selectedFilterStandard != null || _selectedFilterMedium != null || _selectedFilterStream != null || _searchController.text.isNotEmpty)
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdown("Subject", _selectedFilterSubject, _getFilterSubjects(_selectedFilterBoard, _selectedFilterStandard, _selectedFilterStream), (val) => setState(() => _selectedFilterSubject = val)),
+                  ),
+                ],
+              ),
+              if (_selectedFilterBoard != null || _selectedFilterStandard != null || _selectedFilterMedium != null || _selectedFilterStream != null || _selectedFilterSubject != null || _searchController.text.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: TextButton.icon(
@@ -610,6 +644,7 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
                       _selectedFilterStandard = null;
                       _selectedFilterMedium = null;
                       _selectedFilterStream = null;
+                      _selectedFilterSubject = null;
                       _searchController.clear();
                     }),
                     icon: const Icon(Icons.filter_list_off, size: 16),
@@ -816,7 +851,10 @@ class _AdminFiveMinTestScreenState extends State<AdminFiveMinTestScreen> with Si
           isExpanded: true,
           hint: Text(hint, style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey)),
           value: value,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))).toList(),
+          items: [
+            DropdownMenuItem(value: null, child: Text("All $hint", style: GoogleFonts.poppins(fontSize: 14))),
+            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))),
+          ],
           onChanged: onChanged,
         ),
       ),

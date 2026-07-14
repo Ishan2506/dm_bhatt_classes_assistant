@@ -51,6 +51,7 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
   String? _selectedFilterStandard;
   String? _selectedFilterMedium;
   String? _selectedFilterStream;
+  String? _selectedFilterSubject;
   List<dynamic> _allTests = [];
 
   bool get _isEditing => widget.testToEdit != null;
@@ -620,6 +621,23 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
     );
   }
 
+  List<String> _getFilterSubjects(String? board, String? std, String? stream) {
+    if (board != null && std != null) {
+      String key = "$board-$std";
+      if (std == "11" || std == "12") {
+        if (stream != null) {
+          key += "-$stream";
+        }
+      }
+      return AcademicConstants.subjects[key] ?? <String>[];
+    }
+    final Set<String> allSubs = {};
+    for (var subs in AcademicConstants.subjects.values) {
+      allSubs.addAll(subs);
+    }
+    return allSubs.toList()..sort();
+  }
+
   Widget _buildHistoryTab() {
     final filtered = _allTests.where((test) {
       final query = _searchController.text.toLowerCase();
@@ -632,7 +650,8 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
       final matchStd = _selectedFilterStandard == null || test['std'] == _selectedFilterStandard;
       final matchMedium = _selectedFilterMedium == null || test['medium'] == _selectedFilterMedium;
       final matchStream = _selectedFilterStream == null || test['stream'] == _selectedFilterStream;
-      return matchesSearch && matchBoard && matchStd && matchMedium && matchStream;
+      final matchSubject = _selectedFilterSubject == null || test['subject'] == _selectedFilterSubject;
+      return matchesSearch && matchBoard && matchStd && matchMedium && matchStream && matchSubject;
     }).toList();
 
     return Column(
@@ -671,11 +690,15 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
                     child: _buildFilterDropdown("Board", _selectedFilterBoard, AcademicConstants.boards, (val) => setState(() {
                       _selectedFilterBoard = val;
                       _selectedFilterStandard = null;
+                      _selectedFilterSubject = null;
                     })),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildFilterDropdown("Std", _selectedFilterStandard, _selectedFilterBoard == null ? <String>[] : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], (val) => setState(() => _selectedFilterStandard = val)),
+                    child: _buildFilterDropdown("Std", _selectedFilterStandard, _selectedFilterBoard == null ? <String>[] : AcademicConstants.standards[_selectedFilterBoard!] ?? <String>[], (val) => setState(() {
+                      _selectedFilterStandard = val;
+                      _selectedFilterSubject = null;
+                    })),
                   ),
                 ],
               ),
@@ -687,11 +710,22 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildFilterDropdown("Stream", _selectedFilterStream, _streams, (val) => setState(() => _selectedFilterStream = val)),
+                    child: _buildFilterDropdown("Stream", _selectedFilterStream, _streams, (val) => setState(() {
+                      _selectedFilterStream = val;
+                      _selectedFilterSubject = null;
+                    })),
                   ),
                 ],
               ),
-              if (_selectedFilterBoard != null || _selectedFilterStandard != null || _selectedFilterMedium != null || _selectedFilterStream != null || _searchController.text.isNotEmpty)
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildFilterDropdown("Subject", _selectedFilterSubject, _getFilterSubjects(_selectedFilterBoard, _selectedFilterStandard, _selectedFilterStream), (val) => setState(() => _selectedFilterSubject = val)),
+                  ),
+                ],
+              ),
+              if (_selectedFilterBoard != null || _selectedFilterStandard != null || _selectedFilterMedium != null || _selectedFilterStream != null || _selectedFilterSubject != null || _searchController.text.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: TextButton.icon(
@@ -700,6 +734,7 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
                       _selectedFilterStandard = null;
                       _selectedFilterMedium = null;
                       _selectedFilterStream = null;
+                      _selectedFilterSubject = null;
                       _searchController.clear();
                     }),
                     icon: const Icon(Icons.filter_list_off, size: 16),
@@ -780,7 +815,10 @@ class _CreateMatchFollowingExamScreenState extends State<CreateMatchFollowingExa
           isExpanded: true,
           hint: Text(hint, style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey)),
           value: value,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))).toList(),
+          items: [
+            DropdownMenuItem(value: null, child: Text("All $hint", style: GoogleFonts.poppins(fontSize: 14))),
+            ...items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 14)))),
+          ],
           onChanged: onChanged,
         ),
       ),

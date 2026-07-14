@@ -24,6 +24,7 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
   String? _filterStandard;
   String? _filterMedium;
   String? _filterStream;
+  String? _filterSubject;
 
   @override
   void initState() {
@@ -160,9 +161,27 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
       final matchesStd = _filterStandard == null || exam['std'] == _filterStandard;
       final matchesMedium = _filterMedium == null || exam['medium'] == _filterMedium;
       final matchesStream = _filterStream == null || exam['stream'] == _filterStream;
+      final matchesSubject = _filterSubject == null || exam['subject'] == _filterSubject;
 
-      return matchesSearch && matchesBoard && matchesStd && matchesMedium && matchesStream;
+      return matchesSearch && matchesBoard && matchesStd && matchesMedium && matchesStream && matchesSubject;
     }).toList();
+  }
+
+  List<String> _getFilterSubjects() {
+    if (_filterBoard != null && _filterStandard != null) {
+      String key = "$_filterBoard-$_filterStandard";
+      if (_filterStandard == "11" || _filterStandard == "12") {
+        if (_filterStream != null) {
+          key += "-$_filterStream";
+        }
+      }
+      return AcademicConstants.subjects[key] ?? <String>[];
+    }
+    final Set<String> allSubs = {};
+    for (var subs in AcademicConstants.subjects.values) {
+      allSubs.addAll(subs);
+    }
+    return allSubs.toList()..sort();
   }
 
   Widget _buildSearchAndFilterHeader() {
@@ -213,6 +232,7 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
                   (val) => setState(() {
                     _filterBoard = val;
                     _filterStandard = null;
+                    _filterSubject = null;
                   })
                 ),
               ),
@@ -224,7 +244,10 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
                   _filterBoard == null 
                     ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
                     : AcademicConstants.standards[_filterBoard!] ?? <String>[], 
-                  (val) => setState(() => _filterStandard = val)
+                  (val) => setState(() {
+                    _filterStandard = val;
+                    _filterSubject = null;
+                  })
                 ),
               ),
             ],
@@ -247,12 +270,29 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
                   "Stream", 
                   _filterStream, 
                   ["Science", "Commerce"], 
-                  (val) => setState(() => _filterStream = val)
+                  (val) => setState(() {
+                    _filterStream = val;
+                    _filterSubject = null;
+                  })
                 ),
               ),
             ],
           ),
-          if (_filterBoard != null || _filterStandard != null || _filterMedium != null || _filterStream != null || _searchController.text.isNotEmpty)
+          const SizedBox(height: 12),
+          // Filters Row 3
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdown(
+                  "Subject", 
+                  _filterSubject, 
+                  _getFilterSubjects(), 
+                  (val) => setState(() => _filterSubject = val)
+                ),
+              ),
+            ],
+          ),
+          if (_filterBoard != null || _filterStandard != null || _filterMedium != null || _filterStream != null || _filterSubject != null || _searchController.text.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: TextButton.icon(
@@ -261,6 +301,7 @@ class _AdminOneLinerExamHistoryScreenState extends State<AdminOneLinerExamHistor
                   _filterStandard = null;
                   _filterMedium = null;
                   _filterStream = null;
+                  _filterSubject = null;
                   _searchController.clear();
                 }),
                 icon: const Icon(Icons.filter_list_off, size: 16),

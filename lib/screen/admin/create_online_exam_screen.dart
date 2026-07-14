@@ -63,6 +63,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
   String? _filterStandard;
   String? _filterMedium;
   String? _filterStream;
+  String? _filterSubject;
 
   @override
   void initState() {
@@ -423,9 +424,27 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
       final matchesStandard = _filterStandard == null || exam['std'] == _filterStandard;
       final matchesMedium = _filterMedium == null || exam['medium'] == _filterMedium;
       final matchesStream = _filterStream == null || exam['stream'] == _filterStream;
+      final matchesSubject = _filterSubject == null || exam['subject'] == _filterSubject;
 
-      return matchesSearch && matchesBoard && matchesStandard && matchesMedium && matchesStream;
+      return matchesSearch && matchesBoard && matchesStandard && matchesMedium && matchesStream && matchesSubject;
     }).toList();
+  }
+
+  List<String> _getFilterSubjects() {
+    if (_filterBoard != null && _filterStandard != null) {
+      String key = "$_filterBoard-$_filterStandard";
+      if (_filterStandard == "11" || _filterStandard == "12") {
+        if (_filterStream != null) {
+          key += "-$_filterStream";
+        }
+      }
+      return AcademicConstants.subjects[key] ?? <String>[];
+    }
+    final Set<String> allSubs = {};
+    for (var subs in AcademicConstants.subjects.values) {
+      allSubs.addAll(subs);
+    }
+    return allSubs.toList()..sort();
   }
 
   Widget _buildSearchAndFilterHeader() {
@@ -456,6 +475,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                 child: _buildFilterDropdown("Board", _filterBoard, AcademicConstants.boards, (val) => setState(() {
                   _filterBoard = val;
                   _filterStandard = null;
+                  _filterSubject = null;
                 })),
               ),
               const SizedBox(width: 8),
@@ -466,7 +486,10 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                 _filterBoard == null 
                     ? (AcademicConstants.standards.isNotEmpty ? AcademicConstants.standards.values.first : <String>[])
                     : AcademicConstants.standards[_filterBoard!] ?? <String>[], 
-                (val) => setState(() => _filterStandard = val)
+                (val) => setState(() {
+                  _filterStandard = val;
+                  _filterSubject = null;
+                })
               ),
               ),
             ],
@@ -480,11 +503,23 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildFilterDropdown("Stream", _filterStream, ["Science", "Commerce"], (val) => setState(() => _filterStream = val)),
+                child: _buildFilterDropdown("Stream", _filterStream, ["Science", "Commerce"], (val) => setState(() {
+                  _filterStream = val;
+                  _filterSubject = null;
+                })),
               ),
             ],
           ),
-          if (_filterBoard != null || _filterStandard != null || _filterMedium != null || _filterStream != null || _searchController.text.isNotEmpty)
+          const SizedBox(height: 12),
+          // Filters Row 3
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilterDropdown("Subject", _filterSubject, _getFilterSubjects(), (val) => setState(() => _filterSubject = val)),
+              ),
+            ],
+          ),
+          if (_filterBoard != null || _filterStandard != null || _filterMedium != null || _filterStream != null || _filterSubject != null || _searchController.text.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: TextButton.icon(
@@ -493,6 +528,7 @@ class _CreateOnlineExamScreenState extends State<CreateOnlineExamScreen> {
                   _filterStandard = null;
                   _filterMedium = null;
                   _filterStream = null;
+                  _filterSubject = null;
                   _searchController.clear();
                 }),
                 icon: const Icon(Icons.filter_list_off, size: 16),
